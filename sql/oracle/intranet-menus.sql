@@ -82,9 +82,8 @@ CREATE TABLE im_menus (
 				-- Make sure there are no two identical
 				-- menus on the same _level_.
 	constraint im_menus_label_un
-	unique(label)
+	unique(package_name, label)
 );
-
 
 create or replace package im_menu
 is

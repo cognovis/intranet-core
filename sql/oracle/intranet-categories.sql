@@ -53,8 +53,10 @@
 -- 400-409	Intranet Prior Experience
 -- 450-459	Intranet Employee Pipeline Status
 -- 500-599	Intranet Translation Subject Area
+-- 600-699	Intranet Invoice Status
+-- 700-799	Intranet Invoice Type
 -- 800-899	Intranet Invoice Payment Method
--- 900-999	Intranet Cost Templates
+-- 900-999	Intranet Invoice Templates
 -- 1000-1099	Intranet Payment Type (for im_payments)
 -- 1100-1199	Intranet Topic Type
 -- 1200-1299	Intranet Topic Status
@@ -268,16 +270,15 @@ INSERT INTO im_categories ( CATEGORY_DESCRIPTION, ENABLED_P, CATEGORY_ID, CATEGO
 
 -- The "Translation Agency" is a customer
 insert into im_category_hierarchy values (57,54);
-
 -- The "IT Consulting" company is a customer.
 insert into im_category_hierarchy values (57,55);
-
 -- The "Internal" is a customer (internal projects...)
 insert into im_category_hierarchy values (57,53);
 
 -- The "Freelance" company is a provider
 insert into im_category_hierarchy values (56,58);
-
+-- The "SLV Translation Agency" company is a provider
+insert into im_category_hierarchy values (56,58);
 -- The "Office Equipment Provider" company is a provider
 insert into im_category_hierarchy values (56,59);
 
@@ -407,7 +408,6 @@ insert into im_categories ( CATEGORY_DESCRIPTION, ENABLED_P, CATEGORY_ID, CATEGO
 -- Unit or Mesurement
 INSERT INTO im_categories VALUES (320,'Hour','','Intranet UoM','category','t','f');
 INSERT INTO im_categories VALUES (321,'Day','','Intranet UoM','category','t','f');
-INSERT INTO im_categories VALUES (322,'Unit','','Intranet UoM','category','t','f');
 -- Page, S-Word, T-Word, S-Line, T-Line defined in intranet-translation
 
 

@@ -116,7 +116,7 @@ insert into im_views (view_id, view_name, visible_for) values (81, 'office_view'
 
 
 
-prompt Project Status List Page
+-- Project Status List Page
 --
 delete from im_view_columns where column_id > 2200 and column_id < 2299;
 --
@@ -161,7 +161,7 @@ commit;
 
 
 
-prompt Project List Page
+-- Project List Page
 --
 delete from im_view_columns where column_id > 2000 and column_id < 2099;
 --
@@ -202,47 +202,41 @@ extra_select, extra_where, sort_order, visible_for) values (2021,20,NULL,'Status
 commit;
 
 
-prompt CustomerListPage columns.
+-- CustomerListPage columns.
 --
 delete from im_view_columns where column_id > 0 and column_id < 8;
 --
-
 insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
 extra_select, extra_where, sort_order, visible_for) values (1,1,NULL,'Client',
 '"<A HREF=$customer_view_page?customer_id=$customer_id>$customer_name</A>"','','',1,
 'expr 1');
-
 insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
 extra_select, extra_where, sort_order, visible_for) values (3,1,NULL,'Type',
 '$customer_type','','',2,'expr 1');
-
 insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
 extra_select, extra_where, sort_order, visible_for) values (4,1,NULL,'Status',
 '$customer_status','','',3,'expr 1');
-
 insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
 extra_select, extra_where, sort_order, visible_for) values (5,1,NULL,'Contact',
 '"<A HREF=$user_view_page?user_id=$customer_contact_id>$customer_contact_name</A>"',
 '','',4,'im_permission $user_id view_customer_contacts');
-
 insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
 extra_select, extra_where, sort_order, visible_for) values (6,1,NULL,'Contact Email',
 '"<A HREF=mailto:$customer_contact_email>$customer_contact_email</A>"','','',5,
 'im_permission $user_id view_customer_contacts');
-
 -- insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
--- extra_select, extra_where, sort_order, visible_for) values (7,1,NULL,'Contact Phone',
+extra_select, extra_where, sort_order, visible_for) values (7,1,NULL,'Contact Phone',
 -- '$customer_phone','','',6,'im_permission $user_id view_customer_contact');
 commit;
 
 
 --------------------------------------------------------------
-prompt UsersListPage
+-- UsersListPage
 --
 delete from im_view_columns where column_id > 199 and column_id < 299;
 --
 -- insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
--- extra_select, extra_where, sort_order, visible_for) values (207,10,NULL,'#',
+extra_select, extra_where, sort_order, visible_for) values (207,10,NULL,'#',
 -- '$user_id','','',6,'');
 
 insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
@@ -254,7 +248,7 @@ extra_select, extra_where, sort_order, visible_for) values (201,10,NULL,'Email',
 '"<a href=mailto:$email>$email</a>"','','',3,'');
 
 -- insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
--- extra_select, extra_where, sort_order, visible_for) values (202,10,NULL,'Status',
+extra_select, extra_where, sort_order, visible_for) values (202,10,NULL,'Status',
 -- '$status','','',4,'');
 
 insert into im_view_columns (column_id, view_id, group_id, column_name, column_render_tcl,
@@ -280,7 +274,7 @@ commit;
 
 
 -------------------------------------------------------------------
-prompt UsersViewPage
+-- UsersViewPage
 --
 delete from im_view_columns where column_id > 1100 and column_id <= 1199;
 --
@@ -300,7 +294,7 @@ commit;
 
 
 ---------------------------------------------------------------
-prompt UsersContactViewPage
+-- UsersContactViewPage
 --
 delete from im_view_columns where column_id > 399 and column_id < 499;
 --
@@ -367,7 +361,7 @@ commit;
 
 
 -------------------------------------------------------------------
-prompt UsersCommunityView
+-- UsersCommunityView
 --
 delete from im_view_columns where column_id > 1300 and column_id <= 1399;
 --
@@ -395,7 +389,7 @@ commit;
 -- Offices
 --
 
-prompt OfficeListPage columns.
+-- OfficeListPage columns.
 --
 delete from im_view_columns where column_id >= 8000 and column_id <= 8099;
 --
@@ -427,7 +421,7 @@ extra_select, extra_where, sort_order, visible_for) values (8007,80,NULL,'Phone'
 commit;
 
 
-prompt OfficeViewPage columns.
+-- OfficeViewPage columns.
 --
 delete from im_view_columns where column_id >= 8100 and column_id <= 8199;
 --

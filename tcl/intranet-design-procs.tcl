@@ -76,15 +76,6 @@ ad_proc -public im_gif { name {alt ""} { border 0} {width 0} {height 0} } {
 	"middle-sel-sel"	{ return "<img src=$navbar_gif_path/$name.gif width=19 heigth=19 border=$border alt='$alt'>" }
 	"middle-notsel-notsel"	{ return "<img src=$navbar_gif_path/$name.gif width=19 heigth=19 border=$border alt='$alt'>" }
 
-	"admin"		{ return "<img src=$url/admin.gif width=20 heigth=20 border=$border alt='$alt'>" }
-	"customer"	{ return "<img src=$url/customer.gif width=20 heigth=20 border=$border alt='$alt'>" }
-	"employee"	{ return "<img src=$url/employee.gif width=20 heigth=20 border=$border alt='$alt'>" }
-	"freelance"	{ return "<img src=$url/freelance.gif width=20 heigth=20 border=$border alt='$alt'>" }
-	"senman"	{ return "<img src=$url/senman.gif width=20 heigth=20 border=$border alt='$alt'>" }
-	"proman"	{ return "<img src=$url/proman.gif width=20 heigth=20 border=$border alt='$alt'>" }
-	"accounting"	{ return "<img src=$url/accounting.gif width=20 heigth=20 border=$border alt='$alt'>" }
-	"sales"		{ return "<img src=$url/sales.gif width=20 heigth=20 border=$border alt='$alt'>" }
-
 	default		{ 
 	    set result "<img src=\"$url/$name.gif\" border=$border "
 	    if {$width > 0} { append result "width=$width " }
@@ -155,8 +146,6 @@ ad_proc -public im_tablex {{content "no content?"} {pad "0"} {col ""} {spa "0"} 
 ad_proc -public im_table_with_title { title body } {
     Returns a two row table with background colors
 } {
-    if {"" == $body} { return "" }
-
     return "
 <table cellpadding=5 cellspacing=0 border=0 width='100%'>
  <tr>
@@ -483,7 +472,7 @@ append navbar "
 
 
 
-ad_proc -public im_admin_navbar { {select_label ""} } {
+ad_proc -public im_admin_navbar { } {
     Setup a sub-navbar with tabs for each area, highlighted depending
     on the local URL and enabled depending on the user permissions.
 } {
@@ -491,7 +480,7 @@ ad_proc -public im_admin_navbar { {select_label ""} } {
     set parent_menu_sql "select menu_id from im_menus where name='Admin'"
     set parent_menu_id [db_string parent_admin_menu $parent_menu_sql]
 
-    return [im_sub_navbar $parent_menu_id $select_label]
+    return [im_sub_navbar $parent_menu_id]
 }
 
 
@@ -605,11 +594,10 @@ ad_proc -public im_sub_navbar { parent_menu_id {bind_vars ""} {title ""} {title_
 }
 
 
-ad_proc -public im_navbar { { main_navbar_label "" } } {
+ad_proc -public im_navbar { } {
     Setup a top navbar with tabs for each area, highlighted depending
     on the local URL and enabled depending on the user permissions.
 } {
-    ns_log Notice "im_navbar: main_navbar_label=$main_navbar_label"
     set user_id [ad_get_user_id]
     set url_stub [ns_conn url]
 
@@ -654,13 +642,7 @@ order by
 	set selected 0
 	set url_length [expr [string length $url] - 1]
 	set url_stub_chopped [string range $url_stub 0 $url_length]
-
-	# Check if we should select this one:
-	set select_this_one 0
-	if {[string equal $label $main_navbar_label]} { set select_this_one 1 }
-	if {[string equal $url_stub_chopped $url]} { set select_this_one 1 }
-
-        if {!$found_selected && $select_this_one} {
+        if {!$found_selected && [string equal $url_stub_chopped $url]} {
 	    # Make sure we only highligh one menu item..
             set found_selected 1
 	    # Set for the gif

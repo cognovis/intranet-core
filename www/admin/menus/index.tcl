@@ -18,7 +18,6 @@ ad_page_contract {
 
     @author frank.bergmann@project-open.com
 } {
-    { return_url "/intranet/admin/menus/index" }
 }
 
 # ------------------------------------------------------
@@ -52,15 +51,12 @@ set bgcolor(1) " class=roweven"
 set group_list_sql {
 select DISTINCT
         g.group_name,
-        g.group_id,
-	p.profile_gif
+        g.group_id
 from
         acs_objects o,
-        groups g,
-	im_profiles p
+        groups g
 where
         g.group_id = o.object_id
-	and g.group_id = p.profile_id
         and o.object_type = 'im_profile'
 order by lower(g.group_name)
 }
@@ -73,40 +69,30 @@ set table_header "
   <td width=20></td>
   <td width=20></td>
   <td width=20></td>
-  <td width=20></td>
-  <td width=20></td>
-  <td class=rowtitle>Package</td>\n"
-
+  <td class=rowtitle>Package</td>
+"
 set main_sql_select ""
-set num_profiles 0
 db_foreach group_list $group_list_sql {
     lappend group_ids $group_id
     lappend group_names $group_name
     append main_sql_select "\tacs_permission.permission_p(m.menu_id, $group_id, 'read') as p${group_id}_read_p,\n"
-    append table_header "
-      <td class=rowtitle><A href=$group_url?group_id=$group_id>
-      [im_gif $profile_gif $group_name]
-    </A></td>\n"
-    incr num_profiles
+    append table_header "<td class=rowtitle><A href=$group_url?group_id=$group_id>$group_name</A></td>\n"
 }
-append table_header "
-  <td class=rowtitle>[im_gif del "Delete Menu"]</td>
-</tr>
-"
+append table_header "</th>\n"
 
 
 # ------------------------------------------------------
 # Main SQL: Extract the permissions for all Menus
 # ------------------------------------------------------
 
-set start_menu_id [db_string start_menu_id "select menu_id from im_menus where label='top'" -default 0]
+set start_menu_id [db_string start_menu_id "select menu_id from im_menus where label='main'" -default 0]
 
 set main_sql "
 select
 ${main_sql_select}	m.*,
 	level,
 	(level-1) as indent_level,
-	(6-level) as colspan_level
+	(4-level) as colspan_level
 from
 	im_menus m
 start with
@@ -119,8 +105,6 @@ connect by
 
 
 set table "
-<form action=menu-action method=post>
-[export_form_vars return_url]
 <table>
 $table_header\n"
 
@@ -137,7 +121,7 @@ db_foreach menus $main_sql {
 
     append table "
   <td colspan=$colspan_level>
-    <A href=$menu_url?menu_id=$menu_id>$name</A><br>$label
+    <A href=$menu_url?menu_id=$menu_id>$name - $label</A>
   </td>
   <td>$package_name</td>
 "
@@ -157,20 +141,7 @@ db_foreach menus $main_sql {
     }
 
     append table "
-  <td>
-    <input type=checkbox name=menu_id.$menu_id>
-  </td>
 </tr>
 "
 }
-
-append table "
-<tr>
-  <td colspan=[expr $num_profiles + 5]>&nbsp;</td>
-  <td>
-    <input type=submit value='Del'>
-  </td>
-</tr>
-</table>
-</form>
-"
+append table "</table>\n"

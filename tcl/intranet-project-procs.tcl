@@ -27,22 +27,6 @@ ad_library {
     @author frank.bergmann@project-open.com
 }
 
-# -----------------------------------------------------------
-# Constant Functions
-# -----------------------------------------------------------
-
-ad_proc -public im_project_type_unknown {} { return 85 }
-ad_proc -public im_project_type_other {} { return 86 }
-
-ad_proc -public im_project_status_quoting {} { return 74 }
-ad_proc -public im_project_status_open {} { return 76 }
-ad_proc -public im_project_status_declined {} { return 77 }
-ad_proc -public im_project_status_delivered {} { return 78 }
-ad_proc -public im_project_status_invoiced {} { return 79 }
-ad_proc -public im_project_status_closed {} { return 81 }
-ad_proc -public im_project_status_deleted {} { return 82 }
-ad_proc -public im_project_status_canceled {} { return 83 }
-
 
 # -----------------------------------------------------------
 # Project ::new, ::del and ::name procedures
@@ -217,6 +201,17 @@ begin
     }
 }
 
+
+ad_proc -public im_project_status_quoting {} { return 74 }
+ad_proc -public im_project_status_open {} { return 76 }
+ad_proc -public im_project_status_declined {} { return 77 }
+ad_proc -public im_project_status_delivered {} { return 78 }
+ad_proc -public im_project_status_invoiced {} { return 79 }
+ad_proc -public im_project_status_closed {} { return 81 }
+ad_proc -public im_project_status_deleted {} { return 82 }
+ad_proc -public im_project_status_canceled {} { return 83 }
+
+
 # -----------------------------------------------------------
 # Projects Business Logic
 # -----------------------------------------------------------
@@ -378,7 +373,7 @@ ad_proc -public im_project_parent_select { select_name { default "" } {current_g
 
 
 
-ad_proc -public im_project_select { select_name { default "" } { status "" } {type ""} { exclude_status "" } {member_user_id ""} {customer_id ""} } {
+ad_proc -public im_project_select { select_name { default "" } { status "" } {type ""} { exclude_status "" } {member_user_id ""} } {
     Returns an html select box named $select_name and defaulted to
     $default with a list of all the projects in the system. If status is
     specified, we limit the select box to projects matching that
@@ -424,11 +419,6 @@ ad_proc -public im_project_select { select_name { default "" } { status "" } {ty
 	"
      }	
 
-
-     if { ![empty_string_p $customer_id] } {
-	 ns_set put $bind_vars customer_id $customer_id
-	 append sql " and p.customer_id = :customer_id"
-     }
 
      if { ![empty_string_p $status] } {
 	 ns_set put $bind_vars status $status

@@ -20,13 +20,6 @@ ad_library {
     @author frank.bergmann@project-open.com
 }
 
-# ------------------------------------------------------------------
-# Constant Functions
-# ------------------------------------------------------------------
-
-ad_proc -public im_uom_hour {} { return 320 }
-ad_proc -public im_uom_day {} { return 321 }
-ad_proc -public im_uom_unit {} { return 322 }
 
 
 ad_proc -public im_package_core_id {} {
@@ -42,11 +35,6 @@ ad_proc -private im_package_core_id_helper {} {
     } -default 0]
 }
 
-
-
-# ------------------------------------------------------------------
-# 
-# ------------------------------------------------------------------
 
 ad_proc -public im_opt_val { var_name } {
     Acts like a "$" to evaluate a variable, but
@@ -175,7 +163,6 @@ ad_proc im_name_paren_email {user_id} {
 
 
 # ------------------------------------------------------------------
-#
 # ------------------------------------------------------------------
 
 # Find out the user name
@@ -1228,51 +1215,3 @@ ad_proc bd_formatDateTz { date fmt gmt localTz} {
     
     return $r
 }
-
-# ---------------------------------------------------------------
-# Auxilary functions
-# ---------------------------------------------------------------
-
-ad_proc im_date_format_locale { cur {min_decimals ""} {max_decimals ""} } {
-	Takes a number in "Amercian" format (decimals separated by ".") and
-	returns a string formatted according to the current locale.
-} {
-    ns_log Notice "im_date_format_locale($cur, $min_decimals, $max_decimals)"
-
-    # Remove thousands separating comas eventually
-    regsub "\," $cur "" cur
-
-    # Check if the number has no decimals (for ocurrence of ".")
-    if {![regexp {\.} $cur]} {
-	# No decimals - set digits to ""
-	set digits $cur
-	set decimals ""
-    } else {
-	# Split the digits from the decimals
-        regexp {([^\.]*)\.(.*)} $cur match digits decimals
-    }
-
-    if {![string equal "" $min_decimals]} {
-
-	# Pad decimals with trailing "0" until they reach $num_decimals
-	while {[string length $decimals] < $min_decimals} {
-	    append decimals "0"
-	}
-    }
-
-    if {![string equal "" $max_decimals]} {
-	# Adjust decimals by cutting off digits if too long:
-	if {[string length $decimals] > $max_decimals} {
-	    set decimals [string range $decimals 0 [expr $max_decimals-1]]
-	}
-    }
-
-    # Format the digits
-    if {[string equal "" $digits]} {
-	set digits "0"
-    }
-
-    return "$digits.$decimals"
-}
-
-

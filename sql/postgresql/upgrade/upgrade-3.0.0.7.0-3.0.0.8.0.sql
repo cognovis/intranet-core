@@ -114,7 +114,7 @@ extra_select, extra_where, sort_order, visible_for) values (2040,20,NULL,'Status
 
 -- Default value for VAT
 alter table im_companies add
-        vat                     numeric(12,5)
+        vat                     numeric(12,1)
 ;
 
 alter table im_companies

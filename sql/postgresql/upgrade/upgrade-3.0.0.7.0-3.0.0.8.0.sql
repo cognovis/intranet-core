@@ -106,3 +106,57 @@ insert into im_view_columns (column_id, view_id, group_id, column_name, column_r
 extra_select, extra_where, sort_order, visible_for) values (2040,20,NULL,'Status',
 '$project_status','','',40,'');
 
+
+
+
+-- -----------------------------------------------------
+-- Add fields for invoicing automation
+
+-- Default value for VAT
+alter table im_companies add
+        vat                     numeric(12,5)
+;
+
+alter table im_companies
+alter column vat
+set default 0
+;
+
+
+-- Default invoice template
+
+alter table im_companies add
+        invoice_template_id     integer
+                                constraint im_companies_invoice_template_fk
+                                references im_categories
+;
+
+
+-- -----------------------------------------------------
+-- Add DynField "im_companies" extension table (if it 
+-- doesn't exist already)
+
+create or replace function inline_0 ()
+returns integer as '
+declare
+        v_count                 integer;
+begin
+        select count(*)
+        into v_count
+        from acs_object_type_tables
+        where   lower(table_name) = ''im_companies'';
+
+        if v_count > 0 then
+            return 0;
+        end if;
+
+	insert into acs_object_type_tables (
+		object_type, table_name, id_column
+	) values (
+		''im_company'', ''im_companies'', ''company_id''
+	);
+    return 0;
+end;' language 'plpgsql';
+select inline_0 ();
+drop function inline_0 ();
+

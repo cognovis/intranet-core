@@ -132,6 +132,18 @@ alter table im_companies add
 ;
 
 
+-- Default payment method
+alter table im_companies add
+        payment_method_id       integer
+                                constraint im_companies_invoice_payment_fk
+                                references im_categories
+;
+
+alter table im_companies add
+        payment_days            integer
+;
+
+
 -- -----------------------------------------------------
 -- Add DynField "im_companies" extension table (if it 
 -- doesn't exist already)

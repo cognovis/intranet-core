@@ -1,0 +1,90 @@
+Change Log
+
+V3.1.0.0 includes some 40 enhancements, resolved issues, and resolved 
+inconsistencies:
+
+Major Bug Fixes
+
+      * Automatic Software Update Service ("ASUS"): Fixed a bug inhibiting 
+	software updates for the "anonymous" user.
+      * Filestorage: Config tigher permissions (very permissive before)
+      * Fixed a rounding bug in the "Invoices" list page that could lead 
+	to inconsisten invoice sums.
+      * Employees now can edit their master data in all security 
+	configurations.
+      * Fixed a permission issue that allows users with "add_finance" 
+	permission to delete payments (that should require a separate 
+	"add_payments" permission)
+      * Timesheet information are now available as a "Data Warehouse Light" 
+	Cube, suitable to be viewed via Pivot Table.
+
+Minor Bug Fixes
+
+      * Fixed ASUS (Automatic Software Update Service) for "anonymous".
+      * Removed the "internal" company from the default price list of 
+	providers
+      * Self-registered users are now included in the search engine.
+      * Fixed Localization issues with the "Assign" button in ]pt[ in 
+	languages different from English.
+      * User's absences are now shown correctly in the "Users" list page.
+      * Timesheet "Weekly Report" doesn't show non-employees anymore.
+      * Fixed the sort order for several drop-down boxes
+      * Fixed the error message in the translation price list when entering 
+	German ("1,60") values.
+      * Fixed the highlighting of several sub-tabs (such as the "Summary" 
+	tab in projects)
+      * Reduced the precision of financial items in several locations to 2 
+	digits.
+      * ]project-translation[: Auto assignment now works with any UoM (Units 
+	of Measure) and not just Source-Words.
+      * Fixed formatting issue of VAT amounts > 9.999 EUR
+      * Work city" and "work country" are now saved correctly in the Users's 
+	contact information page.
+
+Major Enhancements
+
+      * "Delete Demo Data": This functionality in the "Admin" section allows 
+	you to delete non-master data from a system. This allows you to take 
+	a ]po[ demo configuration (Tigerpond company), to delete any existing 
+	projects, users, ... and to use this system to start production use 
+	for your company.
+      * "DynField" (also called "SQL metadata model") allows you to add new 
+	fields to existing objects and their database tables. DynField 
+	currently support Projects, Companies and Persons as objects.
+      * A new Currency Conversion Module is now available. The module allows 
+	for true multi-currency profit & loss calculation for the default 
+	supported currencies (USD, EUR, AUD, CAD and JPY). The module still 
+	needs to be enhanced to include an automatic update of the currency 
+	conversion table.
+      * A new Reporting Module is now available available as a closed-source 
+	extension module. The module currently includes only three major 
+	reports
+      * "New from Template": This function allows you to "clone" a project 
+	and to use it as a template for a new one. This is particularly 
+	useful for organizations dealing with many similar projects.
+      * Automatic Project Advance: The "% Completed" field of both 
+	]project-translation[ and ]project-consulting[ now advances 
+	automatically, depending on the status of the project's tasks.
+
+Minor Enhancements
+
+      * ]project-translation[: Translator's comments from the task upload 
+	page are now published as forum items.
+      * VAT and Invoice Template default values are now defined on a 
+	company's page.
+      * ]project-translation[: The Project List Page for now shows the size 
+	of a project with all available UoM (units of measure) and not just 
+	words and hours.
+      * ]project-translation[: Added a field "end-date" for translation tasks.
+	This field allows project manager to schedule their projects more 
+	fine-grain.
+      * Added an edit page for translation prices.
+      * ]project-translation[: Added a Parameter to allow freelancers to 
+	upload a WF file with a name different from the original file, so 
+	that they can rename the file locally.
+      * Added separate permissions for editing the "budget" and "budget 
+	hours" fields in projects. This allows to separate budget and PM 
+	responsabilities.
+      * Added a "financial summary" component to the Project's summary page
+      * Fixed a number of submit button texts ("Edit Quote" instead of "Edit 
+	Invoice" on an quote editing screen, ...)

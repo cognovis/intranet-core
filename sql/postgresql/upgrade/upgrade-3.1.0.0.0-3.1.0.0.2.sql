@@ -25,8 +25,8 @@ alter table im_companies drop column invoice_template_id;
 -- Default payment method
 alter table im_companies add
         default_payment_method_id       integer
-                                constraint im_companies_def_invoice_payment_fk
-                                references im_categories;
+        constraint im_companies_def_invoice_payment_fk
+        references im_categories;
 
 update im_companies set default_payment_method_id = payment_method_id;
 alter table im_companies drop column payment_method_id;

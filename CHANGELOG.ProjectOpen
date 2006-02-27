@@ -5,22 +5,50 @@ Change Log
 V3.1.2.0 Changes
 ==============================================================
 
-General Enhancements:
+Major Enhancements:
 
       * Added fields "delivery address" and "contact person" in 
 	financial document creation and editing pages.
-      * Added date and currency format localization in the InvoiceViewPage.
-	The locale is taken from the invoice template and allows to create
-	correctly localized 
+      * Added separate counters for financial document numbers (invoices, 
+	quotes and purchase orders). The old configuration (a single
+	counter) is still the default.
+      * "Create Company from User" wizard speeds up the creation
+	of new users and their companies
+
+
+]project-translation[ Specific Enhancements:
+
+      * Added a "Aggregrate" checkbox in the translation invoice wizard.
+	Unchecking this checkbox allows to create quotes and invoices with
+	details (delivery date) of the individual translation tasks.
+      * Added an extended search for freelancer capabilities in 
+	intranet-freelance
+      * Added a "Translation Project Manager Performance" report to
+	intranet-reporting
+      * Added FreeBudget and WebBudget CVS imports, in addition to Trados.
+      * Translation Workflow File Upload: Introduced a parameter to determine 
+	whether the uploaded file needs to be named exactly like the 
+	original file.
+      * Translators can now give feedback when uploading translation
+	files. The feedback is converted into a forum item.
+
+
+Minor Enhancements
+
       * Added a "redirect to log hours" function in ]project-consulting[,
 	forcing people to log a certain amount of hours per week.
 	Added a parameter that specifies the number of hours to be logged.
 	Added a parameter to redirect from "Home", "Projects" or both.
+      * Financial documents can be sent as HTML attachments.
+      * Automatic advancement of the "percent completed" filed in a project,
+	depending on the state of both consulting and translation tasks
+	the Translation Workflow Status 
+      * Added date and currency format localization in the InvoiceViewPage.
+	The locale is taken from the invoice template and allows to create
+	correctly localized 
       * Enabled alphabetical sorting of projects in the timesheet page
 	(this was quite difficult because of the hierarchical SQL query
 	that includes subprojects and their tasks..)
-      * Financial documents can be sent to project and accounting contacts
-	as HTML attachments
       * Added "Nuke Demo Companies" option to cleanup selected "companies"
 	when taking the system productively
       * "Search" field now clears up when clicking on it (if Full-Text 
@@ -32,34 +60,25 @@ General Enhancements:
 	This function allows users to migrate database backup dumps easier 
 	between a Linux version (production?) and a Windows version 
 	(testing, development?)
-      * Fixed pagination in Translation ProjectListPage
-      * Added several reports to intranet-reporting
       * Allowing to accept/reject multiple tasks of intranet-forum on the 
 	home page. This makes it much quicker to deal with large amounts
 	of minor bug reports.
-      * Enabling the "State" field in address if the parameter 
-	"SomeAmericanReaders" is set.
       * Added a number of invoice templates in a new intranet-invoice-templates
 	package
+      * Fixed pagination in Translation ProjectListPage
+      * Added several reports to intranet-reporting
       * Various fixes of typos and Localization.
-
-
-Translation Specific Enhancements:
-
-      * Added a "Aggregrate" checkbox in the translation invoice wizard.
-	Unchecking this checkbox allows to create quotes and invoices with
-	details (delivery date) of the individual translation tasks.
-      * Added an extended search for freelancer capabilities in 
-	intranet-freelance
-      * Added a "Translation Project Manager Performance" report to
-	intranet-reporting
-      * Added FreeBudget and WebBudget CVS imports, in addition to Trados.
+      * Enabling the "State" field in address if the parameter 
+	"SomeAmericanReaders" is set.
 
 
 Bug Fixes:
 
       * Fixed missing "invoice_office_id" in "Tigerpond" preconfigured
 	demos.
+      * Fixed "Finance" tab in projects in the preconfigured Demos: 
+	Quotes and POs are summed up correctly but wouldn't appear in the 
+	detailed list
       * Fixed a Windows bug displaying Filestorage files under certain 
 	circumstances.
       * Fixed the Company's financial documents "more info..." link 
@@ -87,45 +106,6 @@ V3.1.1.0 Changes
 
 V3.1.1.0 includes some 80 enhancements, resolved issues, and resolved 
 inconsistencies, compared with V3.0.0.6:
-
-Major Bug Fixes
-
-      * Automatic Software Update Service ("ASUS"): Fixed a bug inhibiting 
-	software updates for the "anonymous" user.
-      * Filestorage: Config tigher permissions (very permissive before)
-      * Fixed a rounding bug in the "Invoices" list page that could lead 
-	to inconsisten invoice sums.
-      * Employees now can edit their master data in all security 
-	configurations.
-      * Fixed a permission issue that allows users with "add_finance" 
-	permission to delete payments (that should require a separate 
-	"add_payments" permission)
-      * Timesheet information are now available as a "Data Warehouse Light" 
-	Cube, suitable to be viewed via Pivot Table.
-
-Minor Bug Fixes
-
-      * Fixed ASUS (Automatic Software Update Service) for "anonymous".
-      * Removed the "internal" company from the default price list of 
-	providers
-      * Self-registered users are now included in the search engine.
-      * Fixed Localization issues with the "Assign" button in ]pt[ in 
-	languages different from English.
-      * User's absences are now shown correctly in the "Users" list page.
-      * Timesheet "Weekly Report" doesn't show non-employees anymore.
-      * Fixed the sort order for several drop-down boxes
-      * Fixed the error message in the translation price list when entering 
-	German ("1,60") values.
-      * Fixed the highlighting of several sub-tabs (such as the "Summary" 
-	tab in projects)
-      * Reduced the precision of financial items in several locations to 2 
-	digits.
-      * ]project-translation[: Auto assignment now works with any UoM (Units 
-	of Measure) and not just Source-Words.
-      * Fixed formatting issue of VAT amounts > 9.999 EUR
-      * Work city" and "work country" are now saved correctly in the Users's 
-	contact information page.
-
 
 Major Enhancements
 
@@ -177,4 +157,47 @@ Minor Enhancements
       * Fixed a number of submit button texts ("Edit Quote" instead of "Edit 
 	Invoice" on an quote editing screen, ...)
       * Many typos and Localization fixed
+
+
+Major Bug Fixes
+
+      * Automatic Software Update Service ("ASUS"): Fixed a bug inhibiting 
+	software updates for the "anonymous" user.
+      * Filestorage: Config tigher permissions (very permissive before)
+      * Fixed a rounding bug in the "Invoices" list page that could lead 
+	to inconsisten invoice sums.
+      * Employees now can edit their master data in all security 
+	configurations.
+      * Fixed a permission issue that allows users with "add_finance" 
+	permission to delete payments (that should require a separate 
+	"add_payments" permission)
+      * Timesheet information are now available as a "Data Warehouse Light" 
+	Cube, suitable to be viewed via Pivot Table.
+      * Added default VAT, payment days and financial document templates
+	to companies
+
+
+Minor Bug Fixes
+
+      * Fixed ASUS (Automatic Software Update Service) for "anonymous".
+      * Removed the "internal" company from the default price list of 
+	providers
+      * Self-registered users are now included in the search engine.
+      * Fixed Localization issues with the "Assign" button in ]pt[ in 
+	languages different from English.
+      * User's absences are now shown correctly in the "Users" list page.
+      * Timesheet "Weekly Report" doesn't show non-employees anymore.
+      * Fixed the sort order for several drop-down boxes
+      * Fixed the error message in the translation price list when entering 
+	German ("1,60") values.
+      * Fixed the highlighting of several sub-tabs (such as the "Summary" 
+	tab in projects)
+      * Reduced the precision of financial items in several locations to 2 
+	digits.
+      * ]project-translation[: Auto assignment now works with any UoM (Units 
+	of Measure) and not just Source-Words.
+      * Fixed formatting issue of VAT amounts > 9.999 EUR
+      * Work city" and "work country" are now saved correctly in the Users's 
+	contact information page.
+
 

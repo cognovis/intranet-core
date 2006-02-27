@@ -1,7 +1,92 @@
 Change Log
 
-V3.1.0.0 includes some 40 enhancements, resolved issues, and resolved 
-inconsistencies:
+
+==============================================================
+V3.1.2.0 Changes
+==============================================================
+
+General Enhancements:
+
+      * Added fields "delivery address" and "contact person" in 
+	financial document creation and editing pages.
+      * Added date and currency format localization in the InvoiceViewPage.
+	The locale is taken from the invoice template and allows to create
+	correctly localized 
+      * Added a "redirect to log hours" function in ]project-consulting[,
+	forcing people to log a certain amount of hours per week.
+	Added a parameter that specifies the number of hours to be logged.
+	Added a parameter to redirect from "Home", "Projects" or both.
+      * Enabled alphabetical sorting of projects in the timesheet page
+	(this was quite difficult because of the hierarchical SQL query
+	that includes subprojects and their tasks..)
+      * Financial documents can be sent to project and accounting contacts
+	as HTML attachments
+      * Added "Nuke Demo Companies" option to cleanup selected "companies"
+	when taking the system productively
+      * "Search" field now clears up when clicking on it (if Full-Text 
+	Search is installed)
+      * Enhanced the permission system for the Filestorage: Now a number
+	of privileges determines the default permissions, instead of the
+	either very permissive or restictive settings before.
+      * Added Windows-to-Linus and Linux-to-Windows conversion of parameters. 
+	This function allows users to migrate database backup dumps easier 
+	between a Linux version (production?) and a Windows version 
+	(testing, development?)
+      * Fixed pagination in Translation ProjectListPage
+      * Added several reports to intranet-reporting
+      * Allowing to accept/reject multiple tasks of intranet-forum on the 
+	home page. This makes it much quicker to deal with large amounts
+	of minor bug reports.
+      * Enabling the "State" field in address if the parameter 
+	"SomeAmericanReaders" is set.
+      * Added a number of invoice templates in a new intranet-invoice-templates
+	package
+      * Various fixes of typos and Localization.
+
+
+Translation Specific Enhancements:
+
+      * Added a "Aggregrate" checkbox in the translation invoice wizard.
+	Unchecking this checkbox allows to create quotes and invoices with
+	details (delivery date) of the individual translation tasks.
+      * Added an extended search for freelancer capabilities in 
+	intranet-freelance
+      * Added a "Translation Project Manager Performance" report to
+	intranet-reporting
+      * Added FreeBudget and WebBudget CVS imports, in addition to Trados.
+
+
+Bug Fixes:
+
+      * Fixed missing "invoice_office_id" in "Tigerpond" preconfigured
+	demos.
+      * Fixed a Windows bug displaying Filestorage files under certain 
+	circumstances.
+      * Fixed the Company's financial documents "more info..." link 
+      * Fixed roject's "Profit & Loss" view in the "Tigerpond" demo systems. 
+	This view was not enabled by default.
+      * Fixed URLs in automatic alert emails: Outlooks breaks the lines
+	after 70 characters, breaking the URL. The text has been reformatted
+	now to avoid this situation (unless you've got a very long hostname...)
+      * Fixed ugly JavaScript error if Full-Text Search is not installed
+      * Fixed a few issues with "Nuke Demo Data". Includes the situation
+	that a user has become manager of a cost center.
+      * Fixed "Advanced Filtering" in the ProjectListPage
+      * Relaxed security permissions for project budgets. 
+	Now the "view_budget" privilege controls the visibility, instead
+	of the (usually tighter) "view_finance"
+      * Fixed bug in sending out multipart emails if the Subject includes a 
+	newline character.
+
+
+
+
+==============================================================
+V3.1.1.0 Changes
+==============================================================
+
+V3.1.1.0 includes some 80 enhancements, resolved issues, and resolved 
+inconsistencies, compared with V3.0.0.6:
 
 Major Bug Fixes
 
@@ -41,6 +126,7 @@ Minor Bug Fixes
       * Work city" and "work country" are now saved correctly in the Users's 
 	contact information page.
 
+
 Major Enhancements
 
       * "Delete Demo Data": This functionality in the "Admin" section allows 
@@ -65,6 +151,8 @@ Major Enhancements
       * Automatic Project Advance: The "% Completed" field of both 
 	]project-translation[ and ]project-consulting[ now advances 
 	automatically, depending on the status of the project's tasks.
+      * Automatic data import from LTC Organiser.	
+
 
 Minor Enhancements
 
@@ -88,3 +176,5 @@ Minor Enhancements
       * Added a "financial summary" component to the Project's summary page
       * Fixed a number of submit button texts ("Edit Quote" instead of "Edit 
 	Invoice" on an quote editing screen, ...)
+      * Many typos and Localization fixed
+

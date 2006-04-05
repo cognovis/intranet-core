@@ -26,3 +26,9 @@ end;' language 'plpgsql';
 -- Test query
 -- select * from im_day_enumerator(now()::date, now()::date + 7);
 
+
+
+-- Add "edit_companies_all" privilege
+select acs_privilege__create_privilege('edit_companies_all','Edit All Companies','Edit All Companies');
+select acs_privilege__add_child('admin', 'edit_companies_all');
+

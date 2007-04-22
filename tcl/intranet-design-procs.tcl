@@ -411,7 +411,11 @@ ad_proc -public im_project_navbar {
     # Get the Subnavbar
     set parent_menu_sql "select menu_id from im_menus where label=:navbar_menu_label"
     set parent_menu_id [db_string parent_admin_menu $parent_menu_sql -default 0]
-    set navbar [im_sub_navbar $parent_menu_id "" $alpha_bar "tabnotsel" $select_label]
+    
+    ns_set put $bind_vars letter $default_letter
+    ns_set delkey $bind_vars project_status_id
+
+    set navbar [im_sub_navbar $parent_menu_id $bind_vars $alpha_bar "tabnotsel" $select_label]
 
     return $navbar
 }
@@ -928,21 +932,20 @@ ad_proc -public im_header { { page_title "" } { extra_stuff_for_document_head ""
 
     # --------------------------------------------------------
     set search_form ""
-    if {$user_id > 0 && $search_installed_p} {
+    if {[im_permission $user_id "search_intranet"] && $user_id > 0 && $search_installed_p} {
 	set search_form "
 	    <nobr>
 	      <form action=/intranet/search/go-search method=post name=surx>
                 <input class=surx name=query_string size=15 value=\"[_ intranet-core.Search]\" onClick=\"javascript:this.value = ''\">
-                <select class=surx name=target>"
-	if {[im_permission $user_id "search_intranet"]} {
-	    append search_form "
+	<!--
+                <select class=surx name=target>
                   <option class=surx selected value=content>[_ intranet-core.Intranet_content]</option>
                   <option class=surx value=users>[_ intranet-core.Intranet_users]</option>
-                  <option class=surx value=htsearch>[_ intranet-core.All_documents_in_H]</option>"
-	}
-	append search_form "
+                  <option class=surx value=htsearch>[_ intranet-core.All_documents_in_H]</option>
                   <option class=surx value=google>[_ intranet-core.The_web_with_Google]</option>
                 </select>
+	-->
+		<input type=hidden name=target value=content>
                 <input alt=go type=submit value=Go name='image'>
               </form>
 	    </nobr>

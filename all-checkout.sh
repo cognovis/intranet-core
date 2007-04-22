@@ -56,6 +56,7 @@ cvs checkout intranet-filestorage
 cvs checkout intranet-forum
 cvs checkout intranet-freelance
 cvs checkout intranet-freelance-invoices
+cvs checkout intranet-freelance-translation
 cvs checkout intranet-ganttproject
 cvs checkout intranet-hr
 cvs checkout intranet-html2pdf
@@ -71,7 +72,7 @@ cvs checkout intranet-payments
 # cvs checkout intranet-procedures
 cvs checkout intranet-reporting
 cvs checkout intranet-reporting-cubes
-# cvs checkout intranet-reporting-dashboard
+cvs checkout intranet-reporting-dashboard
 cvs checkout intranet-reporting-finance
 cvs checkout intranet-reporting-translation
 cvs checkout intranet-reporting-tutorial

@@ -62,8 +62,7 @@ if {!$parent_read} {
 #
 db_1row projects_info_query { 
 select 
-	p.project_name as parent_project_name,
-	p.company_id as parent_company_id
+	p.project_name as parent_project_name
 from
 	im_projects p
 where 
@@ -73,7 +72,7 @@ where
 
 # Create a new project_nr if it wasn't specified
 if {"" == $project_nr || ""} {
-    set project_nr [im_next_project_nr -customer_id $parent_company_id]
+    set project_nr [im_next_project_nr]
 }
 
 # Use the parents project name if none was specified

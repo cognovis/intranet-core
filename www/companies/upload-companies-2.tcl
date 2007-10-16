@@ -24,26 +24,6 @@ ad_page_contract {
     return_url
     upload_file
     company_type_id:integer
-    { transformation_key "" }
-}
-
-# Describes how Excel attributes are loaded into DynFields
-# Format:
-#	1. Excel Column Name
-#	2. Table Column
-#	3. Transformation Function
-
-set dynfield_trans_list {}
-
-# Define some hardcoded transformations until we've finished the
-# maintenance screens for database-configured transformations...
-switch $transformation_key {
-    reinisch_customers {
-	set dynfield_trans_list {
-	    {"K_Nr"		"borg_customer_code"	"im_transform_trim"}
-	    {"Comercial"	"sales_rep_id"		"im_transform_email2user_id"}
-	}
-    }
 }
 
 set current_user_id [ad_maybe_redirect_for_registration]
@@ -75,9 +55,11 @@ if {[regexp {\.\.} $company_filename]} {
 }
 
 if {![file readable $tmp_filename]} {
-    ad_return_complaint 1 "Unable to read the file '$tmp_filename'. <br>
-    Please check the file permissions or contact your system administrator.\n"
-    ad_script_abort
+    set err_msg "Unable to read the file '$tmp_filename'. 
+Please check the file permissions or contact your system administrator.\n"
+    append page_body "\n$err_msg\n"
+    doc_return  200 text/html [im_return_template]
+    return
 }
 
 set csv_files_content [fileutil::cat $tmp_filename]
@@ -101,23 +83,7 @@ if {1 == $csv_header_len} {
 
 set values_list_of_lists [im_csv_get_values $csv_files_content $separator]
 
-
-
-
-# ------------------------------------------------------------
-# Render Result Header
-
-ad_return_top_of_page "
-        [im_header]
-        [im_navbar]
-"
-
-
-# ------------------------------------------------------------
-
-set cnt 0
 foreach csv_line_fields $values_list_of_lists {
-    incr cnt
 
     # Preset values, defined by CSV sheet:
     set user_id ""
@@ -216,12 +182,11 @@ foreach csv_line_fields $values_list_of_lists {
 	}
 
 	set var_name [string tolower $var_name]
-        set var_name [string map -nocase {" " "_" "\"" "" "'" "" "/" "_" "-" "_" "\[" "(" "\{" "(" "\}" ")" "\]" ")"} $var_name]
+	set var_name [string map -nocase {" " "_" "'" "" "/" "_" "-" "_"} $var_name]
 	lappend var_name_list $var_name
 	ns_log notice "upload-companies-2: varname([lindex $csv_header_fields $j]) = $var_name"
 
 	set var_value [string trim [lindex $csv_line_fields $j]]
-        set var_value [string map -nocase {"\"" "'" "\[" "(" "\{" "(" "\}" ")" "\]" ")"} $var_value]
 	if {[string equal "NULL" $var_value]} { set var_value ""}
 	
 	set cmd "set $var_name \"$var_value\""
@@ -237,15 +202,15 @@ foreach csv_line_fields $values_list_of_lists {
     # Empty company_name
     # => Skip it completely
     if {[empty_string_p $company_name]} {
-    	ns_write "<li>'$company_name': Skipping, company name can not be empty.\n"
-	continue	
+    	append page_body "<li>'$company_name': Skipping, company name can not be empty.\n"
+		continue	
     }
     
     set company_path [im_mangle_user_group_name $company_name]
 
     set business_country_code [db_string country_code "select iso from country_codes where lower(country_name) = lower(:business_country)" -default ""]
     if {"" == $business_country_code} {
-		ns_write "<li>Didn't find '$business_country' in the country database. Please enter manually.\n"
+		append page_body "<li>Didn't find '$business_country' in the country database. Please enter manually.\n"
     }
 
     set office_name "$company_name [_ intranet-core.Main_Office]"
@@ -258,7 +223,7 @@ foreach csv_line_fields $values_list_of_lists {
     # Two or more companies with the same name
     # => Skip it completely
     if {$found_n > 1} {
-		ns_write "<li>'$company_name': Skipping, we have found already $found_n companies with this name. Please check and change the names.\n"
+		append page_body "<li>'$company_name': Skipping, we have found already $found_n companies with this name. Please check and change the names.\n"
 		continue
     }
 
@@ -268,6 +233,7 @@ foreach csv_line_fields $values_list_of_lists {
     if {0 == $found_n} {
 
 	set company_id [im_new_object_id]
+	
 
 	# First create a new main_office:
 	set main_office_id [office::new \
@@ -286,15 +252,6 @@ foreach csv_line_fields $values_list_of_lists {
 		-company_type_id $company_type_id_org \
 		-company_status_id [im_company_status_active]]	
     } else {
-
-	set company_id [db_string company_id "select company_id from im_companies where lower(company_name) = lower(:company_name)"]
-
-	db_dml update_company "
-		update im_companies set
-			company_path	= :company_path
-		where
-			company_id = :company_id
-	"
 
 	db_1row company_info "
 		select company_id, main_office_id
@@ -332,15 +289,15 @@ foreach csv_line_fields $values_list_of_lists {
         set user_id [db_string person_select "select person_id from persons where lower(first_names) = lower(:first_name) and lower(last_name) = lower(:last_name)" -default 0]
         set relationship_count [db_string relationship_count "select count(*) from acs_rels where object_id_one = :company_id and object_id_two = :user_id"]
         if {0 == $relationship_count} {
-    	ns_write "<li>'$first_name $last_name': Adding as member to '$company'\n"
+    	append page_body "<li>'$first_name $last_name': Adding as member to '$company'\n"
         im_biz_object_add_role $user_id $company_id [im_biz_object_role_full_member]
         } else {
-    	ns_write "<li>'$first_name $last_name': Is already a member of company '$company'\n"
+    	append page_body "<li>'$first_name $last_name': Is already a member of company '$company'\n"
         }
 
     } else {
     
-        ns_write "<li>The user '$first_name $last_name' doesn't exist in our database. <br>
+        append page_body "<li>The user '$first_name $last_name' doesn't exist in our database. <br>
         Please use the 'Import Users CSV' link in the users page to upload a list of users.\n"
         
     }
@@ -372,75 +329,7 @@ foreach csv_line_fields $values_list_of_lists {
     	"
     }
 
-
-    # Example:  "Comercial" "sales_rep_id" im_transform_email2user_id
-    foreach trans $dynfield_trans_list {
-	set excel_field [string tolower [lindex $trans 0]]
-        set excel_field [string map -nocase {" " "_" "\"" "" "'" "" "/" "_" "-" "_" "\[" "(" "\{" "(" "\}" ")" "\]" ")"} $excel_field]
-        set excel_field [im_mangle_unicode_accents $excel_field]
-	set table_column [lindex $trans 1]
-	set trans_function [lindex $trans 2]
-
-	set excel_value ""
-	if {[catch { 
-	    set excel_value [expr \$$excel_field]
-	} err_value]} {
-	    if {"" != $err_value} { 
-		ns_write "
-		<li>Error transforming value '$excel_value' of Excel field '$excel_field' into column '$table_column':<br>
-		<pre>$err_value</pre>
-	        "
-	    }
-	}
-	set excel_value [string trim $excel_value]
-
-	if {"" != $excel_value} {
-
-	    set res_list {}
-	    set res_errors {"Error during transformation"}
-	    
-	    if {[catch {
-		set trans_result [eval $trans_function $excel_value]
-		set res_list [lindex $trans_result 0]
-		set res_errors [lindex $trans_result 1]
-	    } err_trans]} {
-		if {"" != $err_value} { 
-	            ns_write "
-		    <li>Error transforming value '$excel_value' of Excel field '$excel_field' into column '$table_column':<br>
-		    <pre>$err_trans</pre>
-	            "
-		}
-	    }
-
-	    if {[llength $res_errors] > 0 || [llength $res_list] != 1} {
-
-		# Error
-		ns_write "
-	<li>Error transforming value '$excel_value' of Excel field '$excel_field' into column '$table_column':<br>
-	[join $res_errors "<br>\n"]"
-
-	    } else {
-
-		# We found exactly one return value and no errors...
-		set res [lindex $res_list 0]
-	        db_dml update_company_dynfield "
-	                update im_companies set 
-				$table_column = :res
-	                where company_id = :company_id
-	        "
-	    }
-        }
-    }
-
-
 }
 
-ns_write "\n</ul><p>\n<A HREF=$return_url>Return to Project Page</A>\n"
-
-
-# ------------------------------------------------------------
-# Render Report Footer
-
-ns_write [im_footer]
-
-
+append page_body "\n</ul><p>\n<A HREF=$return_url>Return to Project Page</A>\n"
+doc_return  200 text/html [im_return_template]

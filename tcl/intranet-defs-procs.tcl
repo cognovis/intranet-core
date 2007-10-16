@@ -777,7 +777,6 @@ ad_proc im_category_select_helper {
     {-include_empty_name "All"}
     {-plain_p 0}
     {-super_category_id 0}
-    {-cache_interval 3600}
     category_type
     select_name
     { default "" }
@@ -1552,7 +1551,67 @@ ad_proc num_days_in_month {month {year 1999}} {
     }
 }
 
+
 # ---------------------------------------------------------------
+# Auxilary functions
+# ---------------------------------------------------------------
+
+ad_proc im_date_format_locale { cur {min_decimals ""} {max_decimals ""} } {
+	Takes a number in "Amercian" format (decimals separated by ".") and
+	returns a string formatted according to the current locale.
+} {
+#    ns_log Notice "im_date_format_locale($cur, $min_decimals, $max_decimals)"
+
+    # Remove thousands separating comas eventually
+    regsub "\," $cur "" cur
+
+    # Check if the number has no decimals (for ocurrence of ".")
+    if {![regexp {\.} $cur]} {
+	# No decimals - set digits to ""
+	set digits $cur
+	set decimals ""
+    } else {
+	# Split the digits from the decimals
+	regexp {([^\.]*)\.(.*)} $cur match digits decimals
+    }
+
+    if {![string equal "" $min_decimals]} {
+
+	# Pad decimals with trailing "0" until they reach $num_decimals
+	while {[string length $decimals] < $min_decimals} {
+	    append decimals "0"
+	}
+    }
+
+    if {![string equal "" $max_decimals]} {
+	# Adjust decimals by cutting off digits if too long:
+	if {[string length $decimals] > $max_decimals} {
+	    set decimals [string range $decimals 0 [expr $max_decimals-1]]
+	}
+    }
+
+    # Format the digits
+    if {[string equal "" $digits]} {
+	set digits "0"
+    }
+
+    return "$digits.$decimals"
+}
+
+
+
+ad_proc im_mangle_user_group_name { user_group_name } {
+	Returns the input string in lowercase and with " "
+	being replaced by "_".
+} {
+	set user_group_name [string tolower $user_group_name]
+	regsub -all { } $user_group_name "_" user_group_name
+	regsub -all {/} $user_group_name "" user_group_name
+	regsub -all {\+} $user_group_name "_" user_group_name
+	return $user_group_name
+}
+
+
 
 ad_proc im_csv_duplicate_double_quotes {arg} {
     This proc duplicates double quotes so that the resulting
@@ -1564,6 +1623,23 @@ ad_proc im_csv_duplicate_double_quotes {arg} {
     return $result
 }
 
+
+ad_proc im_unicode2html {s} {
+    Converts the TCL unicode characters in a string beyond
+    127 into HTML characters.
+    Doesn't work with MS-Excel though...
+} {
+    set res ""
+    foreach u [split $s ""] {
+	scan $u %c t
+	if {$t>127} {
+	    append res "&\#$t;"
+	} else {
+	    append res $u
+	}
+    }
+    set res
+}
 
 
 # ---------------------------------------------------------------

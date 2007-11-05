@@ -49,10 +49,16 @@ set title_tcl =
 where title_tcl is null;
 
 
+-- Remove the "im_employees e" extra select from employees view
+update im_view_columns set 
+	extra_from = ''
+where
+	extra_from  = 'im_employees e'
+	and column_id = 5500;
+
+
+
 -- Manually set some components title_tcl
-
-
-
 
 update im_component_plugins 
 set title_tcl = 'lang::message::lookup "" intranet-core.Offices "Offices"' 

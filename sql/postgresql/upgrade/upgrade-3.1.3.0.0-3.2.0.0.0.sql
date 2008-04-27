@@ -1,102 +1,7 @@
 -- upgrade-3.1.3.0.0-3.2.0.0.0.sql
 
-
-
-create or replace function im_component_plugin__new (
-	integer, varchar, timestamptz, integer, varchar, integer, 
-	varchar, varchar, varchar, varchar, varchar, integer, 
-	varchar, varchar
-) returns integer as '
-declare
-	p_plugin_id	alias for $1;	-- default null
-	p_object_type	alias for $2;	-- default ''acs_object''
-	p_creation_date	alias for $3;	-- default now()
-	p_creation_user	alias for $4;	-- default null
-	p_creation_ip	alias for $5;	-- default null
-	p_context_id	alias for $6;	-- default null
-
-	p_plugin_name	alias for $7;
-	p_package_name	alias for $8;
-	p_location	alias for $9;
-	p_page_url	alias for $10;
-	p_view_name	alias for $11;	-- default null
-	p_sort_order	alias for $12;
-	p_component_tcl	alias for $13;
-	p_title_tcl	alias for $14;
-
-	v_plugin_id	im_component_plugins.plugin_id%TYPE;
-begin
-	select plugin_id into v_plugin_id
-	from im_component_plugins
-	where plugin_name = p_plugin_name and package_name = p_package_name;
-	IF v_plugin_id is not null THEN return v_plugin_id; END IF;
-
-	v_plugin_id := acs_object__new (
-		p_plugin_id,	-- object_id
-		p_object_type,	-- object_type
-		p_creation_date,	-- creation_date
-		p_creation_user,	-- creation_user
-		p_creation_ip,	-- creation_ip
-		p_context_id	-- context_id
-	);
-
-	insert into im_component_plugins (
-		plugin_id, plugin_name, package_name, sort_order, 
-		view_name, page_url, location, 
-		component_tcl, title_tcl
-	) values (
-		v_plugin_id, p_plugin_name, p_package_name, p_sort_order, 
-		p_view_name, p_page_url, p_location, 
-		p_component_tcl, p_title_tcl
-	);
-
-	return v_plugin_id;
-end;' language 'plpgsql';
-
-
-create or replace function im_component_plugin__new (
-	integer, varchar, timestamptz, integer, varchar, integer, 
-	varchar, varchar, varchar, varchar, varchar, integer, 
-	varchar
-) returns integer as '
-declare
-	p_plugin_id	alias for $1;	-- default null
-	p_object_type	alias for $2;	-- default ''acs_object''
-	p_creation_date	alias for $3;	-- default now()
-	p_creation_user	alias for $4;	-- default null
-	p_creation_ip	alias for $5;	-- default null
-	p_context_id	alias for $6;	-- default null
-
-	p_plugin_name	alias for $7;
-	p_package_name	alias for $8;
-	p_location	alias for $9;
-	p_page_url	alias for $10;
-	p_view_name	alias for $11;	-- default null
-	p_sort_order	alias for $12;
-	p_component_tcl	alias for $13;
-
-	v_plugin_id	im_component_plugins.plugin_id%TYPE;
-begin
-	v_plugin_id := im_component_plugin__new (
-		p_plugin_id,
-		p_object_type,
-		p_creation_date,
-		p_creation_user,
-		p_creation_ip,
-		p_context_id,
-
-		p_plugin_name,
-		p_package_name,
-		p_location,
-		p_page_url,
-		p_view_name,
-		p_sort_order,
-		p_component_tcl,
-		null
-	);
-
-	return v_plugin_id;
-end;' language 'plpgsql';
+-- Source frequently used functions
+\i upgrade-3.0.0.0.first.sql
 
 
 
@@ -112,11 +17,6 @@ alter table im_projects drop constraint im_projects_nr_un;
 -- are unique per parent-project.
 -- Project with parent_id != null don't have a filestorage...
 --
-
-
--- alter table im_projects drop constraint im_projects_nr_un;
-
--- Dont allow the same project_nr  for the same company+level
 alter table im_projects add
         constraint im_projects_nr_un
         unique(project_nr, company_id, parent_id);
@@ -126,20 +26,50 @@ alter table im_projects add
 -- Puff, difficult to find one while maintaining compatible
 -- the the fixed IDs from ACS 3.4 Intranet...
 --
-insert into im_categories (CATEGORY_ID, CATEGORY, CATEGORY_TYPE) 
-values ('100', 'Task', 'Intranet Project Type');
+SELECT im_category_new(100, 'Task', 'Intranet Project Type');
 
 
 -------------------------------------------------------------
 -- Add a "sort order" field to Projects
 --
-alter table im_projects add sort_order integer;
+create or replace function inline_0 ()
+returns integer as '
+declare
+	v_count	integer;
+begin
+	select count(*) into v_count from user_tab_columns
+	where table_name = ''IM_PROJECTS'' and column_name = ''SORT_ORDER'';
+	if v_count > 0 then return 0; end if;
+
+	alter table im_projects add sort_order integer;
+
+	return 0;
+end;' language 'plpgsql';
+select inline_0 ();
+drop function inline_0 ();
+
 
 
 -------------------------------------------------------------
 -- Add a "title_tcl" field to Components
 --
-alter table im_component_plugins add title_tcl varchar(4000);
+create or replace function inline_0 ()
+returns integer as '
+declare
+	v_count	 integer;
+begin
+	select count(*) into v_count from user_tab_columns
+	where table_name = ''IM_COMPONENT_PLUGINS'' and column_name = ''TITLE_TCL'';
+	if v_count > 0 then return 0; end if;
+
+	alter table im_component_plugins add title_tcl text;
+
+	return 0;
+end;' language 'plpgsql';
+select inline_0 ();
+drop function inline_0 ();
+
+
 
 -- Set the default value for title_tcl as the localization
 -- of the package name
@@ -346,56 +276,56 @@ where plugin_name = 'Office Members';
 -------------------------------------------------------------
 -- Update the .new for plugins
 -- drop function im_component_plugin__new (
---        integer, varchar, timestamptz, integer, varchar, integer,
---        varchar, varchar, varchar, varchar, varchar, integer,
---       varchar);
+--	integer, varchar, timestamptz, integer, varchar, integer,
+--	varchar, varchar, varchar, varchar, varchar, integer,
+--	 varchar);
 --
 
 
 create or replace function im_component_plugin__new (
-        integer, varchar, timestamptz, integer, varchar, integer,
-        varchar, varchar, varchar, varchar, varchar, integer,
-        varchar, varchar
+	integer, varchar, timestamptz, integer, varchar, integer,
+	varchar, varchar, varchar, varchar, varchar, integer,
+	varchar, varchar
 ) returns integer as '
 declare
-        p_plugin_id     alias for $1;   -- default null
-        p_object_type   alias for $2;   -- default ''acs_object''
-        p_creation_date alias for $3;   -- default now()
-        p_creation_user alias for $4;   -- default null
-        p_creation_ip   alias for $5;   -- default null
-        p_context_id    alias for $6;   -- default null
+	p_plugin_id     alias for $1;   -- default null
+	p_object_type   alias for $2;   -- default ''acs_object''
+	p_creation_date alias for $3;   -- default now()
+	p_creation_user alias for $4;   -- default null
+	p_creation_ip   alias for $5;   -- default null
+	p_context_id    alias for $6;   -- default null
 
-        p_plugin_name   alias for $7;
-        p_package_name  alias for $8;
-        p_location      alias for $9;
-        p_page_url      alias for $10;
-        p_view_name     alias for $11;  -- default null
-        p_sort_order    alias for $12;
-        p_component_tcl alias for $13;
-        p_title_tcl     alias for $14;
+	p_plugin_name   alias for $7;
+	p_package_name  alias for $8;
+	p_location	alias for $9;
+	p_page_url	alias for $10;
+	p_view_name     alias for $11;  -- default null
+	p_sort_order    alias for $12;
+	p_component_tcl alias for $13;
+	p_title_tcl     alias for $14;
 
-        v_plugin_id     im_component_plugins.plugin_id%TYPE;
+	v_plugin_id     im_component_plugins.plugin_id%TYPE;
 begin
-        v_plugin_id := acs_object__new (
-                p_plugin_id,    -- object_id
-                p_object_type,  -- object_type
-                p_creation_date,        -- creation_date
-                p_creation_user,        -- creation_user
-                p_creation_ip,  -- creation_ip
-                p_context_id    -- context_id
-        );
+	v_plugin_id := acs_object__new (
+		  p_plugin_id,    -- object_id
+		  p_object_type,  -- object_type
+		  p_creation_date,	-- creation_date
+		  p_creation_user,	-- creation_user
+		  p_creation_ip,  -- creation_ip
+		  p_context_id    -- context_id
+	);
 
-        insert into im_component_plugins (
-                plugin_id, plugin_name, package_name, sort_order,
-                view_name, page_url, location,
-                component_tcl, title_tcl
-        ) values (
-                v_plugin_id, p_plugin_name, p_package_name, p_sort_order,
-                p_view_name, p_page_url, p_location,
-                p_component_tcl, p_title_tcl
-        );
+	insert into im_component_plugins (
+		  plugin_id, plugin_name, package_name, sort_order,
+		  view_name, page_url, location,
+		  component_tcl, title_tcl
+	) values (
+		  v_plugin_id, p_plugin_name, p_package_name, p_sort_order,
+		  p_view_name, p_page_url, p_location,
+		  p_component_tcl, p_title_tcl
+	);
 
-        return v_plugin_id;
+	return v_plugin_id;
 end;' language 'plpgsql';
 
 
@@ -410,24 +340,35 @@ comment on table im_component_plugins is '
  customizations to survive system updates.
 ';
 
+create or replace function inline_0 ()
+returns integer as '
+declare
+	v_count		integer;
+begin
+	select count(*)	into v_count from user_tab_columns where table_name = ''IM_COMPONENT_PLUGIN_USER_MAP'';
+	IF v_count > 0 THEN return 0; END IF;
 
-create table im_component_plugin_user_map (
-        plugin_id               integer
-                                constraint im_comp_plugin_user_map_plugin_fk
-                                references im_component_plugins,
-        user_id                 integer
-                                constraint im_comp_plugin_user_map_user_fk
-                                references users,
-        sort_order              integer not null,
-        minimized_p             char(1)
-                                constraint im_comp_plugin_user_map_min_p_ck
-                                check(minimized_p in ('t','f'))
-                                default 'f',
-        location                varchar(100) not null,
-                constraint im_comp_plugin_user_map_plugin_pk
-                primary key (plugin_id, user_id)
-);
+	create table im_component_plugin_user_map (
+		plugin_id		integer
+					constraint im_comp_plugin_user_map_plugin_fk
+					references im_component_plugins,
+		user_id			integer
+					constraint im_comp_plugin_user_map_user_fk
+					references users,
+		sort_order		integer not null,
+		minimized_p		char(1)
+					constraint im_comp_plugin_user_map_min_p_ck
+					check(minimized_p in (''t'',''f''))
+					default ''f'',
+		location		varchar(100) not null,
+			constraint im_comp_plugin_user_map_plugin_pk
+			primary key (plugin_id, user_id)
+	);
 
+	return 0;
+end;' language 'plpgsql';
+select inline_0 ();
+drop function inline_0 ();
 
 
 comment on table im_component_plugin_user_map is '
@@ -437,28 +378,25 @@ comment on table im_component_plugin_user_map is '
 ';
 
 
-
-
-
 -- View to show a "unified" view to the component_plugins, derived
 -- from the main table and the overriding user_map:
 --
 create or replace view im_component_plugin_user_map_all as (
-        select
-                c.plugin_id,
-                c.sort_order,
-                c.location,
-                null as user_id
-        from
-                im_component_plugins c
+	select
+		  c.plugin_id,
+		  c.sort_order,
+		  c.location,
+		  null as user_id
+	from
+		  im_component_plugins c
   UNION
-        select
-                m.plugin_id,
-                m.sort_order,
-                m.location,
-                m.user_id
-        from
-                im_component_plugin_user_map m
+	select
+		  m.plugin_id,
+		  m.sort_order,
+		  m.location,
+		  m.user_id
+	from
+		  im_component_plugin_user_map m
 );
 
 
@@ -472,33 +410,27 @@ create or replace view im_component_plugin_user_map_all as (
 create or replace function inline_1 ()
 returns integer as '
 declare
-      -- Menu IDs
-      v_menu                  integer;
-      v_admin_menu            integer;
-      -- Groups
-      v_admins                integer;
+	v_menu			integer;
+	v_admin_menu		integer;
+	v_admins		  integer;
 begin
     select group_id into v_admins from groups where group_name = ''P/O Admins'';
-
-    select menu_id
-    into v_admin_menu
-    from im_menus
-    where label=''admin'';
+    select menu_id into v_admin_menu from im_menus where label=''admin'';
 
     v_menu := im_menu__new (
-        null,                   -- p_menu_id
-        ''acs_object'',           -- object_type
-        now(),                  -- creation_date
-        null,                   -- creation_user
-        null,                   -- creation_ip
-        null,                   -- context_id
-        ''intranet-core'',      -- package_name
-        ''admin_user_exists'',   -- label
-        ''User Exists'',            -- name
-        ''/intranet/admin/user_exits'', -- url
-        110,                     -- sort_order
-        v_admin_menu,         -- parent_menu_id
-        null                    -- p_visible_tcl
+	null,			-- p_menu_id
+	''acs_object'',		-- object_type
+	now(),			-- creation_date
+	null,			-- creation_user
+	null,			-- creation_ip
+	null,			-- context_id
+	''intranet-core'',	-- package_name
+	''admin_user_exists'',	-- label
+	''User Exists'',	-- name
+	''/intranet/admin/user_exits'', -- url
+	110,			-- sort_order
+	v_admin_menu,		-- parent_menu_id
+	null			-- p_visible_tcl
     );
 
     PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
@@ -522,25 +454,19 @@ drop function im_menu__name(integer);
 -- Returns the name of the menu
 create or replace function im_menu__name (integer) returns varchar as '
 DECLARE
-        p_menu_id   alias for $1;
-        v_name      im_menus.name%TYPE;
+	p_menu_id   alias for $1;
+	v_name	im_menus.name%TYPE;
 BEGIN
-        select  name
-        into    v_name
-        from    im_menus
-        where   menu_id = p_menu_id;
+	select  name
+	into    v_name
+	from    im_menus
+	where   menu_id = p_menu_id;
 
-        return v_name;
+	return v_name;
 end;' language 'plpgsql';
 
 
 
-
-
-
 -- ToDo: Change the "GifPath" parameter to "navbar_default" only
-
-
-
 
 

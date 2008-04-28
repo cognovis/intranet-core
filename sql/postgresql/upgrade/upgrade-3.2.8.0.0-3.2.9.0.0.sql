@@ -1,5 +1,6 @@
 -- upgrade-3.2.8.0.0-3.2.9.0.0.sql
 
+\i upgrade-3.0.0.0.first.sql
 
 
 create or replace function inline_0 ()

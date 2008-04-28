@@ -1,5 +1,7 @@
 -- upgrade-3.3.1.1.0-3.3.1.2.0.sql
 
+\i upgrade-3.0.0.0.first.sql
+
 CREATE OR REPLACE FUNCTION im_category_new (
         integer, varchar, varchar
 ) RETURNS integer as '

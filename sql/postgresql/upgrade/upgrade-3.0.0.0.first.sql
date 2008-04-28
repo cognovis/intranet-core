@@ -1,5 +1,6 @@
 --  upgrade-3.0.0.0.first.sql
 
+
 -- Special upgrade script that includes a number of changed creation
 -- scritps that are tollerant agains already existing data.
 

@@ -1,5 +1,6 @@
 -- upgrade-3.2.3.0.0-3.2.3.0.0.sql
 
+\i upgrade-3.0.0.0.first.sql
 
 
 create or replace function im_country_from_code (varchar)

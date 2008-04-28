@@ -1,6 +1,8 @@
 -- upgrade-3.2.7.0.0-3.2.8.0.0.sql
 
 
+\i upgrade-3.0.0.0.first.sql
+
 
 ----------------------------------------------------------------
 -- percentage column for im_biz_object_members
@@ -88,35 +90,22 @@ where	acs_attribute_id in (
 
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
-        v_count                 integer;
-begin
-        select count(*) into v_count from im_component_plugins
-        where lower(plugin_name) = lower(''Task Members'');
-        IF 0 != v_count THEN return 0; END IF;
-
-	PERFORM im_component_plugin__new (
+PERFORM im_component_plugin__new (
 		null,				-- plugin_id
-		''acs_object'',			-- object_type
+		'acs_object',			-- object_type
 		now(),				-- creation_date
 	        null,                           -- creation_user
 	        null,                           -- creation_ip
 	        null,                           -- context_id
-		''Task Members'',			-- plugin_name
-		''intranet'',			-- package_name
-		''right'',			-- location
-		''/intranet-timesheet2-tasks/new'',	-- page_url
+		'Task Members',			-- plugin_name
+		'intranet',			-- package_name
+		'right',			-- location
+		'/intranet-timesheet2-tasks/new',	-- page_url
 		null,				-- view_name	
 		20,				-- sort_order
-		''im_group_member_component $task_id $current_user_id $user_admin_p $return_url "" "" 1''
-	);
+		'im_group_member_component $task_id $current_user_id $user_admin_p $return_url "" "" 1'
+);
 
-        return 1;
-end;' language 'plpgsql';
-select inline_0 ();
-drop function inline_0 ();
 
 
 
@@ -291,12 +280,6 @@ begin
 	return v_message;	
 
 end;' language 'plpgsql';
-
-
-
-
-
-
 
 
 

@@ -1,7 +1,6 @@
--------------------------------------------------------------
 -- upgrade-3.2.0.0.0-3.2.1.0.0.sql
--------------------------------------------------------------
 
+\i upgrade-3.0.0.0.first.sql
 
 
 -------------------------------------------------------------
@@ -13,8 +12,7 @@ declare
 	v_count		 integer;
 begin
 	select  count(*) into v_count from user_tab_columns
-	where   lower(table_name) = ''persons''
-		and lower(column_name) = ''portrait_checkdate'';
+	where   lower(table_name) = ''persons''	and lower(column_name) = ''portrait_checkdate'';
 	if v_count = 1 then return 0; end if;
 
 	alter table persons add portrait_checkdate date;
@@ -35,9 +33,7 @@ DECLARE
 	p_project_id	alias for $1;
 	v_project_name  varchar(1000);
 BEGIN
-	select project_name
-	into v_project_name
-	from im_projects
+	select project_name into v_project_name from im_projects
 	where project_id = p_project_id;
 
 	return v_project_name;

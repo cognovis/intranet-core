@@ -1,12 +1,15 @@
 -- upgrade-3.1.0.1.0-3.1.2.0.0.sql
 
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.1.0.1.0-3.1.2.0.0.sql','');
+
+
 \i upgrade-3.0.0.0.first.sql
 
 
 -- Add a privilege to allow all users to edit projects
 --
-select acs_privilege__create_privilege(''edit_projects_all'',''Edit All Projects'',''Edit All Projects'');
-select acs_privilege__add_child(''admin'', ''edit_projects_all'');
+select acs_privilege__create_privilege('edit_projects_all','Edit All Projects','Edit All Projects');
+select acs_privilege__add_child('admin', 'edit_projects_all');
 
 
 -- -----------------------------------------------------

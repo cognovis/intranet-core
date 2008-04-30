@@ -1,5 +1,7 @@
 -- upgrade-3.1.0.0.2-3.1.0.1.0.sql
 
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.1.0.0.2-3.1.0.1.0.sql','');
+
 \i upgrade-3.0.0.0.first.sql
 
 

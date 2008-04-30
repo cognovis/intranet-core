@@ -1,3 +1,8 @@
+-- upgrade-3.0.1.0.1-3.0.1.0.2.sql
+
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.0.1.0.1-3.0.1.0.2.sql','');
+
+
 
 
 -- using "last_visit_formatted" instead of "last_visit"

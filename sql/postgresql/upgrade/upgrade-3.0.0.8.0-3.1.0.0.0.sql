@@ -1,3 +1,8 @@
+-- upgrade-3.0.0.8.0-3.1.0.0.0.sql
+
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.0.0.8.0-3.1.0.0.0.sql','');
+
+
 
 -- Being used for "Final Customers" of projects, where
 -- the final customer and the invoicing customer are

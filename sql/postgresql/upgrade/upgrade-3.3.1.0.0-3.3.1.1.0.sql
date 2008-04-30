@@ -1,5 +1,7 @@
 -- upgrade-3.3.1.0.0-3.3.1.1.0.sql
 
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.3.1.0.0-3.3.1.1.0.sql','');
+
 \i upgrade-3.0.0.0.first.sql
 
 
@@ -79,8 +81,7 @@ DECLARE
         v_count                 integer;
 BEGIN
         select count(*) into v_count from user_tab_columns
-        where lower(table_name) = ''acs_object_types'' and lower(column_name) = ''status_col\
-umn'';
+        where lower(table_name) = ''acs_object_types'' and lower(column_name) = ''status_column'';
         IF v_count > 0 THEN return 0; END IF;
 
         alter table acs_object_types
@@ -362,8 +363,7 @@ BEGIN
         END LOOP;
 
         IF v_table is null OR v_id_column is null OR v_column is null THEN
-                RAISE NOTICE ''im_biz_object__set_status_id: Bad metadata: Null value for %'',v_objec\
-t_type;
+                RAISE NOTICE ''im_biz_object__set_status_id: Bad metadata: Null value for %'',v_object_type;
                 return 0;
         END IF;
 

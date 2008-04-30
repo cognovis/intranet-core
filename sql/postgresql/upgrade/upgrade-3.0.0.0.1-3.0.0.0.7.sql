@@ -1,3 +1,8 @@
+-- upgrade-3.0.0.0.1-3.0.0.0.7.sql
+
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.0.0.0.1-3.0.0.0.7.sql','');
+
+
 
 
 create or replace function im_project_nr_from_id (integer)

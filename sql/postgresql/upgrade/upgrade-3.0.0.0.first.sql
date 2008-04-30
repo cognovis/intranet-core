@@ -1,5 +1,9 @@
 --  upgrade-3.0.0.0.first.sql
 
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.0.0.0.first.sql','');
+
+
+
 
 -- Special upgrade script that includes a number of changed creation
 -- scritps that are tollerant agains already existing data.
@@ -502,4 +506,156 @@ END;' language 'plpgsql';
 -----------------------------------------------------------------------
 -- 
 -----------------------------------------------------------------------
+
+
+create or replace function im_dynfield_widget__new (
+	integer, varchar, timestamptz, integer, varchar, integer,
+	varchar, varchar, varchar, integer, varchar, varchar, 
+	varchar, varchar
+) returns integer as '
+DECLARE
+	p_widget_id		alias for $1;
+	p_object_type		alias for $2;
+	p_creation_date 	alias for $3;
+	p_creation_user 	alias for $4;
+	p_creation_ip		alias for $5;
+	p_context_id		alias for $6;
+
+	p_widget_name		alias for $7;
+	p_pretty_name		alias for $8;
+	p_pretty_plural		alias for $9;
+	p_storage_type_id	alias for $10;
+	p_acs_datatype		alias for $11;
+	p_widget		alias for $12;
+	p_sql_datatype		alias for $13;
+	p_parameters		alias for $14;
+
+	v_widget_id		integer;
+BEGIN
+	select widget_id  into v_widget_id from im_dynfield_widgets
+	where widget_name = p_widget_name;
+	if v_widget_id is not null then return v_widget_id; end if;
+
+	v_widget_id := acs_object__new (
+		p_widget_id,
+		p_object_type,
+		p_creation_date,
+		p_creation_user,
+		p_creation_ip,
+		p_context_id
+	);
+
+	insert into im_dynfield_widgets (
+		widget_id, widget_name, pretty_name, pretty_plural,
+		storage_type_id, acs_datatype, widget, sql_datatype, parameters
+	) values (
+		v_widget_id, p_widget_name, p_pretty_name, p_pretty_plural,
+		p_storage_type_id, p_acs_datatype, p_widget, p_sql_datatype, p_parameters
+	);
+	return v_widget_id;
+end;' language 'plpgsql';
+
+
+
+create or replace function im_dynfield_attribute__new (
+	integer, varchar, timestamptz, integer, varchar, integer,
+	varchar, varchar, integer, integer, varchar, 
+	varchar, varchar, varchar, varchar, char, char
+) returns integer as '
+DECLARE
+	p_attribute_id		alias for $1;
+	p_object_type		alias for $2;
+	p_creation_date 	alias for $3;
+	p_creation_user 	alias for $4;
+	p_creation_ip		alias for $5;
+	p_context_id		alias for $6;
+
+	p_attribute_object_type	alias for $7;
+	p_attribute_name	alias for $8;
+	p_min_n_values		alias for $9;
+	p_max_n_values		alias for $10;
+	p_default_value		alias for $11;
+
+	p_datatype		alias for $12;
+	p_pretty_name		alias for $13;
+	p_pretty_plural		alias for $14;
+	p_widget_name		alias for $15;
+	p_deprecated_p		alias for $16;
+	p_already_existed_p	alias for $17;
+
+	v_acs_attribute_id	integer;
+	v_attribute_id		integer;
+	v_table_name		varchar;
+BEGIN
+	-- Check for duplicate
+	select	da.attribute_id into v_attribute_id
+	from acs_attributes aa, im_dynfield_attributes da 
+	where aa.attribute_id = da.acs_attribute_id 
+	and aa.attribute_name = p_attribute_name and aa.object_type = p_attribute_object_type;
+	if v_attribute_id is not null then return v_attribute_id; end if;
+
+	select table_name into v_table_name
+	from acs_object_types where object_type = p_attribute_object_type;
+
+	v_acs_attribute_id := acs_attribute__create_attribute (
+		p_attribute_object_type,
+		p_attribute_name,
+		p_datatype,
+		p_pretty_name,
+		p_pretty_plural,
+		v_table_name,		-- table_name
+		null,			-- column_name
+		p_default_value,
+		p_min_n_values,
+		p_max_n_values,
+		null,			-- sort order
+		''type_specific'',	-- storage
+		''f''			-- static_p
+	);
+
+	v_attribute_id := acs_object__new (
+		p_attribute_id,
+		p_object_type,
+		p_creation_date,
+		p_creation_user,
+		p_creation_ip,
+		p_context_id
+	);
+
+	insert into im_dynfield_attributes (
+		attribute_id, acs_attribute_id, widget_name,
+		deprecated_p, already_existed_p
+	) values (
+		v_attribute_id, v_acs_attribute_id, p_widget_name,
+		p_deprecated_p, p_already_existed_p
+	);
+	return v_attribute_id;
+end;' language 'plpgsql';
+
+
+
+-----------------------------------------------------------------------
+-- 
+-----------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+-- 
+-----------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+-- 
+-----------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+-- 
+-----------------------------------------------------------------------
+
+
+-----------------------------------------------------------------------
+-- 
+-----------------------------------------------------------------------
+
 

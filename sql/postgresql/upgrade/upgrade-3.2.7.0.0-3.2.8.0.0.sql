@@ -1,13 +1,13 @@
 -- upgrade-3.2.7.0.0-3.2.8.0.0.sql
 
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.2.7.0.0-3.2.8.0.0.sql','');
 
 \i upgrade-3.0.0.0.first.sql
 
 
 ----------------------------------------------------------------
 -- percentage column for im_biz_object_members
-
-
+--
 create or replace function inline_0 ()
 returns integer as '
 declare
@@ -76,9 +76,8 @@ end;' language 'plpgsql';
 -- Delete the customer_project_nr DynField.
 -- The DynField has become part of the static Project fields.
 
-delete	
-from im_dynfield_attributes
-where	acs_attribute_id in (
+delete from im_dynfield_attributes
+where acs_attribute_id in (
 		select	attribute_id 
 		from
 			acs_attributes 
@@ -89,8 +88,7 @@ where	acs_attribute_id in (
 ;
 
 
-
-PERFORM im_component_plugin__new (
+SELECT im_component_plugin__new (
 		null,				-- plugin_id
 		'acs_object',			-- object_type
 		now(),				-- creation_date
@@ -148,20 +146,6 @@ begin
 end;' language 'plpgsql';
 select inline_0 ();
 drop function inline_0 ();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

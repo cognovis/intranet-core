@@ -1,3 +1,6 @@
+-- upgrade-3.0.0.2.4-3.0.0.2.5.sql
+
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.0.0.2.4-3.0.0.2.5.sql','');
 
 
 -- Replace the "start_date" and "end_date" columns

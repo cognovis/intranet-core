@@ -1,3 +1,8 @@
+-- upgrade-3.0.0.7.0-3.0.0.8.0.sql
+
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-3.0.0.7.0-3.0.0.8.0.sql','');
+
+
 
 -- -----------------------------------------------------
 -- Add template_p field to indicate templates

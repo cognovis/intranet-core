@@ -27,7 +27,7 @@ declare
 begin
 	select nextval(''im_categories_seq'') into v_max;
 	IF v_max < 10000000 THEN
-		SELECT pg_catalog.setval(''im_categories_seq'', 10000000, true);
+		PERFORM pg_catalog.setval(''im_categories_seq'', 10000000, true);
 	END IF;
 	return 0;
 end;' language 'plpgsql';

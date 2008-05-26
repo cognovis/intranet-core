@@ -1,220 +1,233 @@
-Licensing
 
-					"First they ignore you...,
-					Then they laugh at you...,
-					Then they fight you...,
-					Then you WIN."
+  ]project-open[ LICENSE
+  Frank Bergmann <frank.bergmann@project-open.com>
+  Version VX.Y.Z.V.W, YYYY-MM-DD
+  Copyright (c) YYYY ]project-open[
 
-					M. K. Gandhi
+  ______________________________________________________________________
 
-
-The basic idea behind ]project-open[ is to create an open-source ERP system. 
-So why don't we release all of our code under under an open-source license 
-such as the GPL?
-
-It's a difficult one. We are convinced open-source "believers" and we are 
-convinced that open-source economics will on the long term change and 
-finally dominate the entire software industry. However, there is a certain 
-misfit between the open-source idea and ERP software, because ERPs are 
-considered by most open-source developers to be very "boring", so that few 
-of them would want to spend their free time developing them. We have tried 
-a lot of different options in the past in order to tackle this issue and to 
-make open-source ERPs work. We even have designed a new type of open-source 
-software license. However, all this hasn't worked out.
-
-"Mixed Source" Model
-
-So we have come up with a "mixed source" model for ]project-open[ that is 
-based on the difference between "commodity" and "value added" or "strategic" 
-functionality:
-
-    * "Commodity modules":
-      Commodity modules are open-source and maintained by the community in a 
-      shared effort (GPL and FL licenses). Open-source economics allow to 
-      greatly reduce the development effort for these modules.
-    * "Added Value" or "Strategic Modules:
-      Added value modules are closed-source software written by companies 
-      specialized in a specific sector. These modules allow a companies to 
-      differentiate itself from its competition. These modules are plain 
-      commercial software (CL license).
-
-At least that's easy to explain and it makes economic sense. Here is a 
-comparison between the three licenses:
-
-		GNU		"FreeLicense"	"Commercial License"
-
-License 	"Software wants	"Share costs of	"Maximize profit"
-objective	to be free" 	development" 	
-
-Free for  	yes		yes		no
-end users
-
-Free for IT	yes		no		no
-consulting 
-companies?
-
-Our hope is that these conditions are interesting for small and medium 
-companies and that it will finally lead to an "Open-Source Marketplace" 
-(see below). We hope that the combination of these licenses allow all of it:
-
-    * A sprawling open-source software project,
-    * Maximum value and freedom for customer,
-    * Coherence in the development process,
-    * An interesting marketplace for distributors and resellers and
-    * The prosperity of 3rd party IT consultants .
-
-For questions and suggestions please contact us. We are aware that licenses 
-are a critical issue in the Open-Source community and we are eager to learn 
-about your opinion.
-
-GPL - The Gnu Public License
-
-GPLed software is free for everybody to use, modify and redistribute.
-If redistributed, the software needs to be published under the terms of the 
-GPL again. This is the "classical" open-source license that makes sure that 
-an open-source program will always stay open-source.
-
-FL - ]project-open[ "Free License"
-
-FLed software is free for everybody to use and modify. It is "normal" 
-commercial software, but the license fee for use and modification is EUR 0.
-However, its redistribution is restricted in order to avoid the "free loader 
-problem" (companies taking advantage of the efforts of others). Basically, 
-you have to become a "partner" and share the development costs in order to 
-get the right to redistribute these packages.
-
-CL - ]project-open[ "Commercial License"
-
-CLed software is "normal" software in the sense that the user has to pay 
-for the software in order to use it.
-However, the customer receives the source-code of the modules together with 
-the right to modify the software. So he can maintain the code himself and 
-add strategic functionality.
-
-
-Licensing of ]project-open[ Modules
-
-The following table specifies the license for each module.
-
-GPL	acs-admin
-GPL	acs-api-browser
-GPL	acs-authentication
-GPL	acs-automated-testing
-GPL	acs-bootstrap-installer
-GPL	acs-content-repository
-GPL	acs-core-docs
-GPL	acs-datetime
-GPL	acs-developer-support
-GPL	acs-events
-GPL	acs-kernel
-GPL	acs-lang
-GPL	acs-mail
-GPL	acs-mail-lite
-GPL	acs-messaging
-GPL	acs-reference
-GPL	acs-service-contract
-GPL	acs-subsite
-GPL	acs-tcl
-GPL	acs-templating
-GPL	acs-workflow
-GPL	ajaxhelper
-GPL	ams
-GPL	bug-tracker
-GPL	bulk-mail
-GPL	calendar
-GPL	categories
-GPL	chat
-GPL	cms
-GPL	contacts
-GPL	diagram
-GPL	ecommerce
-GPL	events
-GPL	general-comments
-GPL	intranet-amberjack
-FL	intranet-audit
-GPL	intranet-big-brother
-FL	intranet-bug-tracker
-FL	intranet-calendar
-FL	intranet-calendar-holidays
-FL	intranet-confdb
-GPL	intranet-core
-FL	intranet-cost
-FL	intranet-cost-center
-FL	intranet-crm-tracking
-FL	intranet-cust-baselkb
-FL	intranet-cust-lexcelera
-FL	intranet-cust-projop
-FL	intranet-cust-reinisch
-FL	intranet-cvs-integration
-FL	intranet-dw-light
-GPL	intranet-dynfield
-FL	intranet-exchange-rate
-FL	intranet-expenses
-FL	intranet-filestorage
-FL	intranet-forum
-FL	intranet-freelance
-FL	intranet-freelance-invoices
-FL	intranet-freelance-rfqs
-FL	intranet-freelance-translation
-FL	intranet-ganttproject
-GPL	intranet-hr
-FL	intranet-invoices
-FL	intranet-invoices-templates
-GPL	intranet-mail-import
-FL	intranet-material
-FL	intranet-notes
-FL	intranet-ophelia
-FL	intranet-otp
-GPL	intranet-payments
-FL	intranet-pdf-htmldoc
-FL	intranet-release-mgmt
-FL	intranet-reporting
-FL	intranet-reporting-cubes
-FL	intranet-reporting-dashboard
-FL	intranet-reporting-finance
-FL	intranet-reporting-indicators
-FL	intranet-reporting-translation
-FL	intranet-reporting-tutorial
-GPL	intranet-riskmanagement
-FL	intranet-search-pg
-FL	intranet-search-pg-files
-FL	intranet-security-update-client
-FL	intranet-security-update-server
-FL	intranet-simple-survey
-GPL	intranet-spam
-FL	intranet-sql-selectors
-FL	intranet-sysconfig
-GPL	intranet-timesheet2
-FL	intranet-timesheet2-invoices
-FL	intranet-timesheet2-task-popup
-FL	intranet-timesheet2-tasks
-FL	intranet-tinytm
-FL	intranet-trans-invoices
-FL	intranet-translation
-FL	intranet-trans-project-wizard
-FL	intranet-trans-quality
-FL	intranet-ubl
-FL	intranet-update-client
-FL	intranet-wiki
-FL	intranet-workflow
-FL	intranet-xmlrpc
-GPL	lars-blogger
-GPL	mail-tracking
-GPL	notifications
-GPL	organizations
-GPL	oryx-ts-extensions
-GPL	postal-address
-GPL	ref-countries
-GPL	ref-language
-GPL	ref-timezones
-GPL	ref-us-counties
-GPL	ref-us-states
-GPL	ref-us-zipcodes
-GPL	rss-support
-GPL	search
-GPL	simple-survey
-GPL	telecom-number
-GPL	trackback
-GPL	wiki
-GPL	workflow
-GPL	xml-rpc
+  ]project-open[ Licensing
+  
+  					"First they ignore you...,
+  					Then they laugh at you...,
+  					Then they fight you...,
+  					Then you WIN."
+  
+  					M. K. Gandhi
+  
+  ______________________________________________________________________
+  
+  License Overview
+  
+  The basic idea behind ]project-open[ is to create an open-source ERP system. 
+  So why don't we release all of our code under under an open-source license 
+  such as the GPL?
+  
+  It's a difficult one. We are convinced open-source "believers" and we are 
+  convinced that open-source economics will on the long term change and 
+  finally dominate the entire software industry. However, there is a certain 
+  misfit between the open-source idea and ERP software, because ERPs are 
+  considered by most open-source developers to be very "boring", so that few 
+  of them would want to spend their free time developing them. We have tried 
+  a lot of different options in the past in order to tackle this issue and to 
+  make open-source ERPs work. We even have designed a new type of open-source 
+  software license. However, all this hasn't worked out.
+  
+  "Mixed Source" Model
+  
+  So we have come up with a "mixed source" model for ]project-open[ that is 
+  based on the difference between "commodity" and "value added" or "strategic" 
+  functionality:
+  
+      * "Commodity modules":
+        Commodity modules are open-source and maintained by the community in a 
+        shared effort (GPL and FL licenses). Open-source economics allow to 
+        greatly reduce the development effort for these modules.
+      * "Added Value" or "Strategic Modules:
+        Added value modules are closed-source software written by companies 
+        specialized in a specific sector. These modules allow a companies to 
+        differentiate itself from its competition. These modules are plain 
+        commercial software (CL license).
+  
+  At least that's easy to explain and it makes economic sense. Here is a 
+  comparison between the three licenses:
+  
+  		GNU		"FreeLicense"	"Commercial License"
+  
+  License 	"Software wants	"Share costs of	"Maximize profit"
+  objective	to be free" 	development" 	
+  
+  Free for  	yes		yes		no
+  end users
+  
+  Free for IT	yes		no		no
+  consulting 
+  companies?
+  
+  Our hope is that these conditions are interesting for small and medium 
+  companies and that it will finally lead to an "Open-Source Marketplace" 
+  (see below). We hope that the combination of these licenses allow all of it:
+  
+      * A sprawling open-source software project,
+      * Maximum value and freedom for customer,
+      * Coherence in the development process,
+      * An interesting marketplace for distributors and resellers and
+      * The prosperity of 3rd party IT consultants .
+  
+  For questions and suggestions please contact us. We are aware that licenses 
+  are a critical issue in the Open-Source community and we are eager to learn 
+  about your opinion.
+  
+  GPL - The Gnu Public License
+  
+  GPLed software is free for everybody to use, modify and redistribute.
+  If redistributed, the software needs to be published under the terms of the 
+  GPL again. This is the "classical" open-source license that makes sure that 
+  an open-source program will always stay open-source.
+  
+  FL - ]project-open[ "Free License"
+  
+  FLed software is free for everybody to use and modify. It is "normal" 
+  commercial software, but the license fee for use and modification is EUR 0.
+  However, its redistribution is restricted in order to avoid the "free loader 
+  problem" (companies taking advantage of the efforts of others). Basically, 
+  you have to become a "partner" and share the development costs in order to 
+  get the right to redistribute these packages.
+  
+  CL - ]project-open[ "Commercial License"
+  
+  CLed software is "normal" software in the sense that the user has to pay 
+  for the software in order to use it.
+  However, the customer receives the source-code of the modules together with 
+  the right to modify the software. So he can maintain the code himself and 
+  add strategic functionality.
+  
+  
+  ______________________________________________________________________
+ 
+  Licensing of ]project-open[ Modules
+  
+  The following table specifies the license for each module.
+  
+  GPL	acs-admin
+  GPL	acs-api-browser
+  GPL	acs-authentication
+  GPL	acs-automated-testing
+  GPL	acs-bootstrap-installer
+  GPL	acs-content-repository
+  GPL	acs-core-docs
+  GPL	acs-datetime
+  GPL	acs-developer-support
+  GPL	acs-events
+  GPL	acs-kernel
+  GPL	acs-lang
+  GPL	acs-mail
+  GPL	acs-mail-lite
+  GPL	acs-messaging
+  GPL	acs-reference
+  GPL	acs-service-contract
+  GPL	acs-subsite
+  GPL	acs-tcl
+  GPL	acs-templating
+  GPL	acs-workflow
+  GPL	ajaxhelper
+  GPL	ams
+  GPL	bug-tracker
+  GPL	bulk-mail
+  GPL	calendar
+  GPL	categories
+  GPL	chat
+  GPL	cms
+  GPL	contacts
+  GPL	diagram
+  GPL	ecommerce
+  GPL	events
+  GPL	general-comments
+  GPL	intranet-amberjack
+  FL	intranet-audit
+  GPL	intranet-big-brother
+  FL	intranet-bug-tracker
+  FL	intranet-calendar
+  FL	intranet-calendar-holidays
+  FL	intranet-confdb
+  GPL	intranet-core
+  FL	intranet-cost
+  FL	intranet-cost-center
+  FL	intranet-crm-tracking
+  FL	intranet-cust-baselkb
+  FL	intranet-cust-lexcelera
+  FL	intranet-cust-projop
+  FL	intranet-cust-reinisch
+  FL	intranet-cvs-integration
+  FL	intranet-dw-light
+  GPL	intranet-dynfield
+  FL	intranet-exchange-rate
+  FL	intranet-expenses
+  FL	intranet-filestorage
+  FL	intranet-forum
+  FL	intranet-freelance
+  FL	intranet-freelance-invoices
+  FL	intranet-freelance-rfqs
+  FL	intranet-freelance-translation
+  FL	intranet-ganttproject
+  GPL	intranet-hr
+  FL	intranet-invoices
+  FL	intranet-invoices-templates
+  GPL	intranet-mail-import
+  FL	intranet-material
+  FL	intranet-notes
+  FL	intranet-ophelia
+  FL	intranet-otp
+  GPL	intranet-payments
+  FL	intranet-pdf-htmldoc
+  FL	intranet-release-mgmt
+  FL	intranet-reporting
+  FL	intranet-reporting-cubes
+  FL	intranet-reporting-dashboard
+  FL	intranet-reporting-finance
+  FL	intranet-reporting-indicators
+  FL	intranet-reporting-translation
+  FL	intranet-reporting-tutorial
+  GPL	intranet-riskmanagement
+  FL	intranet-search-pg
+  FL	intranet-search-pg-files
+  FL	intranet-security-update-client
+  FL	intranet-security-update-server
+  FL	intranet-simple-survey
+  GPL	intranet-spam
+  FL	intranet-sql-selectors
+  FL	intranet-sysconfig
+  GPL	intranet-timesheet2
+  FL	intranet-timesheet2-invoices
+  FL	intranet-timesheet2-task-popup
+  FL	intranet-timesheet2-tasks
+  FL	intranet-tinytm
+  FL	intranet-trans-invoices
+  FL	intranet-translation
+  FL	intranet-trans-project-wizard
+  FL	intranet-trans-quality
+  FL	intranet-ubl
+  FL	intranet-update-client
+  FL	intranet-wiki
+  FL	intranet-workflow
+  FL	intranet-xmlrpc
+  GPL	lars-blogger
+  GPL	mail-tracking
+  GPL	notifications
+  GPL	organizations
+  GPL	oryx-ts-extensions
+  GPL	postal-address
+  GPL	ref-countries
+  GPL	ref-language
+  GPL	ref-timezones
+  GPL	ref-us-counties
+  GPL	ref-us-states
+  GPL	ref-us-zipcodes
+  GPL	rss-support
+  GPL	search
+  GPL	simple-survey
+  GPL	telecom-number
+  GPL	trackback
+  GPL	wiki
+  GPL	workflow
+  GPL	xml-rpc

@@ -1,11 +1,69 @@
-Change Log
 
+==============================================================
+V3.3.1.2 Changes
+==============================================================
+
+V3.3 is the current "stable" branch, directly following V3.2. So the
+changes below are minor in general. More disruptive changes (such as
+the new GUI, dynamic workflows and changes in the invoicing schemes)
+are reserved to V3.4.
+
+Bug fixes:
+      * We have fixed more then 50 smaller issues and bugs.
+
+Minor Enhancements:
+
+      * Reporting: Added user-definable reports
+      * Reporting: Added an "Indicators" module that allows 
+	to define and track process performance indicators over time.
+      * Invoices: "Canned Notes" implement pre-defined statements 
+	to include in invoices and other financial documents.
+      * Backup: The Backup screen now allows to download backup files 
+	over the Web, simplifying the backup procedure.
+      * Performance: A number of frequently used procedure are now cached 
+	to improve performance.
+      * Rating: Added "Simple Surveys" rating module
+      * CRM: Improved the "intranet-mail-integration" Email 
+	integration module so that it is now usable. The module allows to 
+	associate incoming email with ]po[ users, effectively maintaining 
+	an email track record per customer.
+      * Translation: Added a link for "editors" to rate their 
+	"translator" (translation-only)
+      * Translation: Added a "Tandem Translation Module". This 
+	module keeps track of the translator-editor tandem combination by 
+	counting how frequently an editor has worked with a translator.
+      * Translation: Added TinyTM Integration. We have integrated TinyTM 
+	(an open-source translation memory) with ]po[. TinyTM itself is 
+	still in "alpha" development/alpha status.
+      * System Integration: Improved the CVS Import: We have added an 
+	algorithm to guess the separator of CSV imports ("," vs. 
+	";").
+      * System Integration: Added an UBS (Unified Business Language) for 
+	accounting applications such as SAP, Oracle or Navision.
+
+Other:
+
+      * We have improved the upgrade procedure. ]po[ now checks for update 
+	scripts that need to be executed.
+
+Upgrade Status:
+
+      * V3.2 -> V3.3: Supported.
+	You will be able to perform this upgrade yourself without help from 
+	]po[.
+
+      * V3.1 -> V3.3: Difficult.
+	This upgrade may require manual intervention. Please see the "Open 
+	Discussions" forum on SourceForge for details.
+
+      * V3.0 -> V3.3: Not supported.
+	This upgrade will likely fail. Please contact the ]project-open[ 
+	team for professional services.
 
 
 ==============================================================
-V3.2.7.0 (V3.2.Beta4) Changes
+V3.2.10.0 (V3.2.Final) Changes
 ==============================================================
-
 
 Major Enhancements:
       * GanttProject Integration:

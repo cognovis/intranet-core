@@ -1,12 +1,9 @@
 
-  ]project-open[ Virtual Machine
+  ]project-open[ VMware Virtual Machine README
   Version V3.3.beta1, 2008-06-03
   Frank Bergmann <frank.bergmann@project-open.com>
   Copyright (c) 2008 ]project-open[
   http://www.project-open.org/download/
-
-  This is the ]project-open[ Virtual Machine. 
-
 
   This is the ]project-open[ VMware distribution. This document describes
   some characteristics of the VM appliance and how to install the software.

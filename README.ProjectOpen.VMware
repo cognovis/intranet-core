@@ -1,8 +1,9 @@
 
-  ]project-open[ V3.4 Virtual Machine
+  ]project-open[ V3.5.0 Virtual Machine
+  Version V3.5.0, 2009-06-04
   Frank Bergmann <frank.bergmann@project-open.com>
-  Version V3.4, 2009-06-04
   Copyright (c) 2009 ]project-open[
+  http://www.project-open.org/documentation/install_vm
 
   This is the ]project-open[ Virtual Machine. This document describes
   the installation and configuration of the VMware appliance.
@@ -23,16 +24,17 @@
   ]project-open[ server. This VMware is suitable for testing ]po[ and
   for production use in small organizations (< 10 active users).
   You will need basic system administration knowledge to follow the
-  steps below. 
+  steps below.
 
   - Please check http://www.project-open.org/documentation/install_vm
     for updates.
 
-  - Go to http://www.vmware.com/ and install VMware Server 2.x 
-    or VMware Player 2.x. Both applications require free registration.
+  - Go to http://www.vmware.com/ and install VMware ESXi, VMware
+    Server or VMware Player. All of these applications require 
+    free registration.
 
   - From within the VMware console, please open the file
-    project-open-v34.vmx included in the "project-open-v34" folder.
+    project-open-v35.vmx included in the "project-open-v35" folder.
 
   - After starting the virtual machine please login to Linux:
 	Username:	root
@@ -79,50 +81,50 @@
   - A computer running Windows or Linux
   - At least 1 GHz AMD or Intel processor
   - At least 1 GB RAM
-  - At least 5 GB of free disk space
+  - At least 30 GB of free disk space
 
   For a production system of up to 10 active users we recommend:
 
-  - 2 GHz AMD or Intel processor
+  - One recent AMD or Intel processor
   - 2 GB RAM
-  - 10 GB of free disk space
-  - aDSL Internet connection
+  - 30 GB of free disk space
 
-  For larger installations please contact the ]po[ team.
+  For larger installations please contact the ]po[ team at:
+  info@project-open.com.
  
 
 ______________________________________________________________________
 
   4. Virtual Machine Installer Contents
 
-  The "project-open-v34.x.zip" file contains the zipped files of
+  The "project-open-v35.x.zip" file contains the zipped files of
   a virtual machine. All files are located in a single subdirectory:
 
   \README.ProjectOpen.VMware.x.y.z.v.w.txt
-  \project-open-v34\
+  \project-open-v35\
 	nvram
-	project-open-v34.nvram
-	project-open-v34.vmdk
-	project-open-v34.vmsd
-	project-open-v34.vmx
-	project-open-v34.vmxf
-	project-open-v34-s001.vmdk
-	project-open-v34-s002.vmdk
-	project-open-v34-s003.vmdk
-	project-open-v34-s004.vmdk
-	project-open-v34-s005.vmdk
-	project-open-v34-s006.vmdk
-	project-open-v34-s007.vmdk
-	project-open-v34-s008.vmdk
-	project-open-v34-s009.vmdk
-	project-open-v34-s010.vmdk
-	project-open-v34-s011.vmdk
-	project-open-v34-s012.vmdk
-	project-open-v34-s013.vmdk
-	project-open-v34-s014.vmdk
-	project-open-v34-s015.vmdk
-	project-open-v34-s016.vmdk
-	project-open-v34-s017.vmdk
+	project-open-v35.nvram
+	project-open-v35.vmdk
+	project-open-v35.vmsd
+	project-open-v35.vmx
+	project-open-v35.vmxf
+	project-open-v35-s001.vmdk
+	project-open-v35-s002.vmdk
+	project-open-v35-s003.vmdk
+	project-open-v35-s004.vmdk
+	project-open-v35-s005.vmdk
+	project-open-v35-s006.vmdk
+	project-open-v35-s007.vmdk
+	project-open-v35-s008.vmdk
+	project-open-v35-s009.vmdk
+	project-open-v35-s010.vmdk
+	project-open-v35-s011.vmdk
+	project-open-v35-s012.vmdk
+	project-open-v35-s013.vmdk
+	project-open-v35-s014.vmdk
+	project-open-v35-s015.vmdk
+	project-open-v35-s016.vmdk
+	project-open-v35-s017.vmdk
 
 
   ______________________________________________________________________
@@ -130,25 +132,26 @@ ______________________________________________________________________
   5. Download VMware Server and Start the ]po[ Server
 
 
-  We recommend you use VMware Server 2.x from VMware's web site at
-  http://www.vmware.com/products/server/. As an alternative, you can 
-  also use the VMware Player 2.x product.
+  We recommend you use VMware ESXi or VMware Server from VMware's web 
+  site at http://www.vmware.com/products/server/. As an alternative, 
+  you can also use the VMware Player product.
 
-  VMware Server is available at no licensing cost. However, it is not 
-  open-source software, and you will need to register in order to obtain 
-  a license key to run VMware Server.
+  All of these VMware products are available at no licensing cost. 
+  However, this is not open-source software, and you will need to 
+  register in order to obtain a license key.
 
-  Once your VMware Server is running, please move the "project-open-v34"
-  folder into VMware's "Virtual Machines" folder typically found at:
-  "My Documents/My Virtual Machines" or "/var/lib/vmware/Virtual Machines"
-  Then use VMware's "Open" or "Add machine to Inventory" command to load
-  the VMware appliance.
+  Once your VMware ESXi/Server/Player is running, please move the 
+  "project-open-v35" folder into VMware's "Virtual Machines" folder 
+  typically found at: "My Documents/My Virtual Machines" or 
+  "/var/lib/vmware/Virtual Machines". Then use VMware's "Open" or 
+  "Add machine to Inventory" command to load the ]po[ appliance.
 
   Before starting, please check the VMware's devices:
 
   - Memory:
-    The minimum is 512 MB, which is OK for testing.
-    For production, please increase this value to 1024 MB or higher.
+    The minimum RAM necessary for ]po[ is 512 MB, which is OK for 
+    testing. For production, please increase this value to 1024 MB 
+    or higher.
 
   - Ethernet:
     Please set "Bridged" mode. This way, the VMware will automatically 
@@ -159,6 +162,7 @@ ______________________________________________________________________
 
 	Username:	root
 	Password:	root
+
 
 
   ______________________________________________________________________

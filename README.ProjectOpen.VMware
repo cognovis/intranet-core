@@ -103,11 +103,9 @@ ______________________________________________________________________
   \README.ProjectOpen.VMware.x.y.z.v.w.txt
   \project-open-v35\
 	nvram
-	project-open-v35.nvram
 	project-open-v35.vmdk
 	project-open-v35.vmsd
 	project-open-v35.vmx
-	project-open-v35.vmxf
 	project-open-v35-s001.vmdk
 	project-open-v35-s002.vmdk
 	project-open-v35-s003.vmdk

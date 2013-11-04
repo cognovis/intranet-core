@@ -684,6 +684,8 @@ ad_proc -public im_sub_navbar {
 	    }
 	}
 
+	regsub -all {\?&amp;} $url {?} url
+
 	# Find out if we need to highligh the current menu item
 	set selected 0
 	set url_length [expr [string length $url] - 1]
@@ -935,7 +937,12 @@ ad_proc -public im_navbar {
 	"
     }
 
-    set show_context_comment_p 1
+    if {"" == [ad_parameter -package_id [im_package_core_id] ErrorReportURL "" ""]} {
+	set show_context_comment_p 0
+    } else {
+	set show_context_comment_p 1
+    }
+
     if {$show_context_comment_p} {
 	set context_comment_html "
 	    <div class=\"main_users_online\">
@@ -1265,59 +1272,85 @@ ad_proc -public im_header {
     append extra_stuff_for_document_head "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\n"
     append extra_stuff_for_document_head "<!--\[if lt IE 7.\]>\n<script defer type='text/javascript' src='/intranet/js/pngfix.js'></script>\n<!\[endif\]-->\n"
 
-
-    # OpenACS 5.4 Header stuff
-    if {[im_openacs54_p]} {
-
-	# Determine if developer support is installed and enabled
-	#
-
-	template::head::add_css -href "/resources/acs-developer-support/acs-developer-support.css" -media "all"
-	set developer_support_p [expr { [llength [info procs ::ds_show_p]] == 1 && [ds_show_p] }]
-	if {$developer_support_p} {
-	    template::add_header -src "/packages/acs-developer-support/lib/toolbar"
-	    template::add_footer -src "/packages/acs-developer-support/lib/footer"
-	}
-
-	template::head::add_css -href "/resources/acs-subsite/default-master.css" -media "all"
-
-	# Extract multirows for header META, CSS, STYLE & SCRIPT etc. from global variables
-	template::head::prepare_multirows
-	set event_handlers [template::get_body_event_handlers]
-
-	template::multirow foreach meta {
-	    set row "<meta"
-	    if {"" != $http_equiv} {  append row " http-equiv='$http_equiv'" }
-	    if {"" != $name} {  append row " name='$name'" }
-	    if {"" != $scheme} {  append row " scheme='$scheme'" }
-	    if {"" != $lang} {  append row " lang='$lang'" }
-	    append row " content='$content'>\n"
-	    append extra_stuff_for_document_head $row
+    if { [info exists ::acs_blank_master(tinymce)] } {
+	ds_comment "TINYMCE :: $::acs_blank_master__htmlareas"
+	# we are using TinyMCE
+	template::head::add_javascript -src "/resources/acs-templating/tinymce/jscripts/tiny_mce/tiny_mce_src.js" -order tinymce0
+	# get the textareas where we apply tinymce
+	set tinymce_elements [list]
+	foreach htmlarea_id [lsort -unique $::acs_blank_master__htmlareas] {
+	    lappend tinymce_elements $htmlarea_id
+	}			
+	set tinymce_config $::acs_blank_master(tinymce.config)    
+	
+	# Figure out the language to use
+	# 1st is the user language, if not available then the system one,
+	# fallback to english which is provided by default
+	
+	set tinymce_relpath "packages/acs-templating/www/resources/tinymce/jscripts/tiny_mce"
+	set lang_list [list [lang::user::language] [lang::system::language]]
+	set tinymce_lang "en"
+	foreach elm $lang_list {
+	    if { [file exists [acs_root_dir]/${tinymce_relpath}/langs/${elm}.js] } {
+		set tinymce_lang $elm
+		break
+	    }
 	}
 	
-	template::multirow foreach link {
-	    set row "<link rel='$rel' href='$href'"
-	    if {"" != $lang} {  append row " lang='$lang'" }
-	    if {"" != $title} {  append row " title='$title'" }
-	    if {"" != $type} {  append row "  type='$type'" }
-	    if {"" != $media} {  append row " media='$media'" }
-	    append row ">\n"
-	    append extra_stuff_for_document_head $row
-	}
-	
-	template::multirow foreach headscript {
-	    set row "<script type='$type'"
-	    if {"" != $src} {  append row " src='$src'" }
-	    if {"" != $charset} {  append row " charset='$charset'" }
-	    if {"" != $defer} {  append row " defer='$defer'" }
-	    append row ">"
-	    if {"" != $content} {  append row " $content" }
-	    append row "</script>\n"
-	    append extra_stuff_for_document_head $row
-	}
-	
+	# TODO : each element should have it's own init
+	template::head::add_javascript -script "
+        tinyMCE.init(\{language: \"$tinymce_lang\", $tinymce_config\});
+	" -order tinymceZ
     }
 
+    # Determine if developer support is installed and enabled
+    #
+    set developer_support_p [expr { [llength [info procs ::ds_show_p]] == 1 && [ds_show_p] }]
+    if {$developer_support_p} {
+	template::head::add_css -href "/resources/acs-developer-support/acs-developer-support.css" -media "all"
+	template::add_header -src "/packages/acs-developer-support/lib/toolbar"
+	template::add_footer -src "/packages/acs-developer-support/lib/footer"
+    }
+    
+    template::head::add_css -href "/resources/acs-subsite/default-master.css" -media "all"
+    
+    set header_html [template::get_header_html]
+    
+    # Extract multirows for header META, CSS, STYLE & SCRIPT etc. from global variables
+    template::head::prepare_multirows
+    set event_handlers [template::get_body_event_handlers]
+    
+    template::multirow foreach meta {
+	set row "<meta"
+	if {"" != $http_equiv} {  append row " http_equiv='$http_equiv'" }
+	if {"" != $name} {  append row " name='$name'" }
+	if {"" != $scheme} {  append row " scheme='$scheme'" }
+	if {"" != $lang} {  append row " lang='$lang'" }
+	append row " content='$content'>\n"
+	append extra_stuff_for_document_head $row
+    }
+    
+    template::multirow foreach link {
+	set row "<link rel='$rel' href='$href'"
+	if {"" != $lang} {  append row " lang='$lang'" }
+	if {"" != $title} {  append row " title='$title'" }
+	if {"" != $type} {  append row "  type='$type'" }
+	if {"" != $media} {  append row " media='$media'" }
+	append row ">\n"
+	append extra_stuff_for_document_head $row
+    }
+    
+    template::multirow foreach headscript {
+	set row "<script type='$type'"
+	if {"" != $src} {  append row " src='$src'" }
+	if {"" != $charset} {  append row " charset='$charset'" }
+	if {"" != $defer} {  append row " defer='$defer'" }
+	append row ">"
+	if {"" != $content} {  append row " $content" }
+	append row "</script>\n"
+	append extra_stuff_for_document_head $row
+    }
+	
     if {[llength [info procs im_amberjack_header_stuff]]} {
 	append extra_stuff_for_document_head [im_amberjack_header_stuff]
     }
@@ -1398,12 +1431,8 @@ ad_proc -public im_header {
 	"
     }
 
+    
     im_performance_log -location im_header_end
-
-    set header_html ""
-    if {[im_openacs54_p]} {
-	set header_html [template::get_header_html]
-    }
 
     return "
 	[ad_header $page_title $extra_stuff_for_document_head]

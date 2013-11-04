@@ -50,6 +50,7 @@ ad_page_contract {
     { start_idx:integer 0 }
     { how_many "" }
     { view_name "project_list" }
+    { view_type "" }
     { filter_advanced_p:integer 0 }
     { plugin_id:integer 0 }
 }
@@ -90,7 +91,7 @@ ad_page_contract {
 # User id already verified by filters
 
 set show_context_help_p 0
-
+set filter_admin_html ""
 set user_id [ad_maybe_redirect_for_registration]
 set admin_p [im_is_user_site_wide_or_intranet_admin $user_id]
 set subsite_id [ad_conn subsite_id]
@@ -102,6 +103,7 @@ set context_bar [im_context_bar $page_title]
 set page_focus "im_header_form.keywords"
 set upper_letter [string toupper $letter]
 set return_url [im_url_with_query]
+set cur_format [im_l10n_sql_currency_format]
 
 
 # Create an action select at the bottom if the "view" has been designed for it...
@@ -213,7 +215,7 @@ db_foreach column_list_sql $column_sql {
     }
 
     if {"" == $visible_for || [eval $visible_for]} {
-	lappend column_headers "$column_name"
+	lappend column_headers "[lang::util::localize $column_name]"
 	lappend column_vars "$column_render_tcl"
 	lappend column_headers_admin $admin_html
 	if {"" != $extra_select} { lappend extra_selects $extra_select }
@@ -240,7 +242,7 @@ ad_form \
     -action $action_url \
     -mode $form_mode \
     -method GET \
-    -export {start_idx order_by how_many view_name include_subprojects_p include_subproject_level letter filter_advanced_p}\
+    -export {start_idx order_by how_many include_subproject_level letter filter_advanced_p}\
     -form {}
 
 if {[im_permission $current_user_id "view_projects_all"]} { 
@@ -252,14 +254,17 @@ if {[im_permission $current_user_id "view_projects_all"]} {
     ad_form -extend -name $form_id -form {
         {mine_p:text(select),optional {label "$min_all_l10n"} {options $mine_p_options }}
         {project_status_id:text(im_category_tree),optional {label \#intranet-core.Project_Status\#} {value $project_status_id} {custom {category_type "Intranet Project Status" translate_p 1}} }
-    } 
+    }
 }
-
+ad_form -extend -name $form_id -form {
+    {include_subprojects_p:text(select),optional {label "#intranet-core.Subprojects#"} {options {{"#intranet-core.Yes#" "t"} {"#intranet-core.No#" "f"}}}}
+}
 if { [empty_string_p $company_id] } {
     set company_id 0
 }
 
 set company_options [im_company_options -include_empty_p 1 -include_empty_name $all_l10n -status "CustOrIntl"]
+set view_options [db_list_of_lists views {select view_label,view_name from im_views where view_type_id = 1451}]
 
 # Get the list of profiles readable for current_user_id
 set managable_profiles [im_profile::profile_options_managable_for_user -privilege "read" $current_user_id]
@@ -268,12 +273,13 @@ set user_select_groups {}
 foreach g $managable_profiles {
     lappend user_select_groups [lindex $g 1]
 }
+
 set user_options [im_profile::user_options -profile_ids $user_select_groups]
 set user_options [linsert $user_options 0 [list $all_l10n ""]]
 
 ad_form -extend -name $form_id -form {
     {project_type_id:text(im_category_tree),optional {label \#intranet-core.Project_Type\#} {value $project_type_id} {custom {category_type "Intranet Project Type" translate_p 1} } }
-    {company_id:text(select),optional {label \#intranet-core.Customer\#} {options $company_options}}
+    {company_id:text(select),optional {label \#intranet-core.Customer\#} {options $company_options} {value $company_id}}
 }
 
 # Does user have VIEW permissions on company's employees?  
@@ -287,9 +293,21 @@ if { "t" == [db_string get_view_perm "select im_object_permission_p(:employee_gr
 ad_form -extend -name $form_id -form {
     {start_date:text(text) {label "[_ intranet-timesheet2.Start_Date]"} {value "$start_date"} {html {size 10}} {after_html {<input type="button" style="height:20px; width:20px; background: url('/resources/acs-templating/calendar.gif');" onclick ="return showCalendar('start_date', 'y-m-d');" >}}}
     {end_date:text(text) {label "[_ intranet-timesheet2.End_Date]"} {value "$end_date"} {html {size 10}} {after_html {<input type="button" style="height:20px; width:20px; background: url('/resources/acs-templating/calendar.gif');" onclick ="return showCalendar('end_date', 'y-m-d');" >}}}
+    {view_name:text(select) {label \#intranet-core.View_Name\#} {value "$view_name"} {options $view_options}}
 }
 
+# List to store the view_type_options
+set view_type_options [list [list HTML ""]]
+
+# Run callback to extend the filter and/or add items to the view_type_options
+callback im_projects_index_filter -form_id $form_id
+ad_form -extend -name $form_id -form {
+    {view_type:text(select),optional {label "#intranet-openoffice.View_type#"} {options $view_type_options}}
+}
+
+set filter_admin_url ""
 set filter_admin_html ""
+
 if {$filter_advanced_p} {
     im_dynfield::append_attributes_to_form \
         -object_type $object_type \
@@ -330,21 +348,21 @@ if {0 != $user_id_from_search && "" != $user_id_from_search} {
 if { ![empty_string_p $company_id] && $company_id != 0 } {
     lappend criteria "p.company_id=:company_id"
 }
-if {"" != $start_date} {
-    lappend criteria "p.end_date >= :start_date::timestamptz"
-}
-if {"" != $end_date} {
-    lappend criteria "p.start_date < :end_date::timestamptz"
-}
+
+# Limit to start-date and end-date
+if {"" != $start_date} { lappend criteria "p.end_date::date >= :start_date" }
+if {"" != $end_date} { lappend criteria "p.start_date::date <= :end_date" }
+
 if { ![empty_string_p $upper_letter] && [string compare $upper_letter "ALL"] != 0 && [string compare $upper_letter "SCROLL"] != 0 } {
     lappend criteria "im_first_letter_default_to_a(p.project_name)=:upper_letter"
 }
 if { $include_subprojects_p == "f" } {
     lappend criteria "p.parent_id is null"
 }
-if { $include_subproject_level != "" } {
-    lappend criteria "tree_level(p.tree_sortkey) <= $include_subproject_level"
-}
+
+#if { $include_subproject_level != "" } {
+#    lappend criteria "tree_level(p.tree_sortkey) <= $include_subproject_level"
+#}
 
 
 
@@ -381,24 +399,24 @@ switch [string tolower $order_by] {
     }
 }
 
-set where_clause [join $criteria " and\n            "]
+set where_clause [join $criteria " and "]
 if { ![empty_string_p $where_clause] } {
     set where_clause " and $where_clause"
 }
 
-set extra_select [join $extra_selects ",\n\t"]
+set extra_select [join $extra_selects ","]
 if { ![empty_string_p $extra_select] } {
-    set extra_select ",\n\t$extra_select"
+    set extra_select ",$extra_select"
 }
 
-set extra_from [join $extra_froms ",\n\t"]
+set extra_from [join $extra_froms ","]
 if { ![empty_string_p $extra_from] } {
-    set extra_from ",\n\t$extra_from"
+    set extra_from ",$extra_from"
 }
 
-set extra_where [join $extra_wheres "and\n\t"]
+set extra_where [join $extra_wheres " and "]
 if { ![empty_string_p $extra_where] } {
-    set extra_where ",\n\t$extra_where"
+    set extra_where " and $extra_where"
 }
 
 
@@ -435,6 +453,7 @@ if {$filter_advanced_p} {
 	set key [ns_set key $tmp_vars $i]
 	set value [ns_set get $tmp_vars $key]
 	ns_set put $form_vars $key $value
+	set $key $value
     }
 
     # Add the additional condition to the "where_clause"
@@ -569,7 +588,7 @@ FROM
                 p.*,
 		round(p.percent_completed * 10.0) / 10.0 as percent_completed,
                 c.company_name,
-                im_name_from_user_id(project_lead_id) as lead_name,
+                im_name_from_user_id(p.project_lead_id) as lead_name,
                 im_category_from_id(p.project_type_id) as project_type,
                 im_category_from_id(p.project_status_id) as project_status,
                 to_char(p.start_date, 'YYYY-MM-DD') as start_date_formatted,
@@ -588,7 +607,6 @@ FROM
         ) projects
 $order_by_clause
 "
-
 
 # ---------------------------------------------------------------
 # 5a. Limit the SQL query to MAX rows and provide << and >>
@@ -650,11 +668,11 @@ ns_log Notice "/intranet/project/index: Before admin links"
 set admin_html "<ul>"
 
 if {[im_permission $current_user_id "add_projects"]} {
-    append admin_html "<li><a href=\"/intranet/projects/new\">[_ intranet-core.Add_a_new_project]</a>\n"
+    append admin_html "<li><a href=\"/intranet/projects/new\">[_ intranet-core.Add_a_new_project]</a></li>\n"
 
     set new_from_template_p [ad_parameter -package_id [im_package_core_id] EnableNewFromTemplateLinkP "" 0]
     if {$new_from_template_p} {
-        append admin_html "<li><a href=\"/intranet/projects/new-from-template\">[lang::message::lookup "" intranet-core.Add_a_new_project_from_Template "Add a new project from Template"]</a>\n"
+        append admin_html "<li><a href=\"/intranet/projects/new-from-template\">[lang::message::lookup "" intranet-core.Add_a_new_project_from_Template "Add a new project from Template"]</a></li>\n"
     }
 
     set wf_oid_col_exists_p [im_column_exists wf_workflows object_type]
@@ -669,7 +687,7 @@ if {[im_permission $current_user_id "add_projects"]} {
 	"
 	db_foreach wfs $wf_sql {
 	    set new_from_wf_url [export_vars -base "/intranet/projects/new" {workflow_key}]
-	    append admin_html "<li><a href=\"$new_from_wf_url\">[lang::message::lookup "" intranet-core.New_workflow "New %wf_name%"]</a>\n"
+	    append admin_html "<li><a href=\"$new_from_wf_url\">[lang::message::lookup "" intranet-core.New_workflow "New %wf_name%"]</a></li>\n"
 	}
     }
 }
@@ -678,7 +696,6 @@ if {[im_permission $current_user_id "add_projects"]} {
 set bind_vars [list return_url $return_url]
 append admin_html [im_menu_ul_list -no_uls 1 "projects_admin" $bind_vars]
 append admin_html "</ul>"
-
 
 # ---------------------------------------------------------------
 # 7. Format the List Table Header
@@ -702,7 +719,6 @@ if { ![empty_string_p $query_string] } {
 append table_header_html "<tr>\n"
 set ctr 0
 foreach col $column_headers {
-
     set wrench_html [lindex $column_headers_admin $ctr]
     regsub -all " " $col "_" col_txt
     set col_txt [lang::message::lookup "" intranet-core.$col_txt $col]
@@ -729,6 +745,9 @@ set bgcolor(1) " class=rowodd "
 set ctr 0
 set idx $start_idx
 
+callback im_projects_index_before_render -view_name $view_name \
+    -view_type $view_type -sql $selection -table_header $page_title -variable_set $form_vars
+
 db_1row timeline "
 	select	 max(end_date) as timeline_end_date,
 		 min(start_date) as timeline_start_date
@@ -736,8 +755,6 @@ db_1row timeline "
 "
 
 db_foreach projects_info_query $selection -bind $form_vars {
-
-#    if {"" == $project_id} { continue }
 
     set project_type [im_category_from_id $project_type_id]
     set project_status [im_category_from_id $project_status_id]
@@ -760,11 +777,11 @@ db_foreach projects_info_query $selection -bind $form_vars {
 
     set url [im_maybe_prepend_http $url]
     if { [empty_string_p $url] } {
-	set url_string "&nbsp;"
+        set url_string "&nbsp;"
     } else {
-	set url_string "<a href=\"$url\">$url</a>"
+        set url_string "<a href=\"$url\">$url</a>"
     }
-
+    
     # Append together a line of data based on the "column_vars" parameter list
     set row_html "<tr$bgcolor([expr $ctr % 2])>\n"
     foreach column_var $column_vars {
@@ -779,10 +796,10 @@ db_foreach projects_info_query $selection -bind $form_vars {
     }
     append row_html "</tr>\n"
     append table_body_html $row_html
-
+    
     incr ctr
     if { $how_many > 0 && $ctr > $how_many } {
-	break
+        break
     }
     incr idx
 }
@@ -906,9 +923,12 @@ set project_navbar_html [\
 eval [template::adp_compile -string {<formtemplate id="project_filter" style="tiny-plain-po"></formtemplate>}]
 set filter_html $__adp_output
 
-
-# Left Navbar is the filter/select part of the left bar
-set left_navbar_html "
+# Customizing for Kolibri. Do not show the filter to freelancers
+if {[im_profile::member_p -user_id $user_id -profile "Freelancers"]} {
+    set left_navbar_html ""
+} else {
+    # Left Navbar is the filter/select part of the left bar
+    set left_navbar_html "
 	<div class='filter-block'>
         	<div class='filter-title'>
 	           #intranet-core.Filter_Projects# $filter_admin_html
@@ -917,7 +937,7 @@ set left_navbar_html "
       	</div>
       <hr/>
 "
-
+}
 append left_navbar_html "
       	<div class='filter-block'>
         <div class='filter-title'>

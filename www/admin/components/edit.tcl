@@ -73,6 +73,7 @@ db_0or1row category_properties "
 #     ad_script_abort
 # }
 
+
 set left_selected ""
 set right_selected ""
 set bottom_selected ""
@@ -156,7 +157,6 @@ set page_body "
   <TR class=rowodd>
     <TD>Menu Sort Order</TD>
     <TD><input type=text name=menu_sort_order value=$menu_sort_order></TD></TR>
-
 </TBODY>
 </TABLE>
 "

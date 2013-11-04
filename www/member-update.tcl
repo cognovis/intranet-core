@@ -126,6 +126,7 @@ switch $action {
     "del_members" {
 	foreach user $delete_user {
 	    im_exec_dml delete_user "user_group_member_del ($object_id, $user)"
+	    callback im_biz_object_member_after_delete -object_type $object_type -object_id $object_id -user_id $user
 	    set touched_p 1
 	}
 

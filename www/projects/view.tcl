@@ -41,7 +41,7 @@ ad_page_contract {
 if {[exists_and_not_null project_id]} {
     set otype [db_string otype "select object_type from acs_objects where object_id = :project_id" -default ""]
     if {"im_timesheet_task" == $otype} {
-	ad_returnredirect [export_vars -base "/intranet-timesheet2-tasks/new" {{form_mode display} {task_id $project_id}}]
+	ad_returnredirect [export_vars -base "/intranet-timesheet2-tasks/view" {{form_mode display} {task_id $project_id}}]
     }  
     if {"im_ticket" == $otype} {
         ad_returnredirect [export_vars -base "/intranet-helpdesk/new" {{form_mode display} {ticket_id $project_id}}]
@@ -229,11 +229,9 @@ switch $view_name {
 set sub_navbar [im_sub_navbar \
     -components \
     -current_plugin_id $plugin_id \
-    -base_url "/intranet/projects/view?project_id=$project_id" \
+    -base_url "/intranet/projects/view" \
     $parent_menu_id \
     $bind_vars "" "pagedesriptionbar" $menu_label] 
-
-
 
 set left_navbar_html ""
 if {"" != $admin_html_content} {

@@ -29,6 +29,7 @@ ad_page_contract {
     {plugin_name:trim ""}
     {sort_order:integer ""}
     {location ""}
+    {package_name ""}
     {page_url:trim ""}
     {title_tcl:allhtml ""}
     {component_tcl:allhtml ""}
@@ -104,6 +105,40 @@ switch $submit {
 	# Delete entries from user_map that might change the location
 	db_dml del_user_map "delete from im_component_plugin_user_map where plugin_id = :plugin_id"
 	db_string delete_component "select im_component_plugin__delete(:plugin_id::integer)"
+    }
+    "Save" { 
+	db_transaction {
+	    db_exec_plsql new_component_plug {
+		SELECT 	im_component_plugin__new (
+		DECLARE
+		v_plugin_id integer;
+		BEGIN
+		v_plugin_id := 	im_component_plugin__new (
+			 	      null,
+				      'acs_object',
+				      now(),
+				      null,
+				      null,
+				      null,
+				      :plugin_name,
+				      :package_name,
+				      :location,
+				      :page_url,
+				      null,
+				      :sort_order,
+				      :component_tcl,
+				      :title_tcl
+				      );
+		UPDATE im_component_plugins SET menu_sort_order = :menu_sort_order, enabled_p = :enabled_p, menu_name = :menu_name WHERE plugin_id = v_plugin_id;
+
+		RETURN 0;
+		END;
+	    }
+	}	
+    }
+    "Cancel" {
+	ad_returnredirect $return_url
+	ad_script_abort
     }
     default {
 	ad_return_complaint 1 "<b>Unknown Operations '$submit'</b><br>"

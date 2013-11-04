@@ -81,6 +81,8 @@ ad_form \
 	{order_by_clause:text(textarea),optional {label #intranet-core.Order_by_clause#} {html {cols 50 rows 5}}}
 	{visible_for:text(textarea),optional {label "Visible For"} {html {cols 50 rows 5}}}
 	{ajax_configuration:text(textarea),optional {label "Ajax Configuration"} {html {cols 50 rows 5}}}
+	{variable_name:text(text),optional {label #intranet-core.Variable_Name#} }
+	    {datatype:text(text),optional {label #intranet-core.Datatype#} {help_text "Could be any of date, currency, float, percentage, textarea, category_pretty"}}
     }
 
 
@@ -115,12 +117,12 @@ ad_form -extend -name column -on_request {
 	(column_id, view_id, column_name, 
 	column_render_tcl, extra_select, extra_from, 
 	extra_where, sort_order, order_by_clause,
-	visible_for, ajax_configuration
+	visible_for, ajax_configuration, variable_name, datatype
     ) values (
 	:column_id, :view_id, :column_name, 
 	:column_render_tcl, :extra_select, :extra_from, 
 	:extra_where, :sort_order, :order_by_clause,
-	:visible_for, :ajax_configuration
+	:visible_for, :ajax_configuration, :variable_name, :datatype
     )"
 
 } -edit_data {
@@ -135,6 +137,8 @@ ad_form -extend -name column -on_request {
 	        sort_order		= :sort_order,
 	        order_by_clause		= :order_by_clause,
 		visible_for		= :visible_for,
+		variable_name	= :variable_name,
+		datatype		= :datatype,
 		ajax_configuration	= :ajax_configuration
 	where
 		column_id = :column_id

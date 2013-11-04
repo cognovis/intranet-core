@@ -501,17 +501,25 @@ ad_proc -public im_company_options {
     {-type "" }
     {-exclude_status_id "" }
     {-exclude_status "" }
+    -no_cache:boolean
     {default 0}
 } {
     Cost company options
 } {
+    # Get the options
+    if {$no_cache_p} {
+        set command "im_company::company_options_not_cached"
+    } else {
+        set command "im_company::company_options"
+    }
+
     set user_id [ad_get_user_id]
     if {"" != $status} { set status_id [im_id_from_category $status "Intranet Company Status"] }
     if {"" != $exclude_status} { set exclude_status_id [im_id_from_category $exclude_status "Intranet Company Status"] }
     if {"" != $type} { set type_id [im_id_from_category $type "Intranet Company Type"] }
 
     # Get the options
-    set company_options [im_company::company_options \
+    set company_options [$command \
 		     -user_id $user_id \
 		     -status_id $status_id \
 		     -type_id $type_id \
@@ -898,3 +906,14 @@ ad_proc -public im_company_contacts_component {
 }
 
 
+ad_proc -public -callback im_company_after_update -impl im_companies_save_vat {
+    {-object_id:required}
+    {-status_id ""}
+    {-type_id ""}
+} {
+    If a company is saved automatically save the vat
+} {
+    set vat [db_string category "select aux_int1 from im_companies c, im_categories ca where ca.category_id = c.vat_type_id and c.company_id = :object_id" -default ""]
+
+    db_dml update_company "update im_companies set default_vat = :vat where company_id = :object_id"
+}

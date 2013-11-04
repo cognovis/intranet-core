@@ -42,6 +42,7 @@
   <msg key="Add_a_new_client">Add New Customer</msg>
   <msg key="Add_a_new_Company">New Company</msg>
   <msg key="Add_a_new_company">Add New Company</msg>
+  <msg key="Add_a_new_component">Add New Component</msg>
   <msg key="Add_a_new_member">Add New Member</msg>
   <msg key="Add_a_new_Office">Add New Office</msg>
   <msg key="Add_a_new_office">Add New Office</msg>
@@ -213,6 +214,7 @@ We recommend you to upgrade your browser to a more recent version.</msg>
   <msg key="Clients">Clients</msg>
   <msg key="Clone_Project">Clone this project</msg>
   <msg key="Clone_Project_Help">You can 'clone' a project in order to save time to setup a similar project.</msg>
+  <msg key="Clone_View">Clone this view</msg>
   <msg key="Close">Close</msg>
   <msg key="Closed">Closed</msg>
   <msg key="CollabKM_Help">C&amp;KM Help</msg>
@@ -320,6 +322,7 @@ We recommend you to upgrade your browser to a more recent version.</msg>
   <msg key="Dangerous">Dangerous!!</msg>
   <msg key="Dashboard">Dashboard</msg>
   <msg key="Data_Access_1">Data Access</msg>
+  <msg key="Datatype">Datatype</msg>
   <msg key="Date">Date</msg>
   <msg key="Day">Day</msg>
   <msg key="de">de</msg>
@@ -383,6 +386,7 @@ We recommend you to upgrade your browser to a more recent version.</msg>
   <msg key="El Salvador">El Salvador</msg>
   <msg key="El_Salvador">El Salvador</msg>
   <msg key="Email">Email</msg>
+  <msg key="EMail">EMail</msg>
   <msg key="Email_address">Email address</msg>
   <msg key="Email_sent">Email sent</msg>
   <msg key="Employee">Employee</msg>
@@ -482,7 +486,9 @@ We recommend you to upgrade your browser to a more recent version.</msg>
   <msg key="Future">Future</msg>
   <msg key="g">g</msg>
   <msg key="Gantt">Gantt</msg>
+  <msg key="gelscht">deleted</msg>
   <msg key="Gen">Gen</msg>
+  <msg key="Gender">Geschlecht</msg>
   <msg key="General_Home">Home</msg>
   <msg key="Generic_PM">Generic PM</msg>
   <msg key="Generic_Table_Header_ocs_bios">BIOS</msg>
@@ -617,6 +623,7 @@ We recommend you to upgrade your browser to a more recent version.</msg>
   <msg key="Home_ZIP">Home ZIP</msg>
   <msg key="Honduras">Honduras</msg>
   <msg key="Hour">Hour</msg>
+  <msg key="Hour_Reduction">Reduction in Working Hours</msg>
   <msg key="How_it_should_be_right">How it should be right</msg>
   <msg key="hr">hr</msg>
   <msg key="HR_Help">HR Help</msg>
@@ -1305,6 +1312,7 @@ other way for the user to find out.</msg>
   <msg key="Ouch">Ouch!</msg>
   <msg key="Our_employees_related">Our Employees (managing the company)</msg>
   <msg key="Outstanding">Outstanding</msg>
+  <msg key="Overtime">Overtime</msg>
   <msg key="p">p</msg>
   <msg key="Package">Package</msg>
   <msg key="Package_Manager">Package Manager</msg>
@@ -1334,6 +1342,8 @@ other way for the user to find out.</msg>
   <msg key="Payed">Payed</msg>
   <msg key="Payment_Method">Payment Method</msg>
   <msg key="Payment_Methods">Payment Methods</msg>
+  <msg key="Payment_Term">Payment Term</msg>
+  <msg key="Payment_Terms">Payment Terms</msg>
   <msg key="Payments">Payments</msg>
   <msg key="PayPal">PayPal</msg>
   <msg key="Per">%%</msg>
@@ -1376,6 +1386,8 @@ other way for the user to find out.</msg>
   <msg key="Prio">Prio</msg>
   <msg key="Prio_1">Prio</msg>
   <msg key="Prio_HJ_1">Prio HJ</msg>
+  <msg key="private_customer">private customer</msg>
+  <msg key="Privatkunde">private customer</msg>
   <msg key="Problem_Ticket">Problem Ticket</msg>
   <msg key="Profile">Profile</msg>
   <msg key="Profile_Accounting">Accounting</msg>
@@ -1419,6 +1431,7 @@ other way for the user to find out.</msg>
   <msg key="Project_name">Project name</msg>
   <msg key="Project_Nr">Project Nr</msg>
   <msg key="Project_nr">Project nr</msg>
+  <msg key="Project_Path">Project Path</msg>
   <msg key="Project_project_name">Project: %project_name%</msg>
   <msg key="Project_Proposals">Project Proposals</msg>
   <msg key="Project_Quality_Component">Übersetzungsqualität</msg>
@@ -1587,6 +1600,7 @@ other way for the user to find out.</msg>
   <msg key="Spam">Spam</msg>
   <msg key="Spam_Members">Spam Members</msg>
   <msg key="Spam_Users">Spam Users</msg>
+  <msg key="Special_Leave">Special Leave</msg>
   <msg key="sq">sq</msg>
   <msg key="SQL_Profiling">SQL Profiling</msg>
   <msg key="sr">sr</msg>
@@ -1624,6 +1638,7 @@ other way for the user to find out.</msg>
   <msg key="Task_Members">Task Members</msg>
   <msg key="Tasks">Tasks</msg>
   <msg key="Tasks__Incidents">Tasks / Incidents</msg>
+  <msg key="Tax_classification">Tax Classification</msg>
   <msg key="Tec">Tec</msg>
   <msg key="Tec-Auto">Tec-Auto</msg>
   <msg key="Tec-Gen">Tec-Gen</msg>
@@ -1634,6 +1649,7 @@ other way for the user to find out.</msg>
   <msg key="Telefonie">Telephony Request</msg>
   <msg key="Telephony_Request">Telephony Request</msg>
   <msg key="Telephony_request">Telephony request</msg>
+  <msg key="templatedeodt">template.de.odt</msg>
   <msg key="templateenadp">template.en.adp</msg>
   <msg key="templateesadp">template.es.adp</msg>
   <msg key="Test_evaluated">Test evaluated</msg>
@@ -1730,6 +1746,7 @@ other way for the user to find out.</msg>
   <msg key="User_Configuration_Items">Configuration Items</msg>
   <msg key="User_Exists">User Exits</msg>
   <msg key="User_Exits">User Exits</msg>
+  <msg key="User_ID">User_ID</msg>
   <msg key="User_Id">User ID</msg>
   <msg key="User_Matrix">User Matrix</msg>
   <msg key="User_name">User name</msg>
@@ -1750,6 +1767,7 @@ other way for the user to find out.</msg>
   <msg key="Vacation">Vacation</msg>
   <msg key="Value">Value</msg>
   <msg key="value">%value%</msg>
+  <msg key="Variable_Name">Variable Name</msg>
   <msg key="VAS">VAS</msg>
   <msg key="VAS_5051">VAS 5051</msg>
   <msg key="VAT_Number">VAT Number</msg>
@@ -1760,6 +1778,7 @@ other way for the user to find out.</msg>
   <msg key="View_1">View:</msg>
   <msg key="View_Id">View Id</msg>
   <msg key="View_Name">View Name</msg>
+  <msg key="View_Label">View Label</msg>
   <msg key="View_Projects">View Projects</msg>
   <msg key="View_sql">View sql</msg>
   <msg key="View_Status">View Status</msg>

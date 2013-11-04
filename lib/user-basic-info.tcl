@@ -38,6 +38,7 @@ if {$object_id} {set user_id_from_search $object_id}
 if {$user_id} {set user_id_from_search $user_id}
 
 set current_user_id [ad_maybe_redirect_for_registration]
+set current_user_is_admin_p [im_is_user_site_wide_or_intranet_admin $current_user_id]
 set subsite_id [ad_conn subsite_id]
 
 # Check the permissions 
@@ -106,7 +107,17 @@ db_multirow -extend {col_name col_value show_p} user_info user_info_sql {} {
 # ---------------------------------------------------------------
 # Get profiles 
 # ---------------------------------------------------------------
-set profile_component [im_profile::profile_component $user_id_from_search "disabled"]
+
+set managable_profiles [im_profile::profile_options_managable_for_user $current_user_id]
+set edit_profiles_p 0
+if {[llength $managable_profiles] > 0} { set edit_profiles_p 1 }
+if {!$current_user_is_admin_p && ($user_id == $current_user_id)} { set edit_profiles_p 0}
+
+if {$edit_profiles_p} {
+    set profile_component [im_profile::profile_component $user_id_from_search "disabled"]
+} else {
+    set profile_component ""
+}
 
 # ------------------------------------------------------
 # Show extension fields
@@ -134,3 +145,6 @@ im_dynfield::append_attributes_to_form \
     -form_display_mode "display" \
     -page_url "/intranet/users/view"
 
+
+# Permissions for existing user: We need to be able to admin him:
+im_user_permissions $current_user_id $user_id view_p read_p write_p admin_p

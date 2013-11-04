@@ -116,6 +116,7 @@ ad_proc im_category_select {
     {-super_category_id 0}
     {-cache_interval 3600}
     {-locale "" }
+    {-id ""}
     category_type
     select_name
     { default "" }
@@ -129,9 +130,9 @@ ad_proc im_category_select {
     if {"" == $locale} { set locale [lang::user::locale -user_id [ad_get_user_id]] }
 
     if {$no_cache_p} {
-	return [im_category_select_helper -multiple_p $multiple_p -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -super_category_id $super_category_id $category_type $select_name $default]
+	return [im_category_select_helper -multiple_p $multiple_p -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -super_category_id $super_category_id -id $id $category_type $select_name $default]
     } else {
-	return [util_memoize [list im_category_select_helper -multiple_p $multiple_p -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -super_category_id $super_category_id $category_type $select_name $default] $cache_interval ]
+	return [util_memoize [list im_category_select_helper -multiple_p $multiple_p -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -super_category_id $super_category_id -id $id $category_type $select_name $default] $cache_interval ]
     }
 }
 
@@ -145,6 +146,7 @@ ad_proc im_category_select_helper {
     {-plain_p 0}
     {-super_category_id 0}
     {-cache_interval 3600}
+    {-id ""}
     category_type
     select_name
     { default "" }
@@ -170,6 +172,7 @@ ad_proc im_category_select_helper {
 
     # Read the categories into the a hash cache
     # Initialize parent and level to "0"
+    set category_list_sorted [list]
     set sql "
         select
                 category_id,
@@ -183,11 +186,12 @@ ad_proc im_category_select_helper {
                 category_type = :category_type
 		and (enabled_p = 't' OR enabled_p is NULL)
 		$super_category_sql
-        order by lower(category)
+        order by sort_order
     "
     db_foreach category_select $sql {
         set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p]
         set level($category_id) 0
+	lappend category_list_sorted $category_id
     }
 
     # Get the hierarchy into a hash cache
@@ -268,8 +272,8 @@ ad_proc im_category_select_helper {
 
     # Sort the category list's top level. We currently sort by category_id,
     # but we could do alphabetically or by sort_order later...
-    set category_list [array names cat]
-    set category_list_sorted [lsort $category_list]
+#    set category_list [array names cat]
+#    set category_list_sorted [lsort $category_list]
 
     # Now recursively descend and draw the tree, starting
     # with the top level
@@ -279,15 +283,18 @@ ad_proc im_category_select_helper {
 	if {"f" == $enabled_p} { continue }
         set p_level $level($p)
         if {0 == $p_level} {
-            append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale $p $default $base_level [array get cat] [array get direct_parent]]
+            append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $p $default $base_level [array get cat] [array get direct_parent]]
         }
     }
 
+    set select_html "<select name=\"$select_name\" "
     if {$multiple_p} {
-	set select_html "<select name=\"$select_name\" multiple=\"multiple\">"
-    } else {
-	set select_html "<select name=\"$select_name\">"
+        append select_html "multiple=\"multiple\""
+    } 
+    if {$id != ""} {
+        append select_html "id=\"$id\""
     }
+    append select_html ">"
 	return "
 $select_html
 $html
@@ -301,6 +308,7 @@ ad_proc im_category_select_branch {
     {-translate_p 0}
     {-package_key "intranet-core" }
     {-locale "" }
+    {-category_list_sorted:required}
     parent 
     default 
     level 
@@ -336,13 +344,9 @@ ad_proc im_category_select_branch {
     }
 
 
-    # Sort by category_id, but we could do alphabetically or by sort_order later...
-    set category_list [array names cat]
-    set category_list_sorted [lsort $category_list]
-
     foreach cat_id $category_list_sorted {
 	if {[info exists direct_parent($cat_id)] && $parent == $direct_parent($cat_id)} {
-	    append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale $cat_id $default $level $cat_array $direct_parent_array]
+	    append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $cat_id $default $level $cat_array $direct_parent_array]
 	}
     }
 
@@ -464,6 +468,15 @@ ad_proc -public template::widget::im_category_tree {
 	set package_key [lindex $params [expr $package_key_pos + 1]]
     }
 
+    # Get the "multiple_p" parameter to determine if we should
+    # display the categories as multiples
+    #
+    set multiple_p 0
+    set multiple_p_pos [lsearch $params multiple_p]
+    if { $multiple_p_pos >= 0 } {
+	set multiple_p [lindex $params [expr $multiple_p_pos + 1]]
+    }
+
     # Get the "include_empty_p" parameter to determine if we should
     # include an empty first line in the widget
     #
@@ -504,7 +517,7 @@ ad_proc -public template::widget::im_category_tree {
     }
 
     if { "edit" == $element(mode)} {
-	append category_html [im_category_select -translate_p 1 -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p $category_type $field_name $default_value]
+	append category_html [im_category_select -translate_p 1 -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -multiple_p $multiple_p $category_type $field_name $default_value]
     } else {
 	if {"" != $default_value && "\{\}" != $default_value} {
 	    append category_html [im_category_from_id $default_value]
@@ -791,3 +804,41 @@ ad_proc im_biz_object_category_select_branch {
     return $html
 }
 
+ad_proc -public im_category_all_parents {
+    -category_id
+} {
+    set all_parent_ids [list]
+    set parent_ids [im_category_parents $category_id]
+    if {$parent_ids ne ""} {
+	foreach parent_id $parent_ids {
+	    lappend all_parent_ids $parent_id
+	    set all_parent_ids [concat $all_parent_ids [im_category_all_parents -category_id $parent_id]]
+	}
+    }
+    return $all_parent_ids
+}
+
+ad_proc -public im_category_string1 {
+    -category_id
+    {-locale "" }
+} {
+    Return the localized version of string1 for the category
+} {
+    set category_key "intranet-core.string1_$category_id"
+    set default_string1 [db_string string1 "select aux_string1 from im_categories where category_id = :category_id" -default ""]
+    if {$default_string1 eq ""} {
+	return ""
+    }
+    return [lang::message::lookup $locale $category_key $default_string1]
+}
+
+ad_proc -public im_category_string2 {
+    -category_id
+    {-locale "" }
+} {
+    Return the localized version of string1 for the category
+} {
+    set category_key "intranet-core.string2_$category_id"
+    set default_string2 [db_string string2 "select aux_string2 from im_categories where category_id = :category_id" -default ""]
+    return [lang::message::lookup $locale $category_key $default_string2]
+}

@@ -34,7 +34,8 @@ ad_page_contract {
     { how_many:integer "" }
     { letter:trim "all" }
     { view_name "" }
-    { filter_advanced_p:integer 0 }
+    { view_type "" }
+    { filter_advanced_p:integer 1 }
 }
 
 # ---------------------------------------------------------------
@@ -139,10 +140,16 @@ set column_vars [list]
 
 set freelancers_exist_p [db_table_exists im_freelancers]
 
+if {$freelancers_exist_p} {
+    set extra_left_joins [list "LEFT OUTER JOIN im_freelancers fl ON (fl.user_id = u.user_id)"]
+    set extra_selects [list "fl.*"]
+}
+
 # Get the ID of the group of users to show
 # Default 0 corresponds to the list of all users.
 # Use a normalized group_name in lowercase and with
 # all special characters replaced by "_".
+
 set user_group_name [im_mangle_user_group_name $user_group_name]
 set user_group_id 0
 set menu_select_label ""
@@ -160,6 +167,10 @@ switch [string tolower $user_group_name] {
         set user_group_id [im_profile_freelancers]
         set menu_select_label "users_freelancers"
 	lappend extra_wheres "u.user_id in (select object_id_two from acs_rels where rel_type = 'membership_rel' and  object_id_one = $user_group_id)"
+    }
+    "none" {
+	set menu_select_label "users_all"
+	lappend extra_wheres "u.user_id not in (select object_id_two from acs_rels where rel_type = 'membership_rel' and object_id_one in (select profile_id from im_profiles))"
     }
     default {
     	# Search for the right group name.
@@ -352,8 +363,9 @@ set user_status_types [im_memoize_list select_user_status_types \
           order by lower(company_status)"]
 set user_status_types [linsert $user_status_types 0 0 All]
 
-set user_types [list 0 All]
-# set user_types [list [list All all]]
+
+
+set user_types [list [list "#acs-kernel.common_All#" all]]
 db_foreach select_user_types "
 	select
 		group_id,
@@ -362,11 +374,13 @@ db_foreach select_user_types "
 		groups,
 		im_profiles
 	where
-		group_id = profile_id" {
-		
-	lappend user_types [im_mangle_user_group_name $group_name]
-	lappend user_types $group_name
-}
+		group_id = profile_id" \
+    {
+	set group_name_pretty [lang::message::lookup "" intranet-core.[lang::util::suggest_key $group_name] $group_name]
+
+        set option [list $group_name_pretty [im_mangle_user_group_name $group_name]]
+        lappend user_types $option
+    }
 
 # company_types will be a list of pairs of (company_type_id, company_type)
 #set user_types [im_memoize_list select_companies_types \
@@ -380,7 +394,7 @@ db_foreach select_user_types "
 # ---------------------------------------------------------------
 # Filter with Dynamic Fields
 # ---------------------------------------------------------------
-
+lappend user_types [list [_ intranet-dynfield.No_items] none]
 set form_id "user_filter"
 set object_type "person"
 set action_url "/intranet/users/index"
@@ -391,6 +405,7 @@ ad_form \
     -mode $form_mode \
     -export {start_idx order_by how_many letter view_name filter_advanced_p} \
     -form {
+        {view_type:text(select),optional {label "#intranet-openoffice.View_type#"} {options {{Tabelle ""} {Excel xls} {OpenOffice ods} {PDF pdf}} }}
         {user_group_name:text(select),optional {label "\#intranet-core.User_Types\#"} {options $user_types} {value $user_group_name}}
     }
 
@@ -516,7 +531,7 @@ if {$filter_advanced_p && [im_table_exists im_dynfield_attributes]} {
     # Add the additional condition to the "where_clause"
     if {"" != $dynfield_extra_where} { 
 	    append extra_where "
-                and person_id in $dynfield_extra_where
+                and p.person_id in $dynfield_extra_where
             "
     }
 }
@@ -616,6 +631,11 @@ set bgcolor(1) " class=rowodd "
 set ctr 1
 set idx $start_idx
 
+if {$view_type ne ""} {
+    intranet_openoffice::spreadsheet -view_name $view_name -sql $query -output_filename "users.$view_type" -table_name "$page_title" -variable_set $form_vars
+    ad_script_abort
+}
+
 db_foreach users $query -bind $form_vars {
 
     ns_log Notice "users/index: user_id=$user_id"
@@ -684,28 +704,16 @@ set table_continuation_html ""
 
 set sub_navbar [im_user_navbar $letter "/intranet/users/index" $next_page_url $previous_page_url [list user_group_name] $menu_select_label]
 
+# Compile and execute the formtemplate if advanced filtering is enabled.
+eval [template::adp_compile -string {<formtemplate id="$form_id" style="tiny-plain"></formtemplate>}]
+set filter_html $__adp_output
+
 set left_navbar_html "
       <div class='filter-block'>
         <div class='filter-title'>
             \#intranet-core.Filter_Users\#
         </div>
-
-        <form method=get action='/intranet/users/index' name=filter_form>
-        [export_form_vars start_idx order_by how_many letter]
-        <input type=hidden name=view_name value='user_list'>
-        <table>
-        <tr>
-          <td class='form-label'>\#intranet-core.User_Types\#  &nbsp;</td>
-          <td class='form-widget'>
-            [im_select user_group_name $user_types ""]
-          </td>
-        </tr>
-        <tr>
-			<td>&nbsp;</td>
-			<td><input type=submit value='[lang::message::lookup "" intranet-core.Action_Go Go]' name=submit></td>
-		<tr>
-        </table>
-        </form>
+            	$filter_html
       </div>
 "
 

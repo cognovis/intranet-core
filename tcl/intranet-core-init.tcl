@@ -287,6 +287,7 @@ ad_proc -public -callback im_project_new_redirect {
 } -
 
 
+
 ad_proc -public -callback im_timesheet_task_new_redirect {
     {-object_id:required}
     {-status_id ""}
@@ -321,10 +322,257 @@ ad_proc -public -callback im_dynfield_widget_after_update {
     Callback to be executed after a widget has been changed
 } -
 
+ad_proc -public -callback im_forum_new_redirect {
+    {-object_id:required}
+    {-status_id ""}
+    {-type_id ""}
+    {-topic_id ""}
+    {-topic_type_id ""}
+    {-parent_id ""}
+    {-return_url:required}
+} {
+	This is mainly a callback to redirect from the original new.tcl page to somewhere else
+	
+        @param topic_id ID of the forum topic
+	@param topic_type_id ID of type of topic  
+} -
+
+
+ad_proc -public -callback im_timesheet_hours_new_redirect {
+    {-object_id:required}
+    {-status_id ""}
+    {-type_id ""}
+    {-project_id ""}
+    {-julian_date ""}
+    {-gregorian_date ""}
+    {-show_week_p ""}
+    {-user_id_from_search ""}
+    {-return_url ""}
+} {
+	This is mainly a callback to redirect from the original new.tcl page to somewhere else
+	
+        @param topic_id ID of the forum topic
+	@param topic_type_id ID of type of topic  
+} -
+
+ad_proc -public -callback im_category_after_create {
+    {-object_id:required}
+    {-type ""}
+    {-status ""}
+    {-category_id ""}
+    {-category_type ""}
+} {
+    This is a callback to map attributes and categories using respectively attribute_id and category_id
+
+    @param category_id ID of the category
+    @param category_type Type of the category
+} -
+
+ad_proc -public -callback im_category_after_update {
+    {-object_id:required}
+    {-type ""}
+    {-status ""}
+    {-category_id ""}
+    {-category_type ""}
+} {
+    This is a callback to map attributes and categories using respectively attribute_id and category_id
+
+    @param category_id ID of the category
+    @param category_type Type of the category
+} -
+
+
+
+ad_proc -public -callback im_project_index_redirect {
+    {-status_id ""}
+    {-type_id ""}
+    {-company_id ""}
+    {-user_id_from_search ""}
+    {-mine_p ""}
+    {-view_name ""}
+} {
+	This is mainly a callback to redirect from the original project table page to somewhere else
+	
+        @param topic_id ID of the forum topic
+	@param topic_type_id ID of type of topic  
+} -
+			       
+
+ad_proc -public -callback im_timesheet_task_list_before_render {
+    {-view_name:required}
+    {-view_type:required}
+    {-sql:required}
+    {-table_header ""}
+} {
+    This callback is executed before im_timesheet_task_list_component is rendered / the sql command actually executed.
+
+    The callback implementation needs to run ad_script_abort in the uplevel, so you don't execute the SQL statement and try to render the component.
+
+    @param view_name view_name used to render the columns.
+    @param view_type The view_type. This can be anything, empty string usually means you want to render the component
+    @param sql The SQL string which im_timesheet_task_list_component prepares
+    @param table_header Name of the table in the spreadsheet (e.g. in Excel).
+} -
+
+ad_proc -public -callback im_projects_index_before_render {
+    {-view_name:required}
+    {-view_type:required}
+    {-sql:required}
+    {-table_header ""}
+    {-variable_set ""}
+} {
+    This callback is executed before /projects/index is rendered / the sql command actually executed.
+
+    The callback implementation needs to run ad_script_abort in the uplevel, so you don't execute the SQL statement and try to render the component.
+
+    @param view_name view_name used to render the columns.
+    @param view_type The view_type. This can be anything, empty string usually means you want to render the component
+    @param sql The SQL string which im_timesheet_task_list_component prepares
+    @param table_header Name of the table in the spreadsheet (e.g. in Excel).
+    @param variable_set A set of variables to pass through
+} -
+
+ad_proc -public -callback im_projects_csv1_before_render {
+    {-view_name:required}
+    {-view_type:required}
+    {-sql:required}
+    {-table_header ""}
+} {
+    This callback is executed before im_projects_csv1 is rendered / the sql command actually executed.
+
+    The callback implementation needs to run ad_script_abort in the uplevel, so you don't execute the SQL statement and try to return a CSV file.
+
+    @param view_name view_name used to render the columns.
+    @param view_type The view_type. This can be anything, empty string usually means you want to render the component
+    @param sql The SQL string which im_timesheet_task_list_component prepares
+    @param table_header Name of the table in the spreadsheet (e.g. in Excel).
+} -
+
+ad_proc -public -callback im_projects_index_filter {
+    {-form_id:required}
+} {
+    This callback is executed after we generated the filter ad_form
+    
+    This allows you to extend in the uplevel the form with any additional filters you might want to add.
+
+    @param form_id ID of the form to which we want to append filter elements
+} - 
+
+ad_proc -public -callback im_companies_index_filter {
+    {-form_id:required}
+} {
+    This callback is executed after we generated the filter ad_form
+    
+    This allows you to extend in the uplevel the form with any additional filters you might want to add.
+
+    @param form_id ID of the form to which we want to append filter elements
+} - 
+
+ad_proc -public -callback im_companies_index_before_render {
+    {-view_name:required}
+    {-view_type:required}
+    {-sql:required}
+    {-table_header ""}
+    {-variable_set ""}
+} {
+    This callback is executed before /companies/index is rendered / the sql command actually executed.
+
+    The callback implementation needs to run ad_script_abort in the uplevel, so you don't execute the SQL statement and try to render the component.
+
+    @param view_name view_name used to render the columns.
+    @param view_type The view_type. This can be anything, empty string usually means you want to render the component
+    @param sql The SQL string which im_timesheet_task_list_component prepares
+    @param table_header Name of the table in the spreadsheet (e.g. in Excel).
+    @param variable_set A set of variables to pass through
+} -
+
+ad_proc -public -callback im_timesheet_tasks_index_filter {
+    {-form_id:required}
+} {
+    This callback is executed after we generated the filter ad_form
+    
+    This allows you to extend in the uplevel the form with any additional filters you might want to add.
+
+    @param form_id ID of the form to which we want to append filter elements
+} - 
+
+ad_proc -public -callback im_helpdesk_ticket_new_redirect {
+    {-ticket_id ""}
+    {-ticket_name "" }
+    {-ticket_nr "" }
+    {-ticket_sla_id "" }
+    {-ticket_customer_contact_id "" }
+    {-ticket_status_id ""}
+    {-ticket_type_id "" }
+    {-view_name ""}
+    {-escalate_from_ticket_id ""}
+    {-return_url:required}
+} {
+    This is mainly a callback to redirect from the original new.tcl page to somewhere else
+    
+    @param task_id ID of the task
+    @param project_id ID of the project 
+    @task_status_id This checks what is the current status of a task 
+    @ticket_type_id This checks what is the current type of a ticket
+} -
+
+ad_proc -public -callback im_biz_object_member_after_delete {
+    {-object_id:required}
+    {-object_type:required}
+    {-user_id:required}
+} {
+    Hook for executing callbacks after a user was removed from an object. 
+} - 
 
 ad_proc -public -callback im_before_member_add {
     {-user_id:required}
     {-object_id:required}
 } {
     Callback to be executed before a user is added to a project
+} -
+
+ad_proc -public -callback im_invoices_index_before_render {
+    {-view_name:required}
+    {-view_type:required}
+    {-sql:required}
+    {-table_header ""}
+    {-variable_set ""}
+} {
+    This callback is executed before /projects/index is rendered / the sql command actually executed.
+
+    The callback implementation needs to run ad_script_abort in the uplevel, so you don't execute the SQL statement and try to render the component.
+
+    @param view_name view_name used to render the columns.
+    @param view_type The view_type. This can be anything, empty string usually means you want to render the component
+    @param sql The SQL string which im_timesheet_task_list_component prepares
+    @param table_header Name of the table in the spreadsheet (e.g. in Excel).
+    @param variable_set A set of variables to pass through
+} -
+
+ad_proc -public -callback im_timesheet_report_filter {
+    {-form_id:required}
+} {
+    This callback is executed after we generated the filter ad_form
+    
+    This allows you to extend in the uplevel the form with any additional filters you might want to add.
+
+    @param form_id ID of the form to which we want to append filter elements
+} - 
+
+ad_proc -public -callback im_timesheet_report_before_render {
+    {-view_name:required}
+    {-view_type:required}
+    {-sql:required}
+    {-table_header ""}
+    {-variable_set ""}
+} {
+    This callback is executed before /intranet-reporting/timesheet-customer-project is rendered / the sql command actually executed.
+
+    The callback implementation needs to run ad_script_abort in the uplevel, so you don't execute the SQL statement and try to render the component.
+
+    @param view_name view_name used to render the columns.
+    @param view_type The view_type. This can be anything, empty string usually means you want to render the component
+    @param sql The SQL string which im_timesheet_task_list_component prepares
+    @param table_header Name of the table in the spreadsheet (e.g. in Excel).
+    @param variable_set A set of variables to pass through
 } -

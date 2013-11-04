@@ -197,7 +197,9 @@ set email_list [db_list email_list $email_list_sql]
 
 # Include a copy to myself?
 if {"" != $send_me_a_copy} {
-    lappend email_list [db_string user_email "select email from parties where party_id = :current_user_id"]
+    set cc_addr [db_string user_email "select email from parties where party_id = :current_user_id"]
+} else {
+    set cc_addr ""
 }
 
 if {"" == $from_email} {
@@ -266,12 +268,13 @@ foreach email $email_list {
 	acs_mail_lite::send \
 	    -send_immediately \
 	    -to_addr $email \
+	    -cc_addr $cc_addr \
 	    -from_addr $sender_email \
 	    -subject $subject \
 	    -body $message_subst \
 	    -file_ids $attachment_ci_id
     } errmsg]} {
-        ns_log Error "member-notify: Error sending to \"$email\": $errmsg"
+        ns_log Error "member-notify: Error sending from \"$sender_email\" to \"$email\": $errmsg"
 	ad_return_error $subject "<p>Error sending out mail:</p><div><code>[ad_quotehtml $errmsg]</code></div>"
 	ad_script_abort
     }

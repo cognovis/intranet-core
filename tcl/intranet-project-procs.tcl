@@ -543,11 +543,17 @@ ad_proc -public im_format_project_duration { words {lines ""} {hours ""} {days "
 ad_proc -public im_project_subproject_ids {
     {-type "project"}
         -exclude_self:boolean
-        -project_id
+    {-project_id ""}
         -sql:boolean
     {-exclude_status_ids ""}
     {-project_type_ids ""}
     {-exclude_type_ids ""}
+    {-exclude_task_status_ids ""}
+    {-exclude_task_type_ids ""}
+    {-cost_center_ids ""}
+    {-task_member_ids ""}
+    {-task_start_date ""}
+    {-task_end_date ""}
 } {
     Get a list of subproject ids. This can be used both as a filter proc (e.g. to filter our certain types of projects from a list of projects) or to get a list of subprojects or even tasks.
     
@@ -569,13 +575,21 @@ ad_proc -public im_project_subproject_ids {
     lappend exclude_type_ids [im_project_type_task]
     lappend exclude_clauses "and children.project_status_id not in ([template::util::tcl_to_sql_list $exclude_status_ids])"
     lappend exclude_clauses "and children.project_type_id not in ([template::util::tcl_to_sql_list $exclude_type_ids])"
-    
+
+    if {$project_id ne ""} {
+	lappend exclude_clauses "and parent.project_id = :project_id"
+    }
+
     # Make sure we don't by accident end up with a circular loop
     if {$exclude_self_p} {
 	lappend exclude_clauses "and children.project_id != :project_id"
 	set union_clause ""
     } else {
-	set union_clause "UNION select :project_id as project_id from dual"
+	if {$project_id ne ""} {
+	    set union_clause "UNION select :project_id as project_id from dual"
+	} else {
+	    set union_clause ""
+	}
     }
     
     set project_ids [db_list projects "
@@ -584,7 +598,6 @@ ad_proc -public im_project_subproject_ids {
                         im_projects children
                 where
                         children.tree_sortkey between parent.tree_sortkey and tree_right(parent.tree_sortkey)
-                and parent.project_id = :project_id
                 [join $exclude_clauses " \n"]
                 $union_clause
     "]
@@ -595,11 +608,37 @@ ad_proc -public im_project_subproject_ids {
 	    lappend project_ids $project_id
 	}
 	
+	set task_exclude_clauses [list]
+	set extra_from ""
 	if {$project_ids ne ""} {
+	    if {$exclude_task_status_ids ne ""} {
+		lappend task_exclude_clauses "and task_status_id not in ([template::util::tcl_to_sql_list $exclude_task_status_ids])"
+	    }
+	    if {$exclude_task_type_ids ne ""} {
+		lappend task_exclude_clauses "and task_type_id not in ([template::util::tcl_to_sql_list $exclude_task_type_ids])"
+	    }
+	    if {$cost_center_ids ne ""} {
+		lappend task_exclude_clauses "and cost_center_id in ([template::util::tcl_to_sql_list $cost_center_ids])"
+	    }
+	    if {$task_member_ids ne ""} {
+		set extra_from ",acs_rels"
+		lappend task_exclude_clauses "and acs_rels.object_id_one = task_id and object_id_two in ([template::util::tcl_to_sql_list $task_member_ids])"
+	    }
+	    
+	    if {$task_start_date ne ""} {
+		lappend task_exclude_clauses "and end_date >= to_timestamp(:task_start_date, 'YYYY-MM-DD')"
+	    } 
+	    if {$task_end_date ne ""} {
+		lappend task_exclude_clauses "and start_date <= to_timestamp(:task_end_date, 'YYYY-MM-DD')"
+	    } 
+
 	    set project_ids [db_list tasks "
 		select	project_id
-		from	im_projects
-		where	project_type_id = [im_project_type_task] and parent_id in ([template::util::tcl_to_sql_list $project_ids])
+		from	im_projects, im_timesheet_tasks
+                $extra_from
+		where	project_id = task_id and parent_id in ([template::util::tcl_to_sql_list $project_ids])
+                and project_type_id = 100
+                [join $task_exclude_clauses " \n"] 
 	    "]
 	}
     }
@@ -634,6 +673,7 @@ ad_proc -public im_project_options {
     {-member_user_id 0}
     {-company_id 0}
     {-project_id 0}
+    {-no_conn_p 0}
 } { 
     Get a list of projects
 } {
@@ -650,7 +690,10 @@ ad_proc -public im_project_options {
     }
     set current_project_id $project_id
     set super_project_id $project_id
-    set current_user_id [ad_get_user_id]
+
+    if {!$no_conn_p} {
+	set current_user_id [ad_get_user_id]
+    }
     set max_project_name_len 50
 
     # Make sure we don't get a syntax error in the query
@@ -683,20 +726,24 @@ ad_proc -public im_project_options {
 	    incr ctr
 	}
 
-	set dept_perm_sql ""
-	if {[im_permission $current_user_id "view_projects_dept"]} {
-	    set dept_perm_sql "
+	if {$no_conn_p} {
+	    set perm_sql "im_projects" 
+	    set dept_perm_sql ""
+	} else {
+
+	    set dept_perm_sql ""
+	    if {[im_permission $current_user_id "view_projects_dept"]} {
+		set dept_perm_sql "
 		UNION
 		-- projects of the user department
 		select  p.*
 		from    im_projects p
 		where   p.project_cost_center_id in (select * from im_user_cost_centers(:user_id))
 	    "
-	}
+	    }
 
-
-	# Check permissions for showing subprojects
-	set perm_sql "
+	    # Check permissions for showing subprojects
+	    set perm_sql "
 		(select p.*
 		from    im_projects p,
 			acs_rels r
@@ -704,9 +751,11 @@ ad_proc -public im_project_options {
 			and r.object_id_two = :current_user_id
 		$dept_perm_sql
 		)
-	"
-	if {[im_permission $current_user_id "view_projects_all"]} {
-	    set perm_sql "im_projects" 
+	    "
+
+	    if {[im_permission $current_user_id "view_projects_all"]} {
+		set perm_sql "im_projects" 
+	    }
 	}
 
 	set subprojects [db_list subprojects "
@@ -782,8 +831,13 @@ ad_proc -public im_project_options {
     }
 
     # Disable the restriction to "my projects" if the user can see all projects.
-    if {[im_permission $current_user_id "view_projects_all"]} { 
+    if {!$no_conn_p} { 
+	if {[im_permission $current_user_id "view_projects_all"]} { 
+	    set member_user_id 0
+	} 
+    } else {
 	set member_user_id 0
+	
     }
 
     if {0 != $member_user_id && "" != $member_user_id} {
@@ -797,14 +851,16 @@ ad_proc -public im_project_options {
     }
 
     # Unprivileged members can only see the projects they're participating
-    if {![im_permission $current_user_id view_projects_all]} {
-	lappend p_criteria "p.project_id in (
+    if {!$no_conn_p} {
+	if {![im_permission $current_user_id view_projects_all]} {
+	    lappend p_criteria "p.project_id in (
 					select	object_id_one
 					from	acs_rels
 					where	object_id_two = :current_user_id
 	)"
-	# No restriction on parent project membership, because parent
-	# projects always have the same members as sub-projects.
+	    # No restriction on parent project membership, because parent
+	    # projects always have the same members as sub-projects.
+	}
     }
 
     # -----------------------------------------------------------------
@@ -879,9 +935,15 @@ ad_proc -public im_project_options {
 			p.tree_sortkey
     "
 
-    db_multirow multirow hours_timesheet $sql
+    if {$no_conn_p} {
+	db_multirow -local -upvar_level 2 multirow project_options $sql
+    } else {
+	db_multirow multirow project_options $sql
+    }
+
     multirow_sort_tree -nosort multirow project_id parent_id sort_order
     set options [list]
+
     template::multirow foreach multirow {
 	set indent ""
 	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" }
@@ -3282,3 +3344,60 @@ ad_proc -public im_project_gantt_main_project {
 }
 
 
+ad_proc -public im_project_get_all_members {
+    {-project_status_id ""}
+    {-group_id "-2"}
+} {
+    returns a [list] of all the users who are in projects with an OPEN status (or subcategories of open).
+} {
+    
+    if {"" == $project_status_id} {
+	set project_status_id [im_project_status_open]
+    }
+
+    set project_list [im_project_options -include_empty 0 -project_status_id $project_status_id -exclude_tasks_p 1 -no_conn_p 1]
+    
+    set user_ids [list]
+    foreach element $project_list {
+	set project_id [lindex $element 1]
+	
+	set members [db_list_of_lists select_members {
+	    select
+	    im_name_from_user_id(u.user_id) as name,
+	    u.user_id
+	    from
+	    users u,
+	    acs_rels rels
+	    LEFT OUTER JOIN im_biz_object_members bo_rels ON (rels.rel_id = bo_rels.rel_id)
+	    LEFT OUTER JOIN im_categories c ON (c.category_id = bo_rels.object_role_id),
+	    group_member_map m,
+	    membership_rels mr
+	    where
+	    rels.object_id_one = :project_id
+	    and rels.object_id_two = u.user_id
+	    and mr.member_state = 'approved'
+	    and u.user_id = m.member_id
+	    and mr.member_state = 'approved'
+	    and m.group_id = :group_id
+	    and m.rel_id = mr.rel_id
+	    and m.container_id = m.group_id
+	    and m.rel_type = 'membership_rel'	
+	    order by lower(im_name_from_user_id(u.user_id))
+	}]
+	
+	foreach element $members {
+	    set user_id_exists_p 0
+	    foreach id $user_ids {
+		if {$id eq [lindex $element 1]} {
+		    set user_id_exists_p 1
+		}
+	    }
+	    
+	    if {$user_id_exists_p eq 0} {
+		lappend user_ids [lindex $element 1]
+	    }
+	}
+    }
+    
+    return $user_ids
+}

@@ -41,6 +41,8 @@ ad_page_contract {
     aux_int2
     aux_string1
     aux_string2
+    { return_url ""}
+    
 }
 
 # ---------------------------------------------------------------
@@ -117,6 +119,11 @@ if [catch {
 }
 
 
+callback im_category_after_create -object_id $category_id \
+    -status "" -type "" -category_id $category_id \
+    -category_type $category_type
+
+
 # ---------------------------------------------------------------
 # Add translations
 # ---------------------------------------------------------------
@@ -139,6 +146,16 @@ foreach locale [array names translation] {
     if {"" != $msg} {
 	lang::message::register -comment $category_description $locale $package_key $msg_key $msg
     }
+}
+
+# Now add aux_string1 and aux_string2 as the default en_US locales
+
+if {"" != $aux_string1} {
+    lang::message::register -comment $category_description en_US intranet-core "string1_${category_id}" [string trim $aux_string1]
+}
+
+if {"" != $aux_string2} {
+    lang::message::register -comment $category_description en_US intranet-core "string2_${category_id}" [string trim $aux_string2]
 }
 
 # Remove all permission related entries in the system cache

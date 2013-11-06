@@ -3404,18 +3404,28 @@ ad_proc -public im_project_get_all_members {
 
 ad_proc -public im_parent_projects {
     -project_ids
+    -start_with_leaf:boolean
 } {
     Return the full list of parent_projects for the list of project_ids
     This is useful if you want to build the path for more then one project, 
     but you can call it with a single project_id and get the path for this project
     NOTE: This includes the called for project_ids as well !!
 } {
-    return [db_list parent_projects "WITH RECURSIVE breadcrumb(parent_id, project_name, project_id) AS (
-    SELECT parent_id, project_name, project_id from im_projects where project_id in ([template::util::tcl_to_sql_list $project_ids])
+    set project_list [list]
+
+    if {$start_with_leaf_p} {
+       set order "desc"
+    } else {
+       set order "asc"
+    } 
+    db_foreach parent_projects "WITH RECURSIVE breadcrumb(parent_id, project_name, project_id, tree_sortkey) AS (
+    SELECT parent_id, project_name, project_id, tree_sortkey from im_projects where project_id in ([template::util::tcl_to_sql_list $project_ids])
   UNION ALL
-    SELECT p.parent_id,p.project_name, p.project_id
+    SELECT p.parent_id,p.project_name, p.project_id, p.tree_sortkey
     FROM breadcrumb b, im_projects p
-    WHERE p.project_id = b.parent_id
-  )
-select distinct project_id from breadcrumb"]
+    WHERE p.project_id = b.parent_id)
+    select distinct project_id, tree_sortkey from breadcrumb order by tree_sortkey $order" {
+	lappend project_list $project_id
+    }
+    return $project_list
 }

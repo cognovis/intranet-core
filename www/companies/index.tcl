@@ -89,7 +89,10 @@ set company_view_page "/intranet/companies/view"
 set view_types [list "mine" "Mine" "all" "All" "unassigned" "Unassigned"]
 set letter [string toupper $letter]
 
-set end_idx [expr $start_idx + $how_many - 1]
+if { [empty_string_p $how_many] || $how_many < 1 } {
+    set how_many [ad_parameter -package_id [im_package_core_id] NumberResultsPerPage  "" 50]
+}
+set end_idx [expr $start_idx + $how_many]
 
 set criteria [list]
 
@@ -335,12 +338,15 @@ where
 # Limit the search results to N data sets only
 # to be able to manage large sites
 #
+
 if {[string compare $letter "ALL"]} {
 
     # Set these limits to negative values to deactivate them
     set total_in_limited -1
     set how_many -1
-    set selection "select * from ($sql) s $order_by_clause"
+
+    set sql "select * from ($sql) s $order_by_clause"
+    set selection [im_select_row_range $sql $start_idx $end_idx]
 
 } else {
 
@@ -358,10 +364,12 @@ if {[string compare $letter "ALL"]} {
 		$where_clause
 	" -bind $form_vars ]
     
-    set selection "select * from ($sql) s $order_by_clause"
+    set sql "select * from ($sql) s $order_by_clause"
+    set selection [im_select_row_range $sql $start_idx $end_idx]
+
 }	
 
-ns_log Notice $selection
+# ad_return_complaint 1 "<pre>$$selection</pre>"
 
 
 # ----------------------------------------------------------
@@ -452,7 +460,7 @@ db_foreach company_info_query $selection -bind $form_vars {
     append table_body_html "</tr>\n"
 
     incr ctr
-    if { $how_many > 0 && $ctr >= $how_many } {
+    if { $how_many > 0 && $ctr > $how_many } {
 	break
     }
     incr idx
@@ -495,12 +503,11 @@ set table_continuation_html ""
 set sub_navbar [im_company_navbar "" "/intranet/companies/" $next_page_url $previous_page_url [list order_by how_many view_name view_type status_id type_id] $menu_select_label] 
 
 
-eval [template::adp_compile -string {<formtemplate style="tiny-plain-po" id="company_filter"></formtemplate>}]
-set filter_html $__adp_output
+if {$filter_advanced_p} {
 
-if { [im_user_is_freelance_p $current_user_id] } {
-    set left_navbar_html ""
-} else {
+    eval [template::adp_compile -string {<formtemplate style="tiny-plain-po" id="company_filter"></formtemplate>}]
+    set filter_html $__adp_output
+
     set left_navbar_html "
       <div class='filter-block'>
          <div class='filter-title'>
@@ -509,10 +516,11 @@ if { [im_user_is_freelance_p $current_user_id] } {
             $filter_html
       </div>
       <hr/>
-"
+    "
 
-    if {!$filter_advanced_p} {
-	set left_navbar_html "
+} else {
+
+    set left_navbar_html "
       <div class='filter-block'>
          <div class='filter-title'>
 	    #intranet-core.Filter_Companies#

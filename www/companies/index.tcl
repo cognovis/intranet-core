@@ -150,12 +150,12 @@ ad_form \
 
 
 if {$view_companies_all_p} {
-
+    
     ad_form -extend -name $form_id -form {
         {status_id:text(im_category_tree),optional {label "Status"} {custom {category_type "Intranet Company Status" } } }
         {type_id:text(im_category_tree),optional {label "Type"} {custom {category_type "Intranet Company Type"} } }
     }
-
+    
 }
 
 
@@ -338,28 +338,29 @@ where
 #
 
 set limited_query [im_select_row_range $sql $start_idx $end_idx]
+
 # We can't get around counting in advance if we want to be able to 
 # sort inside the table on the page for only those users in the 
 # query results
+
 set total_in_limited [db_string projects_total_in_limited "
-	select count(*) 
-        from
-		im_companies c
+    	select count(*) 
+    	    from
+	    	im_companies c
 		$extra_table
         where 
 		1=1
 		$where_clause
 	" -bind $form_vars ]
-    
+
 set sql "select * from ($sql) s $order_by_clause"
 set selection [im_select_row_range $sql $start_idx $end_idx]
-
-
 
 # ----------------------------------------------------------
 # Do we have to show administration links?
 
 set admin_html ""
+
 if {[im_permission $current_user_id "add_companies"]} {
     set admin_html "<ul>"
     
@@ -409,7 +410,7 @@ foreach col $column_headers {
 
     regsub -all " " $col "_" col_txt
     set col_txt [_ intranet-core.$col_txt]
-
+    
     if { [string compare $order_by $col] == 0 } {
 	append table_header_html "  <td class=rowtitle>$col_txt</td>\n"
     } else {
@@ -432,7 +433,7 @@ callback im_projects_index_before_render -view_name $view_name \
     -view_type $view_type -sql $selection -table_header $page_title -variable_set $form_vars
 
 db_foreach company_info_query $selection -bind $form_vars {
-
+    
     # Append together a line of data based on the "column_vars" parameter list
     append table_body_html "<tr$bgcolor([expr $ctr % 2])>\n"
     foreach column_var $column_vars {
@@ -442,7 +443,7 @@ db_foreach company_info_query $selection -bind $form_vars {
 	append table_body_html "</td>\n"
     }
     append table_body_html "</tr>\n"
-
+    
     incr ctr
     if { $how_many > 0 && $ctr > $how_many } {
 	break
@@ -490,10 +491,10 @@ set sub_navbar [im_company_navbar "" "/intranet/companies/" $next_page_url $prev
 
 
 if {$filter_advanced_p} {
-
+    
     eval [template::adp_compile -string {<formtemplate style="tiny-plain-po" id="company_filter"></formtemplate>}]
     set filter_html $__adp_output
-
+    
     set left_navbar_html "
       <div class='filter-block'>
          <div class='filter-title'>
@@ -503,9 +504,9 @@ if {$filter_advanced_p} {
       </div>
       <hr/>
     "
-
+    
 } else {
-
+    
     set left_navbar_html "
       <div class='filter-block'>
          <div class='filter-title'>
@@ -540,8 +541,9 @@ if {$filter_advanced_p} {
       </div>
       <hr/>
     "
-    }
 }
+
+
 if {$admin_html ne ""} {
     append left_navbar_html "
       <div class='filter-block'>

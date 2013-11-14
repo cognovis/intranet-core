@@ -40,7 +40,7 @@ ad_page_contract {
     { include_subprojects_p "" }
     { include_subproject_level "" }
     { mine_p "f" }
-    { project_status_id 0 } 
+    { project_status_id:integer 0 } 
     { project_type_id:integer 0 } 
     { user_id_from_search 0}
     { company_id:integer 0 } 
@@ -54,6 +54,7 @@ ad_page_contract {
     { filter_advanced_p:integer 0 }
     { plugin_id:integer 0 }
 }
+
 
 # ---------------------------------------------------------------
 # Project List Page
@@ -105,6 +106,10 @@ set upper_letter [string toupper $letter]
 set return_url [im_url_with_query]
 set cur_format [im_l10n_sql_currency_format]
 
+set org_start_date $start_date
+set org_end_date $end_date
+set org_project_status_id $project_status_id
+set org_project_type_id $project_type_id
 
 # Create an action select at the bottom if the "view" has been designed for it...
 set show_bulk_actions_p [string equal "project_timeline" $view_name]
@@ -162,6 +167,24 @@ if {"" == $end_date} { set end_date [parameter::get_from_package_key -package_ke
 set min_all_l10n [lang::message::lookup "" intranet-core.Mine_All "Mine/All"]
 set all_l10n [lang::message::lookup "" intranet-core.All "All"]
 
+
+
+# Check that Start & End-Date have correct format
+if {"" != $start_date && ![regexp {^[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}$} $start_date]} {
+    set date $start_date
+    ad_return_complaint 1 "<b>[lang::message::lookup "" intranet-core.Invalid_Start_Date "Invalid Start Date"]</b>:<br>
+    [lang::message::lookup "" intranet-core.Invalid_Date_Format_msg "<br>
+    Current value: '%date%'<br>
+    Expected format: 'YYYY-MM-DD'"]"
+}
+
+if {"" != $end_date && ![regexp {^[0-9]{4}\-[0-9]{1,2}\-[0-9]{1,2}$} $end_date]} {
+    set date $end_date
+    ad_return_complaint 1 "<b>[lang::message::lookup "" intranet-core.Invalid_End_Date "Invalid End Date"]</b>:<br>
+    [lang::message::lookup "" intranet-core.Invalid_Date_Format_msg "<br>
+    Current value: '%date%'<br>
+    Expected format: 'YYYY-MM-DD'"]"
+}
 
 
 # ---------------------------------------------------------------
@@ -280,9 +303,22 @@ set user_options [im_profile::user_options -profile_ids $user_select_groups]
 set user_options [linsert $user_options 0 [list $all_l10n ""]]
 
 ad_form -extend -name $form_id -form {
+<<<<<<< HEAD
     {project_type_id:text(im_category_tree),optional {label \#intranet-core.Project_Type\#} {value $project_type_id} {custom {category_type "Intranet Project Type" translate_p 1} } }
     {company_id:text(select),optional {label \#intranet-core.Customer\#} {options $company_options} {value $company_id}}
+=======
+    {project_type_id:text(im_category_tree),optional {label \#intranet-core.Project_Type\#} {value $project_type_id} {custom {category_type "Intranet Project Type" translate_p 1 include_empty_name $all_l10n} } }
+>>>>>>> c38a2825d5aef33d3f50b0cacdccf843b707847c
 }
+
+# The "company_id" field can become very slow if there are
+# many customers in the system.
+if {!$filter_advanced_p} {
+    ad_form -extend -name $form_id -form {
+	{company_id:text(select),optional {label \#intranet-core.Customer\#} {options $company_options}}
+    }
+}
+
 
 # Does user have VIEW permissions on company's employees?  
 set employee_group_id [im_employee_group_id]
@@ -318,6 +354,7 @@ if {$filter_advanced_p} {
         -form_id $form_id \
         -object_id 0 \
         -advanced_filter_p 1 \
+	-include_also_hard_coded_p 1 \
 	-page_url "/intranet/projects/index"
 
     # Set the form values from the HTTP form variable frame
@@ -908,6 +945,13 @@ foreach query_piece $query_pieces {
 	lappend pass_through_vars $var
     }
 }
+
+
+set start_date $org_start_date
+set end_date $org_end_date
+set project_status_id $org_project_status_id
+set project_type_id $org_project_type_id
+# !!! ad_return_complaint 1 "pass=$pass_through_vars, start_date=$start_date, end_date=$end_date"
 
 # Project Navbar goes to the top
 #

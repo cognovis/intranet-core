@@ -23,6 +23,14 @@ set object_type_id $project(object_type_id)
 # Add DynField Columns to the display
 set old_section ""
 
+set default_layout_p [db_string select_layout "select 0 from im_dynfield_layout where page_url = '/intranet/projects/index' limit 1" -default 1]
+
+if {$default_layout_p} {
+    set layout_where "and la.page_url = (select page_url from im_dynfield_layout_pages where object_type = 'im_project' and default_p ='t'"
+} else {
+    set layout_where "and la.page_url = '/intranet/projects/index'"
+}
+
 db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
       select
       		aa.pretty_name,
@@ -43,6 +51,7 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
                 la.attribute_id = da.attribute_id and
                 acs_permission__permission_p(da.attribute_id,:user_id,'read') = 't' and
                 tam.display_mode in ('edit','display')
+                $layout_where
       order by la.pos_y
 " {
 

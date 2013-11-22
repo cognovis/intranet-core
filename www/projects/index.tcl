@@ -303,12 +303,7 @@ set user_options [im_profile::user_options -profile_ids $user_select_groups]
 set user_options [linsert $user_options 0 [list $all_l10n ""]]
 
 ad_form -extend -name $form_id -form {
-<<<<<<< HEAD
-    {project_type_id:text(im_category_tree),optional {label \#intranet-core.Project_Type\#} {value $project_type_id} {custom {category_type "Intranet Project Type" translate_p 1} } }
-    {company_id:text(select),optional {label \#intranet-core.Customer\#} {options $company_options} {value $company_id}}
-=======
     {project_type_id:text(im_category_tree),optional {label \#intranet-core.Project_Type\#} {value $project_type_id} {custom {category_type "Intranet Project Type" translate_p 1 include_empty_name $all_l10n} } }
->>>>>>> c38a2825d5aef33d3f50b0cacdccf843b707847c
 }
 
 # The "company_id" field can become very slow if there are

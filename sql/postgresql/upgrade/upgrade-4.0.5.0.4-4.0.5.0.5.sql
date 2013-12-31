@@ -20,34 +20,57 @@ select acs_object_type__create_type (
 );
 
 
-insert into acs_object_type_tables VALUES ('im_biz_object_group', 'im_biz_object_groups', 'group_id');
+create or replace function inline_0 () returns integer as $body$
+DECLARE
+	v_count		    integer;
+BEGIN
+	select	count(*) into v_count 
+	from	acs_object_type_tables
+	where	object_type = 'im_biz_object_group' and
+		table_name = 'im_biz_object_groups';
+	IF v_count = 0  THEN
+		insert into acs_object_type_tables VALUES ('im_biz_object_group', 'im_biz_object_groups', 'group_id');
+	END IF; 
 
--- Mark biz_object_group as a dynamically managed object type
-update acs_object_types 
-set dynamic_p='t' 
-where object_type = 'im_biz_object_group';
+	-- Mark biz_object_group as a dynamically managed object type
+	update acs_object_types 
+	set dynamic_p='t' 
+	where object_type = 'im_biz_object_group';
 
+	select	count(*) into v_count
+	from	group_type_rels	
+	where	group_type = 'im_biz_object_group';
+	IF v_count = 0  THEN
+		-- Copy group type_rels to groups
+		insert into group_type_rels (group_rel_type_id, rel_type, group_type)
+		select	nextval('t_acs_object_id_seq'), 
+			r.rel_type, 
+			'im_biz_object_group'
+		from	group_type_rels r
+		where	r.group_type = 'group';
+	END IF; 
 
--- Copy group type_rels to groups
-insert into group_type_rels (group_rel_type_id, rel_type, group_type)
-select	nextval('t_acs_object_id_seq'), 
-	r.rel_type, 
-	'im_biz_object_group'
-from	group_type_rels r
-where	r.group_type = 'group';
+	select	count(*) into v_count
+	from	user_tab_columns
+	where	lower(table_name) = 'im_biz_object_groups';
+	IF v_count = 0  THEN
+		create table im_biz_object_groups (
+			group_id	integer
+					constraint im_biz_object_groups_id_pk primary key
+					constraint im_biz_object_groups_id_fk references groups,
+					-- The ID of the business object for which this group is created
+			biz_object_id	integer
+					constraint im_biz_object_groups_biz_object_fk references acs_objects
+		);
 
+		-- Unique index: Do not allow duplicate biz object groups for a single biz object
+		create unique index im_biz_object_groups_un on im_biz_object_groups (coalesce(biz_object_id,0));
+	END IF;
 
-create table im_biz_object_groups (
-	group_id	integer
-			constraint im_biz_object_groups_id_pk primary key
-			constraint im_biz_object_groups_id_fk references groups,
-			-- The ID of the business object for which this group is created
-	biz_object_id	integer
-			constraint im_biz_object_groups_biz_object_fk references acs_objects
-);
-
--- Unique index: Do not allow duplicate biz object groups for a single biz object
-create unique index im_biz_object_groups_un on im_biz_object_groups (coalesce(biz_object_id,0));
+	return 0;
+END;$body$ language 'plpgsql';
+SELECT inline_0 ();
+DROP FUNCTION inline_0 ();
 
 
 

@@ -310,8 +310,9 @@ ad_form -extend -name $form_id -new_request {
     set project_nr_exists [db_string project_nr_exists "
 	select 	count(*)
 	from	im_projects
-	where	project_nr = :project_nr
-	        and project_id <> :project_id
+	where	project_nr = :project_nr and
+		project_id <> :project_id and
+		(parent_id = :parent_id OR (:parent_id is null and parent_id is null))
     "]
      if {$project_nr_exists} {
 	 # We have found a duplicate project_nr, now check how to deal with this case:
@@ -336,11 +337,11 @@ ad_form -extend -name $form_id -new_request {
     set project_name_exists [db_string project_name_exists "
 	select 	count(*)
 	from	im_projects
-	where	upper(trim(project_name)) = upper(trim(:project_name))
-	        and project_id <> :project_id
-		and parent_id = :parent_id
+	where	upper(trim(project_name)) = upper(trim(:project_name)) and
+		project_id <> :project_id and
+		(parent_id = :parent_id OR (:parent_id is null and parent_id is null))
     "]
-	
+
     if { $project_name_exists > 0 } {
 	incr n_error
 	template::element::set_error $form_id project_name "[_ intranet-core.lt_The_specified_name_pr]"

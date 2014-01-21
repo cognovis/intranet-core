@@ -66,6 +66,7 @@ set object_types {
     im_trans_invoice
     im_trans_task
     im_user_absence
+    im_user_leave_entitlement
     membership_rel
     person
     party

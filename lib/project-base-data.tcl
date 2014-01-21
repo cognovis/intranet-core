@@ -31,31 +31,34 @@ if {$default_layout_p} {
     set layout_where "and la.page_url = '/intranet/projects/index'"
 }
 
-db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
+db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql {
       select
       		aa.pretty_name,
       		aa.attribute_name,
-                tam.section_heading,
-                w.widget, w.widget_name
+            tam.section_heading,
+            w.widget, w.widget_name
       from
       		im_dynfield_widgets w,
       		acs_attributes aa,
-                im_dynfield_type_attribute_map tam,
+            im_dynfield_type_attribute_map tam,
       		im_dynfield_attributes da, 
-                im_dynfield_layout la
+            im_dynfield_layout la
       where
-                da.widget_name = w.widget_name and
-                da.acs_attribute_id = aa.attribute_id and
-                da.attribute_id = tam.attribute_id and
-                tam.object_type_id = :object_type_id and
-                la.attribute_id = da.attribute_id and
-                acs_permission__permission_p(da.attribute_id,:user_id,'read') = 't' and
-                tam.display_mode in ('edit','display')
-                $layout_where
+            da.widget_name = w.widget_name and
+            da.acs_attribute_id = aa.attribute_id and
+            da.attribute_id = tam.attribute_id and
+            tam.object_type_id = :object_type_id and
+            la.attribute_id = da.attribute_id and
+            acs_permission__permission_p(da.attribute_id,:user_id,'read') = 't' and
+            tam.display_mode in ('edit','display')
+            $layout_where
       order by la.pos_y
-" {
-
+} {
     set heading ""    
+    if {![info exists section_heading]} {
+        set section_heading ""
+    }
+
     if {$old_section != $section_heading} {
         set heading $section_heading
         set old_section $section_heading

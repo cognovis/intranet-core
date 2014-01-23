@@ -110,6 +110,7 @@ set category_select_sql "
                 category_description,
                 parent_only_p,
                 enabled_p,
+                visible_tcl,
 		sort_order
         from
                 im_categories
@@ -120,6 +121,12 @@ set category_select_sql "
         order by lower(category)
 "
 db_foreach category_select $category_select_sql {
+	if {"" != $visible_tcl} {
+	    set visible 0
+	    set errmsg ""
+	    catch {	set visible [expr $visible_tcl] }
+	    if {!$visible} { continue }
+	}
     set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p $sort_order]
     set level($category_id) 0
 }

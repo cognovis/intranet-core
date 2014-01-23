@@ -106,6 +106,7 @@ if {$show_add_new_category_p} {
 	  <th style='min-width:50px'>Int2</th>
 	  <th style='min-width:60px'>String1</th>
 	  <th style='min-width:60px'>String2</th>
+	  <th style='min-width:60px'>VisibleTcl</th>
     "
 
     if {[string equal "All" $select_category_type]} {
@@ -145,6 +146,7 @@ if {$show_add_new_category_p} {
 	  <td></td>
 	  <td></td>
 	  <td></td>
+	  <td></td>
 	    "
 	    if {[string equal "All" $select_category_type]} {
 		append category_list_html "<td></td>"
@@ -172,6 +174,7 @@ if {$show_add_new_category_p} {
 	  <td>$aux_int2 $aux_int2_cat</td>
 	  <td>$aux_string1</td>
 	  <td>$aux_string2</td>
+	  <td>$visible_tcl</td>
         "
 	if {[string equal "All" $select_category_type]} {
 	    append category_list_html "<td>$select_category_type</td>"

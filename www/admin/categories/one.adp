@@ -83,6 +83,12 @@ However, it is OK to:
     </td>
   </tr>
 
+  <tr class=rowodd>
+    <td>#intranet-core.Visible_tcl#</td>
+    <td>
+      <textarea name=visible_tcl rows=5 cols=50 wrap="<%=[im_html_textarea_wrap]%>">@visible_tcl@</textarea>
+    </td>
+  </tr>
 
   <tr class=rowodd>
     <td>#intranet-core.Category_description#</td>

@@ -122,6 +122,7 @@ set category_select_sql "
 "
 db_foreach category_select $category_select_sql {
 	if {"" != $visible_tcl} {
+        set user_id [ad_conn user_id]
 	    set visible 0
 	    set errmsg ""
 	    catch {	set visible [expr $visible_tcl] }

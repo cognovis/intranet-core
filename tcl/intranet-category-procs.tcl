@@ -179,7 +179,8 @@ ad_proc im_category_select_helper {
                 category,
                 category_description,
                 parent_only_p,
-                enabled_p
+                enabled_p,
+                visible_tcl
         from
                 im_categories
         where
@@ -189,9 +190,15 @@ ad_proc im_category_select_helper {
         order by sort_order
     "
     db_foreach category_select $sql {
+    	if {"" != $visible_tcl} {
+    	    set visible 0
+    	    set errmsg ""
+    	    catch {	set visible [expr $visible_tcl] }
+    	    if {!$visible} { continue }
+    	}
         set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p]
         set level($category_id) 0
-	lappend category_list_sorted $category_id
+        lappend category_list_sorted $category_id
     }
 
     # Get the hierarchy into a hash cache
@@ -841,4 +848,22 @@ ad_proc -public im_category_string2 {
     set category_key "intranet-core.string2_$category_id"
     set default_string2 [db_string string2 "select aux_string2 from im_categories where category_id = :category_id" -default ""]
     return [lang::message::lookup $locale $category_key $default_string2]
+}
+
+ad_proc -public im_category_visible_p {
+    -category_id
+    {-user_id ""}
+} {
+    Return 1 if the category_id is visible to the user taking visible_tcl into account
+} {
+    if {"" == $user_id} {set user_id [ad_conn user_id]}
+    set visible_tcl [db_string visible_tcl "select visible_tcl from im_categories where category_id = :category_id" -default ""]
+    if {"" == $visible_tcl} {
+        return 1
+    } else {
+        set visible 0
+	    set errmsg ""
+	    catch {	set visible [expr $visible_tcl] }
+        return $visible
+	}
 }

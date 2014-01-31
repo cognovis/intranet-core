@@ -26,12 +26,12 @@ set old_section ""
 set default_layout_p [db_string select_layout "select 0 from im_dynfield_layout where page_url = '/intranet/projects/index' limit 1" -default 1]
 
 if {$default_layout_p} {
-    set layout_where "and la.page_url = (select page_url from im_dynfield_layout_pages where object_type = 'im_project' and default_p ='t'"
+    set layout_where "and la.page_url = (select page_url from im_dynfield_layout_pages where object_type = 'im_project' and default_p ='t')"
 } else {
     set layout_where "and la.page_url = '/intranet/projects/index'"
 }
 
-db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql {
+db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
       select
       		aa.pretty_name,
       		aa.attribute_name,
@@ -53,7 +53,7 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql {
             tam.display_mode in ('edit','display')
             $layout_where
       order by la.pos_y
-} {
+" {
     set heading ""    
     if {![info exists section_heading]} {
         set section_heading ""
@@ -64,39 +64,39 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql {
         set old_section $section_heading
     }   
    
+    ds_comment "$attribute_name :: $pretty_name :: $value"
+   
     # Set the field name
     set pretty_name_key "intranet-core.[lang::util::suggest_key $pretty_name]"
     set pretty_name [lang::message::lookup "" $pretty_name_key $pretty_name]
 
     # Set the value
     if {[info exists project($attribute_name)]} {
-	set value $project($attribute_name)
+	    set value $project($attribute_name)
     } else {
-	set value ""
+	    set value ""
     }
 
     if {$widget eq "richtext"} {
-	regsub -all {\"} $value {'} value
-	if { [ad_html_text_convertable_p -from "[lindex $value 1]" -to "text/html"] } {
-	    set value [template::util::richtext::get_property html_value "[set $attribute_name]"]
-	}
+	    regsub -all {\"} $value {'} value
+	    if { [ad_html_text_convertable_p -from "[lindex $value 1]" -to "text/html"] } {
+	        set value [template::util::richtext::get_property html_value "[set $attribute_name]"]
+	    }
     }
     
     # Special setting for projects (parent_id)
     if {$attribute_name eq "parent_id"} {
-	set parent_project_id $project(parent_id_orig)
-	set project_url [export_vars -base "/intranet/projects/view" -url {{project_id $parent_project_id}}]
-	set value "<a href='$project_url'>$value</a>"
+	    set parent_project_id $project(parent_id_orig)
+	    set project_url [export_vars -base "/intranet/projects/view" -url {{project_id $parent_project_id}}]
+	    set value "<a href='$project_url'>$value</a>"
     }
 
     # Special setting for projects (company_id)
     if {$attribute_name eq "company_id"} {
-	set company_url [export_vars -base "/intranet/companies/view" -url {{company_id $project(company_id_orig)}}]
-	set value "<a href='$company_url'>$value</a>"
+	    set company_url [export_vars -base "/intranet/companies/view" -url {{company_id $project(company_id_orig)}}]
+	    set value "<a href='$company_url'>$value</a>"
     }
-
 }
-
 
 # -----------------------------------
 # Notification Subscription Button

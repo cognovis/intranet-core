@@ -201,6 +201,7 @@ ns_log Notice "/users/new: reg_elements=[auth::get_registration_form_elements]"
 # Fraber 051123: Don't show the profile to the user
 # himself, unless it's an administrator.
 
+
 if {[llength $managable_profiles] > 0} { set edit_profiles_p 1 }
 if {!$current_user_is_admin_p && $editing_self_p} { set edit_profiles_p 0}
 
@@ -212,8 +213,15 @@ if {!$current_user_is_admin_p && $editing_self_p} { set edit_profiles_p 0}
 
 set status_options "{{[lang::message::lookup "" intranet-core.Member_state_active "active"]} approved} {{[lang::message::lookup "" intranet-core.Member_state_deleted "deleted"]} banned }"
 set status_option_value [db_string get_status_option_value "select member_state from cc_users where user_id = :user_id" -default 0]
+
 if {$edit_profiles_p} {
     ad_form -extend -name register -form {
+        {profile:text(multiselect),multiple
+            {label "[_ intranet-core.Group_Membership]"}
+            {options $managable_profiles }
+            {values $profile_values }
+            {html {size 12}}
+        }
         {member_state:text(select)
             {label "[_ intranet-core.lt_Member_state]"}
             {options $status_options }

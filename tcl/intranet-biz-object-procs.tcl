@@ -883,3 +883,31 @@ ad_proc -public im_biz_object_related_objects_component {
     return [string trim $result]
 }
 
+
+ad_proc -public im_biz_object_memberships {
+    {-member_id:required}
+} {
+    Get the biz_object_groups a user is member of.
+} {
+    return [util_memoize [list im_biz_object_memberships_helper -member_id $member_id] 60]
+}
+
+ad_proc -public im_biz_object_memberships_helper {
+    {-member_id:required}
+} {
+    Get the biz_object_groups a user is member of.
+} {
+
+    # Get the groups the owner belongs to
+    set group_ids [db_list group_options "
+        select	g.group_id
+        from	groups g,
+	            acs_objects o,
+                acs_rels r
+        where	g.group_id = o.object_id and
+                o.object_type in ('im_profile', 'im_biz_object_group') and
+                r.object_id_one = g.group_id and
+                r.object_id_two = :member_id
+        order by g.group_name
+     "]
+}

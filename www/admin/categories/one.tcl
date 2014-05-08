@@ -43,6 +43,7 @@ set package_key "intranet-core"
 set sort_order 0
 set profiling_weight 0
 set hierarchy_component ""
+set visible_tcl ""
 ns_log Notice "one: category_id=$category_id"
 
 if {0 != $category_id} {

@@ -671,11 +671,14 @@ ad_proc -public im_project_options {
     {-project_status_id 0}
     {-project_type_id 0}
     {-member_user_id 0}
+    {-pm_user_id 0}
     {-company_id 0}
     {-project_id 0}
     {-no_conn_p 0}
 } { 
     Get a list of projects
+    
+    @pm_user_id only display projects where the user_id is a pm of that project
 } {
     set exclude_type_id [list]
     # Default: Exclude tickets and deleted projects
@@ -830,24 +833,26 @@ ad_proc -public im_project_options {
 	# No restriction on parent's project type!
     }
 
-    # Disable the restriction to "my projects" if the user can see all projects.
-    if {!$no_conn_p} { 
-	if {[im_permission $current_user_id "view_projects_all"]} { 
-	    set member_user_id 0
-	} 
-    } else {
-	set member_user_id 0
-	
+    set pm_user_check_p 0
+    if {0 != $pm_user_id && "" != $pm_user_id} {
+        set pm_user_check_p 1
+	    lappend p_criteria "p.project_id in (
+					select	object_id_one
+					from	acs_rels r, im_biz_object_members bom
+					where	r.object_id_two = :pm_user_id
+                    and r.rel_id = bom.rel_id
+                    and bom.object_role_id = [im_biz_object_role_project_manager]
+                    )"        
     }
-
-    if {0 != $member_user_id && "" != $member_user_id} {
-	lappend p_criteria "p.project_id in (
+    
+    if {0 != $member_user_id && "" != $member_user_id && 0 == $pm_user_check_p} {
+	    lappend p_criteria "p.project_id in (
 					select	object_id_one
 					from	acs_rels
 					where	object_id_two = :member_user_id
-	)"
-	# No restriction on parent project membership, because parent
-	# projects always have the same members as sub-projects.
+                    )"
+        # No restriction on parent project membership, because parent
+        # projects always have the same members as sub-projects.
     }
 
     # Unprivileged members can only see the projects they're participating

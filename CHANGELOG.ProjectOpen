@@ -3,6 +3,66 @@
 ==============================================================
 
 
+==============================================================
+V4.1 Changes
+==============================================================
+
+]project-open[ V4.1 is mainly a bug fix release with gradual improvements
+in many 
+
+
+New Packages
+
+- Rule Engine
+
+- CRM Package
+
+
+
+Important Features
+
+- GUI:
+  Added sub-menus to main tabs - still accepting comments
+
+- Absences:
+  Automatically maintaining groups per office in order to allow
+  for bank holidays per office. These bank holidays enter into
+  the resource management calculation algorithm.
+
+- Security:
+  - Improved IDS (Intrusion Detection System)
+  - Fixed 2nd tier security of util_memoize
+
+- CSV Import
+
+
+
+
+Experimental - Requires Productification
+
+- Training Management
+
+
+
+
+Bugs Fixed
+
+- Timesheet Approval Workflow
+- Localization
+
+Sencha Stuff
+
+
+
+Small Stuff
+
+- Performance enhancements of 40.000 users
+
+
+Security
+
+- 
+
 
 
 

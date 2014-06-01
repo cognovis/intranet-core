@@ -7,16 +7,35 @@
 V4.1 Changes
 ==============================================================
 
-]project-open[ V4.1 is mainly a bug fix release with gradual improvements
-in many 
+]project-open[ V4.1 is mainly a bug fix release with gradual 
+improvements thanks to several large customer implantation
+projects.
 
 
 New Packages
 
-- Rule Engine
+- Rule Engine:
+  Allows you to define actions that are executed once a value 
+  of a project, a task or any other business object (future)
+  changes or reaches a certain value.
+  For example, a task reaching 100% could trigger a notification
+  email to the project manager.
 
-- CRM Package
+- CRM Opportunity Tracking:
+  This package maintains a list of opportunities during the
+  qualification and sales cycle (sales pipeline).
 
+- Periodic Invoicing (experimental):
+  This new package introduces the notion of a "service contract"
+  with certain parameters including a monthly fee, a number of 
+  free service hours and the price per additional service hour.
+  A (semi-) automatic invoicing functionality allows to process
+  many service contracts in "batch mode".
+
+- Mobile Timesheet Logging (experimental):
+  A Sencha client for mobile devices (issues on Android?).
+
+  
 
 
 Important Features
@@ -29,10 +48,6 @@ Important Features
   for bank holidays per office. These bank holidays enter into
   the resource management calculation algorithm.
 
-- Security:
-  - Improved IDS (Intrusion Detection System)
-  - Fixed 2nd tier security of util_memoize
-
 - CSV Import
 
 
@@ -42,24 +57,90 @@ Experimental - Requires Productification
 
 - Training Management
 
+- Cloud Backup:
+  A new experimental feature allows you to perform backups
+  from your on-premise Windows or Linux installation to a 
+  ]project-open[ backup server. In case of an accident we
+  will offer you the option to "resurrect" your machine as
+  a SaaS hosted machine within 24 hours.
+  This is an experimental service. Please let us know if
+  you are interested, in exchange of two years free service.
+  We plan to price this "Cloud Backup" service at EUR 10
+  per month with standard SaaS charges in case of a restore.
+
+- Project Membership based on Groups:
+  A new feature allows you to add groups as "members" to
+  a project, company or other business object. This allows
+  some customers to streamline permission assignment.
+
+- Fast-Track Customer Contact Adding:
+  We have included a new option to enter CRM customer
+  contacts + companies including a duplicate check based
+  of fuzzy full-text search.
 
 
 
 Bugs Fixed
 
 - Timesheet Approval Workflow
-- Localization
+- Localization:
+  Fixed various non-translatable strings
+- Auto-Login:
+  Fixed behaviour for automatic login from emails sent
+  out by the forum and mailing functionalities.
 
 Sencha Stuff
 
 
 
-Small Stuff
+
+Performance
 
 - Performance enhancements of 40.000 users
 
 
+Small Stuff
+
+- CRM Mass-Mailing functionality:
+  You can now send thousands of personalized emails
+  messages to customers of other groups.
+
+- Helpdesk:
+  Priority changes now send out better notifications mails.
+
+- New reports:
+  Which??
+
+- Fixed Resource Management:
+  - New report(?)
+
+- Task Management:
+  ]po[ now allows a user to delete a task in a project, if
+  there are no financial items related to the task.
+
+- Workflow Vacation Handling:
+  Users can now specific their replacement when creating a 
+  new absence. The absence replacement has the right to
+  process workflow approvals for the absent person during the
+  vacation period.
+
+
+
 Security
+
+- A scurity testing company performed a one week testing on ]po[
+  and found no major issue. However, there were several minor issues
+  that were fixed in ]po[ V4.1:
+  - Header Injection
+  - Redirect
+  - SQL injection in the category administration section. 
+    This bug would have been serious. However, the affected pages
+    are only accessible to the system adminstrator who has the
+    right to perform arbitrary SQL statements anyway.
+
+- Security:
+  - Improved IDS (Intrusion Detection System)
+  - Fixed 2nd tier security of util_memoize
 
 - 
 

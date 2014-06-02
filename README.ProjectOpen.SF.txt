@@ -1,8 +1,7 @@
 - V4.1:
   This is our "development/unstable" version and NOT 
-  recommended for production environments unless the ]po[
-  core team or a ]po[ partner is working with you or you
-  know what you are doing.
+  recommended for production environments unless you know
+  what you are doing.
 
 - V4.0:
   This is the current "stable" version.  

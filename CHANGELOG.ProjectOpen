@@ -14,6 +14,9 @@ projects.
 
 New Packages
 
+- Mobile Timesheet Logging (experimental):
+  A Sencha client for mobile devices (issues on Android?).
+
 - Rule Engine:
   Allows you to define actions that are executed once a value 
   of a project, a task or any other business object (future)
@@ -32,9 +35,10 @@ New Packages
   A (semi-) automatic invoicing functionality allows to process
   many service contracts in "batch mode".
 
-- Mobile Timesheet Logging (experimental):
-  A Sencha client for mobile devices (issues on Android?).
-
+- Events & Training Management:
+  This new package is now running in production with one
+  customer. It consists of a new business object "event" 
+  that handles resource allocation using a calendar view.
   
 
 
@@ -55,7 +59,6 @@ Important Features
 
 Experimental - Requires Productification
 
-- Training Management
 
 - Cloud Backup:
   A new experimental feature allows you to perform backups

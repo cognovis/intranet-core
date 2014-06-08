@@ -61,6 +61,22 @@ ad_proc -public im_openacs54_p { } {
 
 
 # ------------------------------------------------------------------
+# 
+# ------------------------------------------------------------------
+
+
+ad_proc -public im_view_id_from_name { 
+    view_name
+} {
+    Returns the view_id for given name
+} {
+    if {[im_security_alert_check_alphanum -location im_view_id_from_name -value $view_name]} { return 0 }
+    set view_id [util_memoize [list db_string get_view "select view_id from im_views where view_name = '$view_name'" -default 0]]
+    return $view_id
+}
+
+
+# ------------------------------------------------------------------
 # Date conversion
 # ------------------------------------------------------------------
 
@@ -120,7 +136,7 @@ ad_proc -public im_date_julian_to_epoch {
 } {
     Returns seconds after 1/1/1970 00:00 GMT
 } {
-    set tz_offset_seconds [util_memoize "db_string tz_offset {select extract(timezone from now())}"]
+    set tz_offset_seconds [util_memoize [list db_string tz_offset "select extract(timezone from now())"]]
     return [expr 86400.0 * ($julian - 2440588.0) - $tz_offset_seconds]
 }
 
@@ -490,7 +506,7 @@ ad_proc -public im_exec_dml { { -dbn "" } sql_name sql } {
 ad_proc -public im_package_core_id {} {
     Returns the package id of the intranet-core module
 } {
-    return [util_memoize "im_package_core_id_helper"]
+    return [util_memoize im_package_core_id_helper]
 }
 
 ad_proc -private im_package_core_id_helper {} {
@@ -544,7 +560,10 @@ ad_proc -public im_exec_dml { { -dbn "" } sql_name sql } {
 # 
 # ------------------------------------------------------------------
 
-ad_proc -public im_opt_val { var_name } {
+ad_proc -public im_opt_val { 
+    {-limit_to "nohtml"}
+    var_name
+} {
     Acts like a "$" to evaluate a variable, but
     returns "" if the variable is not defined,
     instead of an error.<BR>
@@ -557,16 +576,47 @@ ad_proc -public im_opt_val { var_name } {
     context.
 } {
     # Check if the variable exists in the parent's caller environment
-    upvar $var_name var
-    if [exists_and_not_null var] { 
-	return $var
+    upvar $var_name value
+    if [exists_and_not_null value] { 
+	# return $value
+    } else {
+	# get fr´om the list of all HTTP variables.
+	# ns_set get returns "" if not found
+	set form_vars [ns_conn form]
+	if {"" == $form_vars} { set form_vars [ns_set create] }
+	set value [ns_set get $form_vars $var_name]
+    }
+
+    set message ""
+    switch $limit_to {
+	allhtml {
+	    # Do nothing - no checks
+	}
+	nohtml {
+	    # Don't allow any tags
+	    if { [string first < $value] >= 0 } {
+		set message [lang::message::lookup "" intranet-core.No_HTML_allowed_in_varname "No HTML tags allowed in variable '%var_name%'"]
+	    }
+	}
+	html {
+	    set message [ad_html_security_check $value]
+	}
+	integer {
+	    if {![string is integer $value]} { 
+		set message [lang::message::lookup "" intranet-core.Variable_is_not_an_integer "Variable '%var_name%' is not an integer"]
+	    }
+	}
+	default {
+	    # Do nothing - no checks
+	}
+    }
+
+    if {"" != $message} {
+	im_security_alert -location im_opt_val -message $message -value $value -severity "Severe"
+	ad_return_complaint 1 "<b>Security Check</b>:<br>$message"
+	ad_script_abort
     }
     
-    # get from the list of all HTTP variables.
-    # ns_set get returns "" if not found
-    set form_vars [ns_conn form]
-    if {"" == $form_vars} { set form_vars [ns_set create] }
-    set value [ns_set get $form_vars $var_name]
     return $value
 } 
 
@@ -661,9 +711,11 @@ ad_proc im_url {} {
 # ------------------------------------------------------------------
 
 # Find out the user name
-ad_proc -public im_name_from_user_id {user_id} {
+ad_proc -public im_name_from_user_id {
+    user_id
+} {
     if {"" == [string trim $user_id]} { set user_id -1 }
-    return [util_memoize "im_name_from_user_id_helper $user_id"]
+    return [util_memoize [list im_name_from_user_id_helper $user_id]]
 }
 
 ad_proc -public im_name_from_user_id_helper {user_id} {
@@ -675,11 +727,15 @@ ad_proc -public im_name_from_user_id_helper {user_id} {
 
 
 # Find out the user email
-ad_proc -public im_email_from_user_id {user_id} {
-    return [util_memoize "im_email_from_user_id_helper $user_id"]
+ad_proc -public im_email_from_user_id {
+    user_id
+} {
+    return [util_memoize [list im_email_from_user_id_helper $user_id]]
 }
 
-ad_proc -public im_email_from_user_id_helper {user_id} {
+ad_proc -public im_email_from_user_id_helper {
+    user_id
+} {
     set user_email "unknown@unknown.com"
     if ![catch { 
 	set user_email [db_string get_user_email {
@@ -1563,10 +1619,11 @@ ad_proc -public im_valid_auto_login_p {
         "]]
 	set user_requires_manual_login_p [im_permission $user_id "require_manual_login"]
 
-	if {$priv_exists_p && !$user_requires_manual_login_p} {
+	if {$priv_exists_p && $user_requires_manual_login_p} {
 	    return 0
 	}
     }
+
 
     # Ok, the tokens are identical and the guy is allowed to login via auto_login.
     # So we can log the dude in if the "expiry_date" is OK.

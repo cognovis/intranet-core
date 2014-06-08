@@ -8,6 +8,13 @@ ad_page_contract {
 
 
 set user_id [ad_conn user_id] 
+set project_type [im_category_from_id $project_type_id]
+set project_status [im_category_from_id $project_status_id]
+
+# Get the parent project's name
+if {"" == $parent_id} { set parent_id 0 }
+im_security_alert_check_integer -location "intranet-core/lib/project-base-data: parent_id" -value $parent_id
+set parent_name [util_memoize [list db_string parent_name "select project_name from im_projects where project_id = $parent_id" -default ""]]
 
 # get the current users permissions for this project
 im_project_permissions $user_id $project_id view read write admin
@@ -30,6 +37,12 @@ if {$default_layout_p} {
 } else {
     set layout_where "and la.page_url = '/intranet/projects/index'"
 }
+
+set im_company_link_tr [im_company_link_tr $user_id $company_id $company_name "[_ intranet-core.Client]"]
+set im_render_user_id [im_render_user_id $project_lead_id $project_lead $user_id $project_id]
+
+set im_project_on_track_bb [im_project_on_track_bb $on_track_status_id]
+ 
 
 db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
       select
@@ -64,8 +77,6 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
         set old_section $section_heading
     }   
    
-    ds_comment "$attribute_name :: $pretty_name :: $value"
-   
     # Set the field name
     set pretty_name_key "intranet-core.[lang::util::suggest_key $pretty_name]"
     set pretty_name [lang::message::lookup "" $pretty_name_key $pretty_name]
@@ -95,6 +106,27 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
     if {$attribute_name eq "company_id"} {
 	    set company_url [export_vars -base "/intranet/companies/view" -url {{company_id $project(company_id_orig)}}]
 	    set value "<a href='$company_url'>$value</a>"
+    }
+
+    # Empty values will be skipped anyway
+    if {"" != [string trim $value]} {
+	set attrib_var [lang::message::lookup "" intranet-core.$attribute_name $attribute_pretty_name]
+
+	set translate_p 0
+	switch $acs_datatype {
+	    boolean - string { set translate_p 1 }
+	}
+	switch $widget {
+	    im_category_tree - checkbox - generic_sql - select { set translate_p 1 }
+	    richtext - textarea - text - date { set translate_p 0 }
+	}
+	
+	set value_l10n $value
+	if {$translate_p} {
+	    # ToDo: Is lang::util::suggest_key the right way? Or should we just use blank substitution?
+	    set value_l10n [lang::message::lookup "" intranet-core.[lang::util::suggest_key $value] $value] 
+	}
+	set value $value_l10n
     }
 }
 

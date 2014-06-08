@@ -96,13 +96,16 @@ ad_proc im_backup_download { } {
 # Lookup procedures for faster imports
 # -------------------------------------------------------
 
-ad_proc -public im_import_get_category { category category_type default } {
+ad_proc -public im_import_get_category { 
+    category 
+    category_type 
+    default 
+} {
     Looks up a category or returns the default value
 } {
     if {"" == $category} { return $default }
-    set category_id [im_import_get_category_helper $category $category_type]
-
-#    set category_id [util_memoize "im_import_get_category_helper \"$category\" \"$category_type\""]
+    # set category_id [im_import_get_category_helper $category $category_type]
+    set category_id [util_memoize [list im_import_get_category_helper $category $category_type]]
 
     if {"" == $category_id} {
 	set category_id $default
@@ -127,7 +130,7 @@ ad_proc -public im_import_get_user { email default } {
     Looks up an email or returns the default value
 } {
     if {"" == $email} { return $default }
-    set user_id [util_memoize "im_import_get_user_helper \"$email\""]
+    set user_id [util_memoize [list im_import_get_user_helper $email]]
     if {"" == $user_id} {
 	set user_id $default
 	set err "didn't find user '$email'"
@@ -2369,7 +2372,6 @@ ad_proc -public im_import_trans_project_details { filename } {
 	    ns_log Notice "cmd=$cmd"
 	    set result [eval $cmd]
 	}
-	set final_company [ns_urldecode $final_company]
 	set company_project_nr [ns_urldecode $company_project_nr]
 	# -------------------------------------------------------
 	# Transform categories, email and names into IDs
@@ -2393,8 +2395,7 @@ SET
 	company_contact_id	= :company_contact_id,
 	source_language_id	= :source_language_id,
 	subject_area_id		= :subject_area_id,
-	expected_quality_id	= :expected_quality_id,
-	final_company		= :final_company
+	expected_quality_id	= :expected_quality_id
 WHERE
 	project_id = :project_id
 "

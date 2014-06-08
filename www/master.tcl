@@ -76,15 +76,10 @@ if {"" == $sub_navbar} {
     }
 
     if {"" != $label} {
-
 	# Show a help link in the search bar
 	set show_context_help_p 1
-
 	set admin_navbar_label ""
-	set parent_menu_id [util_memoize [list db_string admin_parent_menu "select menu_id from im_menus where label = 'admin'" -default 0]]
-
-	# Moved the context help to the "search bar"
-#	set sub_navbar [im_sub_navbar -show_help_icon $parent_menu_id "" $title "pagedesriptionbar" $label]
+	set parent_menu_id [im_menu_id_from_label "admin"]
 	set sub_navbar [im_sub_navbar $parent_menu_id "" $title "pagedesriptionbar" $label]
     }
 }
@@ -94,6 +89,8 @@ if {[catch {
     set feedback_behaviour_key [im_feedback_set_user_messages]
     util_get_user_messages -multirow user_messages
 } err_msg]} {
+    global errorInfo
+    ns_log Error "Error in master.tcl - im_feedback_set_user_messages failed with the following message: $err_msg \n $errorInfo "
     set feedback_behaviour_key 1
     set err_user_feedback "There was a problem retrieving user messages. This is probably a minor issue and can be disregarded. Please consult the error.log file for additional information. If this message persists, please logout and login again."
     set err_user_feedback [lang::message::lookup "" intranet-core.ErrorRetrievingUserMessage $err_user_feedback]

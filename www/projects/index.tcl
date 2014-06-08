@@ -288,7 +288,31 @@ if { [empty_string_p $company_id] } {
     set company_id 0
 }
 
-set company_options [im_company_options -include_empty_p 1 -include_empty_name $all_l10n -status "CustOrIntl"]
+# Company Options - only select companies that are customers for projects
+# in order to deal with performance isues
+# set company_options [im_company_options -include_empty_p 1 -include_empty_name $all_l10n -status "CustOrIntl"]
+
+# Permission SQL: Normal users can see only "their" companies
+set company_perm_sql "
+		(       select	c.*
+			from	im_companies c,
+				acs_rels r
+			where	c.company_id = r.object_id_one
+				and r.object_id_two = $current_user_id
+		)
+"
+if {[im_permission $user_id "view_companies_all"]} { set company_perm_sql "im_companies" }
+set company_sql "
+		select	c.company_name,
+			c.company_id
+		from	$company_perm_sql c
+		where	c.company_id in (select distinct company_id from im_projects)
+		order by lower(trim(c.company_name))
+"
+
+set company_options [util_memoize [list db_list_of_lists company_options $company_sql] 60]
+set company_options [linsert $company_options 0 [list $all_l10n ""]]
+
 set view_options [db_list_of_lists views {select view_label,view_name from im_views where view_type_id = 1451}]
 
 # Get the list of profiles readable for current_user_id
@@ -319,6 +343,10 @@ if {!$filter_advanced_p} {
 set employee_group_id [im_employee_group_id]
 if { "t" == [db_string get_view_perm "select im_object_permission_p(:employee_group_id, :user_id, 'read') from dual"]} {
     if {$show_filter_with_member_p} {
+
+	set user_options [im_profile::user_options -profile_ids $user_select_groups]
+	set user_options [linsert $user_options 0 [list $all_l10n ""]]
+
 	ad_form -extend -name $form_id -form {
 	    {user_id_from_search:text(select),optional {label \#intranet-core.With_Member\#} {options $user_options}}
 	}
@@ -702,35 +730,17 @@ set letter $upper_letter
 
 ns_log Notice "/intranet/project/index: Before admin links"
 set admin_html "<ul>"
-
-if {[im_permission $current_user_id "add_projects"]} {
-    append admin_html "<li><a href=\"/intranet/projects/new\">[_ intranet-core.Add_a_new_project]</a></li>\n"
-
-    set new_from_template_p [ad_parameter -package_id [im_package_core_id] EnableNewFromTemplateLinkP "" 0]
-    if {$new_from_template_p} {
-        append admin_html "<li><a href=\"/intranet/projects/new-from-template\">[lang::message::lookup "" intranet-core.Add_a_new_project_from_Template "Add a new project from Template"]</a></li>\n"
+set links [im_menu_projects_admin_links]
+foreach link_entry $links {
+    set html ""
+    for {set i 0} {$i < [llength $link_entry]} {incr i 2} {
+	set name [lindex $link_entry $i]
+	set url [lindex $link_entry [expr $i+1]]
+	append html "<a href='$url'>$name</a>"
     }
-
-    set wf_oid_col_exists_p [im_column_exists wf_workflows object_type]
-    if {$wf_oid_col_exists_p} {
-	set wf_sql "
-		select	t.pretty_name as wf_name,
-			w.*
-		from	wf_workflows w,
-			acs_object_types t
-		where	w.workflow_key = t.object_type
-			and w.object_type = 'im_project'
-	"
-	db_foreach wfs $wf_sql {
-	    set new_from_wf_url [export_vars -base "/intranet/projects/new" {workflow_key}]
-	    append admin_html "<li><a href=\"$new_from_wf_url\">[lang::message::lookup "" intranet-core.New_workflow "New %wf_name%"]</a></li>\n"
-	}
-    }
+    append admin_html "<li>$html</li>\n"
 }
 
-# Append user-defined menus
-set bind_vars [list return_url $return_url]
-append admin_html [im_menu_ul_list -no_uls 1 "projects_admin" $bind_vars]
 append admin_html "</ul>"
 
 # ---------------------------------------------------------------

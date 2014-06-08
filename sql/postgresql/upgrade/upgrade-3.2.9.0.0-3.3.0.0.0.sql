@@ -79,8 +79,7 @@ BEGIN
 		end_date			timestamptz,
 		start_date			timestamptz,
 		company_contact_id		integer,
-		company_project_nr		varchar(50),
-		final_company			varchar(50)
+		company_project_nr		varchar(50)
 	);
 	
 	create index im_projects_audit_project_id_idx on im_projects_audit(project_id);

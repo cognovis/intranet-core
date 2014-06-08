@@ -35,6 +35,17 @@ ad_proc -public im_project_type_unknown {} { return 85 }
 ad_proc -public im_project_type_other {} { return 86 }
 ad_proc -public im_project_type_task {} { return 100 }
 ad_proc -public im_project_type_ticket {} { return 101 }
+
+ad_proc -public im_project_type_opportunity {} { return 102 }
+ad_proc -public im_project_type_campaign {} { return 103 }
+
+ad_proc -public im_project_type_employee_evaluation {} { return 104 }
+
+ad_proc -public im_project_type_service_contract {} { return 105 }
+ad_proc -public im_project_type_service_contract_periodic_invoicing {} { return 106 }
+ad_proc -public im_project_type_service_contract_time_material {} { return 107 }
+ad_proc -public im_project_type_service_contract_open_stack {} { return 108 }
+
 ad_proc -public im_project_type_consulting {} { return 2501 }
 ad_proc -public im_project_type_sla {} { return 2502 }
 ad_proc -public im_project_type_milestone {} { return 2504 }
@@ -106,7 +117,7 @@ ad_proc -public im_project_has_type_helper { project_id project_type } {
 ad_proc -public im_project_main_project { project_id } {
     Returns the project_id of the project's top level main project.
 } {
-    im_security_alert_check_integer -location "im_project_main_project" -value $project_id
+    im_security_alert_check_integer -location "im_project_main_project: project_id" -value $project_id
     return [util_memoize [list db_string project_main_project "select project_id from im_projects where tree_sortkey in (select tree_root_key(tree_sortkey) from im_projects where project_id = $project_id)" -default ""]]
 }
 
@@ -120,7 +131,7 @@ ad_proc -public im_project_permissions {
     write_var
     admin_var
 } {
-    Fill the "by-reference" variables read, write and admin
+    Fill the by-reference variables read, write and admin
     with the permissions of $user_id on $project_id
 } {
     if {$debug} { ns_log Notice "im_project_permissions: user_id=$user_id project_id=$project_id" }
@@ -136,7 +147,7 @@ ad_proc -public im_project_permissions {
 
     # empty project_id would give errors below
     if {"" == $project_id} { set project_id 0 }
-    im_security_alert_check_integer -location "im_project_permissions" -value $project_id
+    im_security_alert_check_integer -location "im_project_permissions: project_id" -value $project_id
 
     if {$debug} { ns_log Notice "im_project_permissions: before user_is_admin_p" }
     set user_is_admin_p [im_is_user_site_wide_or_intranet_admin $user_id]
@@ -160,7 +171,6 @@ ad_proc -public im_project_permissions {
 	    }
 	}
     }
-
 
     # Treat the project mangers_fields
     # A user man for some reason not be the group PM
@@ -681,9 +691,12 @@ ad_proc -public im_project_options {
     @pm_user_id only display projects where the user_id is a pm of that project
 } {
     set exclude_type_id [list]
-    # Default: Exclude tickets and deleted projects
+    # Default: Exclude tickets, opportunities and deleted projects
     if {"" == $exclude_status_id} { set exclude_status_id [im_project_status_deleted] }
-    if {"" == $exclude_type_id} { set exclude_type_id [list [im_project_type_ticket]] } 
+    if {"" == $exclude_type_id} { 
+	set exclude_type_id [list [im_project_type_ticket]] 
+	lappend exclude_type_id [im_project_type_opportunity]
+    } 
     # Exclude tasks? 
     if {!$exclude_tasks_p} { 
 	# Overwrite parameter when tasks should be shown
@@ -691,6 +704,7 @@ ad_proc -public im_project_options {
     } else {
 	lappend exclude_type_id [im_project_type_task]
     }
+
     set current_project_id $project_id
     set super_project_id $project_id
 
@@ -995,7 +1009,7 @@ ad_proc -public im_project_template_select {
 		project_name
 	from	im_projects
 	where	parent_id is null and
-		project_type_id not in ([im_project_type_task], [im_project_type_ticket]) and
+		project_type_id not in ([im_project_type_task], [im_project_type_ticket], [im_project_type_opportunity]) and
 		(lower(project_name) like '%template%' $template_p_sql)
 	order by
 		lower(project_name)
@@ -1129,6 +1143,7 @@ ad_proc -public im_project_personal_active_projects_component {
            Setting this parameter to 0 the component will just disappear
            if there are no projects.
 } {
+
     set user_id [ad_get_user_id]
 
     if {"" == $order_by_clause} {
@@ -1214,7 +1229,7 @@ ad_proc -public im_project_personal_active_projects_component {
 		r.object_id_one = p.project_id and
 		r.object_id_two = :user_id and
 		p.parent_id is null and
-		p.project_type_id not in ([im_project_type_task], [im_project_type_ticket]) and
+		p.project_type_id not in ([im_project_type_task], [im_project_type_ticket], [im_project_type_opportunity]) and
 		p.project_status_id not in ([im_project_status_deleted], [im_project_status_closed])
 		$project_status_restriction
 		$project_type_restriction
@@ -1609,6 +1624,11 @@ ad_proc im_project_clone {
 	    set task_id_one_nr $parent_project_hierarchy_hash_id_nr($task_id_one)
 	    set task_id_two_nr $parent_project_hierarchy_hash_id_nr($task_id_two)
 
+	    # fraber 140228: There seems to be an error with closing the dependencies.
+	    # ToDo: Investigate error further, rather than avoiding the error...
+	    if {![info exists $cloned_project_hierarchy_hash_nr_id($task_id_one_nr)]} { continue }
+	    if {![info exists $cloned_project_hierarchy_hash_nr_id($task_id_two_nr)]} { continue }
+
 	    # Convert the nrs of the original project into ids of the cloned project
 	    set task_id_one_cloned_id $cloned_project_hierarchy_hash_nr_id($task_id_one_nr)
 	    set task_id_two_cloned_id $cloned_project_hierarchy_hash_nr_id($task_id_two_nr)
@@ -1633,8 +1653,9 @@ ad_proc im_project_clone {
     # Remove the template_p flag from the newly created project
     if {0 == $clone_level} {
 	db_dml remove_template_p "
-		update im_projects
-		set template_p = 'f'
+		update im_projects set
+			template_p = 'f',
+			project_status_id = [im_project_status_open]
 		where project_id = :cloned_project_id
 	"
     }
@@ -1845,7 +1866,6 @@ ad_proc im_project_clone_base2 {
 		source_language_id =	:source_language_id,
 		subject_area_id =	:subject_area_id,
 		expected_quality_id =	:expected_quality_id,
-		final_company =		:final_company,
 		trans_project_words =	:trans_project_words,
 		trans_project_hours =	:trans_project_hours
 	where
@@ -2554,7 +2574,8 @@ ad_proc im_project_nuke {
 	    db_dml expense_cost_link "update im_expenses set bundle_id = null where bundle_id = :cost_id"
 
 	    ns_log Notice "projects/nuke-2: deleting cost: Delete any created_from_item_id references to the items we need to delete"
-	    db_dml created_from_item_id "
+	    if {[im_column_exists im_invoice_items created_from_item_id]} {
+		db_dml created_from_item_id "
 		update im_invoice_items 
 		set created_from_item_id = null 
 		where created_from_item_id in (
@@ -2562,7 +2583,8 @@ ad_proc im_project_nuke {
 			from	im_invoice_items
 			where	invoice_id = :cost_id
 		)
-	    "
+	        "
+	    }
 
 	    ns_log Notice "projects/nuke-2: deleting cost: ${object_type}__delete($cost_id)"
 	    im_exec_dml del_cost "${object_type}__delete($cost_id)"
@@ -2946,10 +2968,15 @@ ad_proc im_project_nuke {
 			project_nr = project_nr || random(),
 			project_path = project_path || random()
 		where parent_id = :project_id"
+
+	# Relocate sub-tasks to the parent, so that they won't
+	# appear as main projects
+	set parent_parent_id [db_string parent_id "select parent_id from im_projects where project_id = :project_id"]
 	db_dml parent_projects "
 		update im_projects 
-		set parent_id = null 
+		set parent_id = :parent_parent_id
 		where parent_id = :project_id"
+
 	if {[im_column_exists im_projects program_id]} {
 	    db_dml program_id "
 		update im_projects 
@@ -3128,7 +3155,7 @@ ad_proc -public im_personal_todo_component {
 		r.rel_id = bom.rel_id and
 		bom.object_role_id = 1301 and
 		p.parent_id is null and
-		p.project_type_id not in ([im_project_type_task], [im_project_type_ticket]) and
+		p.project_type_id not in ([im_project_type_task], [im_project_type_ticket], [im_project_type_opportunity]) and
 		p.project_status_id not in ([join [im_sub_categories [im_project_status_closed]] ","])
 	UNION
 	-- tasks assigned to this user
@@ -3350,6 +3377,7 @@ ad_proc -public im_project_gantt_main_project {
 }
 
 
+
 ad_proc -public im_project_get_all_members {
     {-project_status_id ""}
     {-group_id "-2"}
@@ -3434,4 +3462,48 @@ ad_proc -public im_parent_projects {
 	lappend project_list $project_id
     }
     return $project_list
+}
+
+ad_proc -public im_menu_projects_admin_links {
+
+} {
+    Return a list of admin links to be added to the "projects" menu
+} {
+    set result_list {}
+    set current_user_id [ad_get_user_id]
+    set return_url [im_url_with_query]
+
+    if {[im_permission $current_user_id "add_projects"]} {
+	lappend result_list [list [_ intranet-core.Add_a_new_project] "/intranet/projects/new"]
+
+	set new_from_template_p [ad_parameter -package_id [im_package_core_id] EnableNewFromTemplateLinkP "" 0]
+	if {$new_from_template_p} {
+	    lappend result_list [list [lang::message::lookup "" intranet-core.Add_a_new_project_from_Template "Add a new project from Template"] "/intranet/projects/new-from-template"]
+	}
+
+	set wf_oid_col_exists_p [im_column_exists wf_workflows object_type]
+	if {$wf_oid_col_exists_p} {
+	    set wf_sql "
+		select	t.pretty_name as wf_name,
+			w.*
+		from	wf_workflows w,
+			acs_object_types t
+		where	w.workflow_key = t.object_type
+			and w.object_type = 'im_project'
+	    "
+	    db_foreach wfs $wf_sql {
+		set new_from_wf_url [export_vars -base "/intranet/projects/new" {workflow_key}]
+		lappend result_list [list [lang::message::lookup "" intranet-core.New_workflow "New %wf_name%"] $new_from_wf_url]
+	    }
+	}
+    }
+
+    # Append user-defined menus
+    set bind_vars [list return_url $return_url]
+    set links [im_menu_ul_list -no_uls 1 -list_of_links 1 "projects_admin" $bind_vars]
+    foreach link $links {
+	lappend result_list $link
+    }
+
+    return $result_list
 }

@@ -47,14 +47,15 @@ ad_proc -public im_biz_object_url { object_id {url_type "view"} } {
     @param url_tpye is "view" or "edit", according to what you
 	want to do with the object.
 } {
-    set url [util_memoize "db_string object_type_url \"
+    im_security_alert_check_alphanum -location "im_biz_object_url: url_type" -value $url_type
+    set url [util_memoize [list db_string object_type_url "
     	select	url
 	from	im_biz_object_urls u,
 		acs_objects o
 	where	o.object_id = $object_id
 		and o.object_type = u.object_type
 		and u.url_type = '$url_type'
-    \" -default {}"]
+    " -default ""]]
     return "$url$object_id"
 }
 
@@ -115,9 +116,9 @@ ad_proc -public im_biz_object_admin_p_helper { user_id object_id } {
 	where	r.object_id_one=:object_id
 		and r.object_id_two=:user_id
 		and r.rel_id = m.rel_id
-		and m.object_role_id in (1301,1302,1303,1308)
+		and m.object_role_id in (1301,1302,1303)
     "
-    # 1301=PM, 1302=Key Account, 1303=Office Man., 1308=Event Trainer
+    # 1301=PM, 1302=Key Account, 1303=Office Man.
 
     set result [db_string im_biz_object_member_p $sql]
     return $result
@@ -132,7 +133,7 @@ ad_proc -public im_biz_object_admin_ids { object_id } {
 		im_biz_object_members m
 	where	r.object_id_one=:object_id
 		and r.rel_id = m.rel_id
-		and m.object_role_id in (1301,1302,1303,1308) and
+		and m.object_role_id in (1301,1302,1303) and
 		r.object_id_two not in (
 			-- Exclude deleted or disabled users
 			select	m.member_id
@@ -512,11 +513,13 @@ ad_proc -public im_group_member_component {
     are welcome...
 
 } {
+    im_security_alert_check_integer -location "im_group_member_component: object_id" -value $object_id
+
     # Settings ans Defaults
     set name_order [parameter::get -package_id [apm_package_id_from_key intranet-core] -parameter "NameOrder" -default 1]
 
     # Check if there is a percentage column from intranet-ganttproject
-    set object_type [util_memoize "db_string otype \"select object_type from acs_objects where object_id=$object_id\" -default \"\""]
+    set object_type [util_memoize [list db_string otype "select object_type from acs_objects where object_id=$object_id" -default ""]]
     if {"" == $show_percentage_p && ($object_type == "im_project" || $object_type == "im_timesheet_task")} { set show_percentage_p 1 }
     if {"" == $show_percentage_p} { set show_percentage_p 0 }
     if {![im_column_exists im_biz_object_members percentage]} { set show_percentage_p 0 }
@@ -594,7 +597,7 @@ ad_proc -public im_group_member_component {
     }
     if {$add_admin_links} {
 	incr colspan
-	append header_html "<td class=rowtitle align=middle>[im_gif delete]</td>"
+	append header_html "<td class=rowtitle align=middle><input type='checkbox' name='_dummy' onclick=\"acs_ListCheckAll('delete_user',this.checked)\"></td>"
     }
     append header_html "
       </tr>"
@@ -647,7 +650,7 @@ ad_proc -public im_group_member_component {
 	if {$add_admin_links} {
 	    append body_html "
 		  <td align=middle>
-		    <input type=checkbox name=delete_user value=$user_id>
+		    <input type='checkbox' name='delete_user' id='delete_user,$user_id' value='$user_id'>
 		  </td>
 	    "
 	}

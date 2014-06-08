@@ -160,21 +160,22 @@ namespace eval im_company {
 	{-type_id "" }
 	{-exclude_status_id "" }
 	{-always_include_company_id "" }
+	{-with_active_projects_p 0}
+	{-with_projects_p 0}
     } {
 	Returns a list of company_name - company_id tuples for the
 	given parameters.
 	This procedure relies that changes to companies will be 
 	reported to this module.
     } {
-
 	if {"" == $user_id} { set user_id [ad_get_user_id] }
 	
 	# Check if we have calculated this result already
-	set key [list company_options $user_id $status_id $type_id $exclude_status_id $always_include_company_id]
+	set key [list company_options $user_id $status_id $type_id $exclude_status_id $always_include_company_id $with_projects_p $with_active_projects_p]
 	if {[ns_cache get im_company $key value]} { return $value }
 
 	# Calculate the options
-	set company_options [company_options_not_cached -user_id $user_id -status_id $status_id -type_id $type_id -exclude_status_id $exclude_status_id -always_include_company_id $always_include_company_id]
+	set company_options [company_options_not_cached -user_id $user_id -status_id $status_id -type_id $type_id -exclude_status_id $exclude_status_id -always_include_company_id $always_include_company_id -with_active_projects_p $with_active_projects_p -with_projects_p $with_projects_p]
 
 	# Store the value in the cache
         ns_cache set im_company $key $company_options
@@ -188,6 +189,8 @@ namespace eval im_company {
 	{-type_id "" }
 	{-exclude_status_id "" }
 	{-always_include_company_id "" }
+	{-with_active_projects_p 0}
+	{-with_projects_p 0}
     } {
 	Returns a list of company_name - company_id tuples for the
 	given parameters.
@@ -221,7 +224,15 @@ namespace eval im_company {
 	    im_security_alert_check_integer -value $type_id -location "company_options_not_cached"
 	    lappend criteria "c.company_type_id in ([join [im_sub_categories $type_id] ","])"
 	}
-    
+
+        if {$with_active_projects_p} {
+            lappend criteria "c.company_id in (select company_id from im_projects where parent_id is null and project_status_id in (select * from im_sub_categories([im_project_status_open])))"
+        }
+   
+        if {$with_projects_p} {
+            lappend criteria "c.company_id in (select company_id from im_projects where parent_id is null)"
+        }
+   
         set where_clause [join $criteria " and\n\t\t"]
         if { ![empty_string_p $where_clause] } { set where_clause " and $where_clause" }
 
@@ -501,6 +512,8 @@ ad_proc -public im_company_options {
     {-exclude_status_id "" }
     {-exclude_status "" }
     -no_cache:boolean
+    {-with_active_projects_p 0}
+    {-with_projects_p 0}
     {default 0}
 } {
     Cost company options
@@ -519,11 +532,13 @@ ad_proc -public im_company_options {
 
     # Get the options
     set company_options [$command \
-		     -user_id $user_id \
-		     -status_id $status_id \
-		     -type_id $type_id \
-		     -exclude_status_id $exclude_status_id \
-		     -always_include_company_id $default \
+			     -user_id $user_id \
+			     -status_id $status_id \
+			     -type_id $type_id \
+			     -exclude_status_id $exclude_status_id \
+			     -always_include_company_id $default \
+			     -with_active_projects_p $with_active_projects_p \
+			     -with_projects_p $with_projects_p \
     ]
     if {1 == $include_empty_p} { set company_options [linsert $company_options 0 [list $include_empty_name ""]] }
     return $company_options
@@ -534,6 +549,8 @@ ad_proc -public im_company_select {
     {-include_empty_p 1}
     {-include_empty_name ""}
     {-tag_attributes {} }
+    {-with_active_projects_p 0}
+    {-with_projects_p 0}
     select_name 
     { default "" } 
     { status "" } 
@@ -560,6 +577,8 @@ ad_proc -public im_company_select {
 			     -status $status \
 			     -type $type \
 			     -exclude_status $exclude_status \
+			     -with_active_projects_p $with_active_projects_p \
+			     -with_projects_p $with_projects_p \
 			     $default \
     ]
     return [im_options_to_select_box $select_name $company_options $default $tag_attributes]
@@ -919,4 +938,36 @@ ad_proc -public -callback im_company_after_update -impl im_companies_save_vat {
     set vat [db_string category "select aux_int1 from im_companies c, im_categories ca where ca.category_id = c.vat_type_id and c.company_id = :object_id" -default ""]
 
     db_dml update_company "update im_companies set default_vat = :vat where company_id = :object_id"
+}
+
+ad_proc -public im_menu_companies_admin_links {
+
+} {
+    Return a list of admin links to be added to the "companies" menu
+} {
+    set result_list {}
+    set current_user_id [ad_get_user_id]
+    set return_url [im_url_with_query]
+
+    # Add companies 
+    if {[im_permission $current_user_id "add_companies"]} {
+	lappend result_list [list [_ intranet-core.Add_a_new_company] "/intranet/companies/new"]
+    }
+    # Upload Companies 
+
+    if { [im_is_user_site_wide_or_intranet_admin $current_user_id] } {
+	lappend result_list [list [_ intranet-core.Import_Company_CSV] "/intranet/companies/upload-companies?[export_url_vars return_url]"]
+    }
+
+    # Advanced Filtering 
+    lappend result_list [list [_ intranet-core.Advanced_Filtering] "/intranet/companies/index?filter_advanced_p=1"]
+
+    # Append user-defined menus
+    set bind_vars [list return_url $return_url]
+    set links [im_menu_ul_list -no_uls 1 -list_of_links 1 "companies_admin" $bind_vars]
+    foreach link $links {
+        lappend result_list $link
+    }
+
+    return $result_list
 }

@@ -81,20 +81,48 @@ ad_proc -public im_send_alert {target_id frequency subject {message ""} } {
 
 ad_proc -public im_security_alert_check_integer {
     { -location "No location specified"}
-    { -value "No value specified" }
+    { -value "" }
+    { -message "Found non-integer value in integer argument" }
+    { -severity "Normal" }
 } {
     Check of a parameter has the form of an integer list,
     which includes the empty list and a single integer.
 } {
+    set breach_p 0
     foreach v $value {
 	if {![string is integer $v]} {
+	    set breach_p 1
 	    im_security_alert \
 		-location $location \
-		-message "Found non-integer in integer argument" \
+		-message $message \
 		-value $value \
-		-severity "Normal" \
+		-severity $severity \
 	}
     }
+    return $breach_p
+}
+
+ad_proc -public im_security_alert_check_alphanum {
+    { -location "No location specified"}
+    { -value "" }
+    { -message "Found non-alphanum value" }
+    { -severity "Normal" }
+} {
+    Check of a parameter has the form of a list of alphanumeric,
+    which includes the empty list and a single alphanumeric.
+} {
+    set breach_p 0
+    foreach v $value {
+	if {![regexp {^[0-9a-zA-Z_\-\ ]*$} $v match]} {
+	    set breach_p 1
+	    im_security_alert \
+		-location $location \
+		-message $message \
+		-value $value \
+		-severity $severity \
+	}
+    }
+    return $breach_p
 }
 
 

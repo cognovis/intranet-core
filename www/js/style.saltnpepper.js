@@ -45,7 +45,8 @@ function sideBarSlide(fromHeight, toHeight, fromWidth, toWidth) {
 };
 
 function sideBarOpacity(from, to) {
-	$("#filter").animate( { 'opacity': to }, opacityDuration, "linear" );
+	$("#sideBarContents").animate( { 'opacity': to }, opacityDuration, "linear" );
+	// $("#filter").animate( { 'opacity': to }, opacityDuration, "linear" );
 };
 
 /*   END: SIDEBAR */
@@ -55,6 +56,14 @@ function sideBarOpacity(from, to) {
 // jQuery.noConflict();
 
 jQuery().ready(function(){
+
+    // Build smartmenu
+    $(function() {
+	    $('#navbar_main').smartmenus({
+		    subMenusSubOffsetX: 2,
+		    subMenusSubOffsetY: -5 
+	    });
+    });
 	
     jQuery("#header_skin_select > form > select").change(function() {
 	jQuery("#header_skin_select > form").submit();
@@ -142,6 +151,7 @@ jQuery().ready(function(){
     });
 
     setFooter();
+
 
 });
 

@@ -121,6 +121,7 @@ ad_proc -public im_menu_ul_list {
     {-no_cache:boolean}
     {-package_key "intranet-core" }
     {-no_uls 0}
+    {-list_of_links 0}
     {-check_parent_enabled:boolean}
     parent_menu_label 
     bind_vars 
@@ -142,9 +143,9 @@ ad_proc -public im_menu_ul_list {
     set locale [lang::user::locale -user_id $user_id]
 
     if {$no_cache_p} {
-	set result [im_menu_ul_list_helper -package_key $package_key -locale $locale $user_id $no_uls $parent_menu_label $bind_vars]
+	set result [im_menu_ul_list_helper -package_key $package_key -locale $locale $user_id $no_uls $list_of_links $parent_menu_label $bind_vars]
     } else {
-	set result [util_memoize [list im_menu_ul_list_helper -package_key $package_key -locale $locale $user_id $no_uls $parent_menu_label $bind_vars] 3600]
+	set result [util_memoize [list im_menu_ul_list_helper -package_key $package_key -locale $locale $user_id $no_uls $list_of_links $parent_menu_label $bind_vars] 3600]
     }
     return $result
 }
@@ -154,6 +155,7 @@ ad_proc -public im_menu_ul_list_helper {
     {-package_key "" }
     user_id
     no_uls
+    list_of_links
     parent_menu_label 
     bind_vars
 } {
@@ -202,19 +204,45 @@ ad_proc -public im_menu_ul_list_helper {
 	    append url "$var=[ad_urlencode $value]"
 	}
 
+	set name_l10n [lang::message::lookup "" $package_name.$name_key $name]
 	set admin_url [export_vars -base "/intranet/admin/menus/index" {menu_id return_url}]
-	set admin_html "<a href='$admin_url'>[im_gif wrench]</a>"
-	if {!$admin_p} { set admin_html "" }
-    
-	append result "<li><a href=\"$url\">[lang::message::lookup "" $package_name.$name_key $name]</a> $admin_html</li>\n"
+	set admin_gif [im_gif wrench]
+
+	if {$list_of_links} {
+	    if {!$admin_p} {
+		lappend result [list $name_l10n $url]
+	    } else {
+		lappend result [list $name_l10n $url $admin_gif $admin_url]
+	    }
+	} else {
+	    set admin_html "<a href='$admin_url'>$admin_gif</a>"
+	    if {!$admin_p} { set admin_html "" }
+	    set link "<a href=\"$url\">[lang::message::lookup "" $package_name.$name_key $name]</a> $admin_html"
+	    append result "<li>$link</li>\n"
+	}
 	incr ctr
     }
     if {!$no_uls} {append result "</ul>\n" }
-
     if {0 == $ctr} { set result "" }
+
     return $result
 }
 
+
+
+# --------------------------------------------------------
+#
+# --------------------------------------------------------
+
+ad_proc -public im_menu_id_from_label {
+    label
+} {
+    Returns the menu_id for a menu with the specified label.
+} {
+    if {[im_security_alert_check_alphanum -location "im_menu_id_from_label: label" -value $label  -severity "Severe"]} { set label "" }
+    set menu_id [util_memoize [list db_string menu_id_from_label "select menu_id from im_menus where label = '$label'" -default 0]]
+    return $menu_id
+}
 
 
 # --------------------------------------------------------
@@ -312,11 +340,39 @@ ad_proc -public im_menu_li_helper {
 	set value $bind_vars_hash($var)
 	append url "$var=[ad_urlencode $value]"
     }
-
-
     return "<li $class_html><a href=\"$url\">[lang::message::lookup "" "$package_key.$name_key" $name]</a>\n"
-
-
-
 }
 
+
+ad_proc -public im_menu_links {
+    label
+} {
+    Return a list of links and admin links for a parent menu item:
+    1) menu_item_name menu_item_absolute_url
+2) wrench_html menu_item_admin_url
+} {
+    set result_list [list]
+    set result_list_admin [list] 
+    set current_user_id [ad_get_user_id]
+    set return_url [im_url_with_query]
+
+    # Create SubMenu "new FinDocs"
+    set parent_menu_id [im_menu_id_from_label $label]
+
+    set menu_select_sql "
+        select  m.*
+        from    im_menus m
+        where   parent_menu_id = :parent_menu_id
+                and enabled_p = 't'
+                and im_object_permission_p(m.menu_id, :current_user_id, 'read') = 't'
+        order by sort_order
+"
+    db_foreach menu_select $menu_select_sql {
+        ns_log Notice "im_sub_navbar: menu_name='$name'"
+        regsub -all " " $name "_" name_key
+        set wrench_url [export_vars -base "/intranet/admin/menus/index" {menu_id return_url}]
+	lappend result_list "[list [_ intranet-invoices.$name_key] $url] [list [im_gif wrench] $wrench_url]"
+    }
+
+    return $result_list
+}

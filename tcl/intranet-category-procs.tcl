@@ -30,7 +30,7 @@ ad_proc -public im_category_from_id {
     if {![string is integer $category_id]} { return $category_id }
     if {"" == $category_id} { return $empty_default }
     if {0 == $category_id} { return $empty_default }
-    set category_name [util_memoize "db_string cat \"select im_category_from_id($category_id)\" -default {}"]
+    set category_name [util_memoize [list db_string cat "select im_category_from_id($category_id)" -default {}]]
     set category_key [lang::util::suggest_key $category_name]
     if {$translate_p} {
 	if {"" == $locale} { set locale [lang::user::locale -user_id [ad_get_user_id]] }
@@ -89,15 +89,10 @@ ad_proc -public im_category_from_category {
     {-category ""}
 } {
     Get the category_id from a category
-    
     @param category Name of the category. This is not translated!
 } {
     if {$category eq ""} {return ""}
-    return [util_memoize [list db_string cat "
-	select	category_id
-	from	im_categories
-	where	category = '$category'
-    " -default {}]]
+    return [util_memoize [list db_string cat "select category_id from im_categories where category = '$category'" -default ""]]
 }
 
 
@@ -524,10 +519,10 @@ ad_proc -public template::widget::im_category_tree {
     }
 
     if { "edit" == $element(mode)} {
-	append category_html [im_category_select -translate_p 1 -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -multiple_p $multiple_p $category_type $field_name $default_value]
+	append category_html [im_category_select -translate_p $translate_p -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -multiple_p $multiple_p $category_type $field_name $default_value]
     } else {
 	if {"" != $default_value && "\{\}" != $default_value} {
-	    append category_html [im_category_from_id $default_value]
+	    append category_html [im_category_from_id -translate_p $translate_p -package_key $package_key $default_value]
 	}
     }
     return $category_html
@@ -626,21 +621,28 @@ ad_proc -public im_category_is_a_helper {
 ad_proc -public im_category_get_key_value_list {
     { category_type "" }
 } {
-        set sql "
-
+    # check if any sort order is defined, if not order by category_id 
+    if { [db_string get_sort_order_values_p "select count(*) from im_categories where category_type = :category_type and sort_order IS NOT NULL and sort_order <> 0" -default 0]  } {
+	set order_by "sort_order"
+    } else {
+	set order_by "category_id"
+    }
+    set sql "
         select
                 category_id,
                 category
         from
                 im_categories
         where
-                category_type = '$category_type'
+                category_type = :category_type
+	order by 
+		$order_by
         "
     set category_list [list]
     db_foreach category_select $sql {
         lappend category_list [list $category_id $category]
     }
-        return $category_list
+    return $category_list
 }
 
 
@@ -731,12 +733,11 @@ ad_proc -public im_category_object_type {
     Returns the object_type for a category_type when it is used as a type category type like "Intranet Project Type". Empty String otherwise
     @param category_type The category type like "Intranet Project Type"
 } {
-    return [util_memoize [list db_string object_type "
-	select	object_type
-	from	acs_object_types
-	where	type_category_type = '$category_type' 
-	limit 1
-    " -default ""]]
+    if {![regexp {^[a-zA-Z_\-\ ]+$} $category_type]} {
+	im_security_alert -location im_category_object_type -message "SQL Injection Attempt" -value $category_type -severity "Severe"
+	set category_type ""
+    }
+    return [util_memoize [list db_string object_type "select object_type from acs_object_types where type_category_type = '$category_type' limit 1" -default ""]]
 }
 
 

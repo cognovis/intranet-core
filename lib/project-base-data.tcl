@@ -6,6 +6,23 @@ ad_page_contract {
 
 } 
 
+# ---------------------------------------------------------------------
+# Get Everything about the project
+# ---------------------------------------------------------------------
+ 
+ 
+set extra_selects [list "0 as zero"]
+db_foreach column_list_sql {}  {
+    lappend extra_selects "${deref_plpgsql_function}($attribute_name) as ${attribute_name}_deref"
+}
+    
+set extra_select [join $extra_selects ",\n\t"]
+ 
+    
+if { ![db_0or1row project_info_query {}] } {
+    ad_return_complaint 1 "[_ intranet-core.lt_Cant_find_the_project]"
+    return
+}
 
 set user_id [ad_conn user_id] 
 set project_type [im_category_from_id $project_type_id]

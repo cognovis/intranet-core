@@ -4,6 +4,5 @@ SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-4.
 -- Disable the ASUS backup component at the moment
 update im_component_plugins
 set enabled_p = 'f'
-where plugin_name = 'ASUS Backup';
-
+where plugin_name in ('ASUS Backup', 'Home Page Help Blurb');
 

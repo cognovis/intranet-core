@@ -10,28 +10,16 @@ ad_page_contract {
 # Get Everything about the project
 # ---------------------------------------------------------------------
  
- 
-set extra_selects [list "0 as zero"]
-db_foreach column_list_sql {}  {
-    lappend extra_selects "${deref_plpgsql_function}($attribute_name) as ${attribute_name}_deref"
-}
-    
-set extra_select [join $extra_selects ",\n\t"]
- 
-    
-if { ![db_0or1row project_info_query {}] } {
-    ad_return_complaint 1 "[_ intranet-core.lt_Cant_find_the_project]"
-    return
-}
-
 set user_id [ad_conn user_id] 
-set project_type [im_category_from_id $project_type_id]
-set project_status [im_category_from_id $project_status_id]
+im_dynfield::object_array -array_name project -object_id $project_id
+set object_type_id $project(object_type_id)
+set project_type [im_category_from_id $project(project_type_id)]
+set project_status [im_category_from_id $project(project_status_id)]
+set parent_id $project(parent_id_orig)
 
 # Get the parent project's name
 if {"" == $parent_id} { set parent_id 0 }
 im_security_alert_check_integer -location "intranet-core/lib/project-base-data: parent_id" -value $parent_id
-set parent_name [util_memoize [list db_string parent_name "select project_name from im_projects where project_id = $parent_id" -default ""]]
 
 # get the current users permissions for this project
 im_project_permissions $user_id $project_id view read write admin
@@ -40,9 +28,6 @@ set edit_project_base_data_p [im_permission $user_id edit_project_basedata]
 # ---------------------------------------------------------------------
 # Get Everything about the project
 # ---------------------------------------------------------------------
-im_dynfield::object_array -array_name project -object_id $project_id
-set object_type_id $project(object_type_id)
-
 # ---------------------------------------------------------------------
 # Add DynField Columns to the display
 set old_section ""
@@ -54,11 +39,6 @@ if {$default_layout_p} {
 } else {
     set layout_where "and la.page_url = '/intranet/projects/index'"
 }
-
-set im_company_link_tr [im_company_link_tr $user_id $company_id $company_name "[_ intranet-core.Client]"]
-set im_render_user_id [im_render_user_id $project_lead_id $project_lead $user_id $project_id]
-
-set im_project_on_track_bb [im_project_on_track_bb $on_track_status_id]
  
 
 db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
@@ -94,10 +74,6 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
         set old_section $section_heading
     }   
    
-    # Set the field name
-    set pretty_name_key "intranet-core.[lang::util::suggest_key $pretty_name]"
-    set pretty_name [lang::message::lookup "" $pretty_name_key $pretty_name]
-
     # Set the value
     if {[info exists project($attribute_name)]} {
 	    set value $project($attribute_name)
@@ -105,46 +81,37 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
 	    set value ""
     }
 
-    if {$widget eq "richtext"} {
-	    regsub -all {\"} $value {'} value
-	    if { [ad_html_text_convertable_p -from "[lindex $value 1]" -to "text/html"] } {
-	        set value [template::util::richtext::get_property html_value "[set $attribute_name]"]
-	    }
-    }
-    
-    # Special setting for projects (parent_id)
-    if {$attribute_name eq "parent_id"} {
-	    set parent_project_id $project(parent_id_orig)
-	    set project_url [export_vars -base "/intranet/projects/view" -url {{project_id $parent_project_id}}]
-	    set value "<a href='$project_url'>$value</a>"
-    }
-
-    # Special setting for projects (company_id)
-    if {$attribute_name eq "company_id"} {
-	    set company_url [export_vars -base "/intranet/companies/view" -url {{company_id $project(company_id_orig)}}]
-	    set value "<a href='$company_url'>$value</a>"
-    }
-
-    # Empty values will be skipped anyway
     if {"" != [string trim $value]} {
-	set attrib_var [lang::message::lookup "" intranet-core.$attribute_name $attribute_pretty_name]
+        # Set the field name
+        set pretty_name_key "intranet-core.[lang::util::suggest_key $attribute_name]"
+        set pretty_name [lang::message::lookup "" $pretty_name_key $pretty_name]
 
-	set translate_p 0
-	switch $acs_datatype {
-	    boolean - string { set translate_p 1 }
-	}
-	switch $widget {
-	    im_category_tree - checkbox - generic_sql - select { set translate_p 1 }
-	    richtext - textarea - text - date { set translate_p 0 }
-	}
-	
-	set value_l10n $value
-	if {$translate_p} {
-	    # ToDo: Is lang::util::suggest_key the right way? Or should we just use blank substitution?
-	    set value_l10n [lang::message::lookup "" intranet-core.[lang::util::suggest_key $value] $value] 
-	}
-	set value $value_l10n
-    }
+        switch $widget {
+            richtext {
+    	        regsub -all {\"} $value {'} value
+                if { [ad_html_text_convertable_p -from "[lindex $value 1]" -to "text/html"] } {
+                    set value [template::util::richtext::get_property html_value "[set $attribute_name]"]
+                }
+            }
+            project_parent_options {
+    	        set parent_project_id $project(parent_id_orig)
+                set project_url [export_vars -base "/intranet/projects/view" -url {{project_id $parent_project_id}}]
+    	        set value "<a href='$project_url'>$value</a>"
+            }
+            customers {
+    	        set company_url [export_vars -base "/intranet/companies/view" -url {{company_id $project(company_id_orig)}}]
+                set value "<a href='$company_url'>$value</a>"
+            }
+            project_managers {
+                set value [im_render_user_id $project(project_lead_id_orig) $value $user_id $project_id]
+            }
+            category_project_on_track_status {
+                set im_project_on_track_bb [im_project_on_track_bb $project(on_track_status_id)]
+            }
+        }
+    } else {
+        continue
+    } 	
 }
 
 # -----------------------------------

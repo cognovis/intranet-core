@@ -168,7 +168,9 @@ ad_proc im_category_select_helper {
     # Read the categories into the a hash cache
     # Initialize parent and level to "0"
     set category_list_sorted [list]
-    set sql "
+
+    if {[im_column_exists im_categories visible_tcl]} {
+	set sql "
         select
                 category_id,
                 category,
@@ -183,7 +185,25 @@ ad_proc im_category_select_helper {
 		and (enabled_p = 't' OR enabled_p is NULL)
 		$super_category_sql
         order by sort_order
-    "
+        "
+    } else {
+	set sql "
+        select
+                category_id,
+                category,
+                category_description,
+                parent_only_p,
+                enabled_p,
+                '' as visible_tcl
+        from
+                im_categories
+        where
+                category_type = :category_type
+		and (enabled_p = 't' OR enabled_p is NULL)
+		$super_category_sql
+        order by sort_order
+        "
+    }
     db_foreach category_select $sql {
     	if {"" != $visible_tcl} {
     	    set visible 0

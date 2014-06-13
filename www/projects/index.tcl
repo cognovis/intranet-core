@@ -334,7 +334,7 @@ ad_form -extend -name $form_id -form {
 # many customers in the system.
 if {!$filter_advanced_p} {
     ad_form -extend -name $form_id -form {
-	{company_id:text(select),optional {label \#intranet-core.Customer\#} {options $company_options}}
+    {company_id:text(select),optional {label \#intranet-core.Customer\#} {options $company_options} {value $company_id}}
     }
 }
 

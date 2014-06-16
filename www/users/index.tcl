@@ -86,14 +86,25 @@ set debug_html ""
 set email ""
 set name_order [parameter::get -package_id [apm_package_id_from_key intranet-core] -parameter "NameOrder" -default 1]
 set show_context_help_p 1
+set extra_wheres [list]
+set extra_froms [list]
+set extra_left_joins [list]
+set extra_selects [list]
+
+set extra_order_by ""
+set column_headers [list]
+set column_headers_admin [list]
+set column_vars [list]
 
 # ---------------------------------------------------------------
 # 2a. Security
 # ---------------------------------------------------------------
 
 switch $user_group_name {
-    "Employees" {
+    "Employees" - "employees" {
 	set menu_label "users_employees"
+#	lappend extra_froms "im_employees e"
+#	lappend extra_wheres "u.user_id = e.employee_id"
     }
     "Customers" {
 	set menu_label "users_companies"
@@ -128,22 +139,7 @@ if {![string equal "t" $read_p]} {
 # 
 # ---------------------------------------------------------------
 
-set extra_wheres [list]
-set extra_froms [list]
-set extra_left_joins [list]
-set extra_selects [list]
-
-set extra_order_by ""
-set column_headers [list]
-set column_headers_admin [list]
-set column_vars [list]
-
 set freelancers_exist_p [db_table_exists im_freelancers]
-
-if {$freelancers_exist_p} {
-    set extra_left_joins [list "LEFT OUTER JOIN im_freelancers fl ON (fl.user_id = u.user_id)"]
-    set extra_selects [list "fl.*"]
-}
 
 # Get the ID of the group of users to show
 # Default 0 corresponds to the list of all users.
@@ -166,6 +162,10 @@ switch [string tolower $user_group_name] {
     "freelancers" {
         set user_group_id [im_profile_freelancers]
         set menu_select_label "users_freelancers"
+	if {$freelancers_exist_p} {
+	    lappend extra_froms "im_freelancers fl"
+	    lappend extra_wheres "fl.user_id = u.user_id"
+	}
 	lappend extra_wheres "u.user_id in (select object_id_two from acs_rels where rel_type = 'membership_rel' and  object_id_one = $user_group_id)"
     }
     "none" {
@@ -426,17 +426,20 @@ if { $user_group_id > 0 } {
     append page_title " in group \"$group_pretty_name\""
     set context_bar [im_context_bar $page_title]
 
-    lappend extra_froms "(select member_id from group_distinct_member_map m where group_id = :user_group_id) m"
+    set user_sql "(select
+        u.*
+        from
+        cc_users u,
+        group_distinct_member_map m
+        where
+          u.user_id = m.member_id and group_id = '$user_group_id'
+          and u.member_state = 'approved') u,"
+} else {
+    
+    set user_sql "cc_users u,"
 
-    lappend extra_wheres "u.user_id = m.member_id"
-}
-
-# Don't show deleted users unless specified (in the future)
-if {1} {
     lappend extra_wheres "u.member_state = 'approved'"
 }
-
-
 
 if { -1 == $user_group_id} {
     # "Unregistered users
@@ -528,27 +531,20 @@ if {$filter_advanced_p && [im_table_exists im_dynfield_attributes]} {
 
 set sql "
 select
-	p.*,
 	u.*,
-	c.home_phone, c.work_phone, c.cell_phone, c.pager,
-	c.fax, c.aim_screen_name, c.msn_screen_name,
-	c.icq_number, c.m_address,
-	c.ha_line1, c.ha_line2, c.ha_city, c.ha_state, c.ha_postal_code, c.ha_country_code,
-	c.wa_line1, c.wa_line2, c.wa_city, c.wa_state, c.wa_postal_code, c.wa_country_code,
-	c.note, c.current_information,
+        c.*,
         to_char(u.last_visit, 'YYYY-MM-DD HH:SS') as last_visit_formatted,
 	to_char(u.creation_date,:date_format) as creation_date,
 	im_name_from_user_id(u.user_id, $name_order) as name
 	$extra_select
 from 
-	persons p,
-	cc_users u
-	LEFT OUTER JOIN im_employees e ON (u.user_id = e.employee_id)
-	LEFT OUTER JOIN users_contact c ON (u.user_id = c.user_id)
+        $user_sql
+        users_contact c
+        LEFT OUTER JOIN im_employees e ON (e.employee_id = c.user_id)
 	$extra_left_join
 	$extra_from
 where
-	p.person_id = u.user_id
+        u.user_id = c.user_id
 	$extra_where
 $extra_order_by
 "

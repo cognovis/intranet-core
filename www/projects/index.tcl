@@ -338,16 +338,22 @@ if {!$filter_advanced_p} {
 
 # Does user have VIEW permissions on company's employees?  
 set employee_group_id [im_employee_group_id]
+set user_select_group_ids [list]
 if { "t" == [db_string get_view_perm "select im_object_permission_p(:employee_group_id, :user_id, 'read') from dual"]} {
-    if {$show_filter_with_member_p} {
+    lappend user_select_group_ids $employee_group_id
+}
 
-	set user_options [im_profile::user_options -profile_ids $user_select_groups]
+if {$show_filter_with_member_p} {
+    set user_select_group_ids [concat $user_select_group_ids $user_select_groups]
+}
+
+if {"" != $user_select_group_ids} {
+	set user_options [im_profile::user_options -profile_ids $user_select_group_ids]
 	set user_options [linsert $user_options 0 [list $all_l10n ""]]
 
 	ad_form -extend -name $form_id -form {
 	    {user_id_from_search:text(select),optional {label \#intranet-core.With_Member\#} {options $user_options}}
 	}
-    }
 }
 
 ad_form -extend -name $form_id -form {

@@ -378,4 +378,46 @@ db_foreach user_select $user_sql {
    "
 }
 
+# ---------------------- im_user_absences -------------------------------
+
+
+set im_user_absences_sql "
+	select	a.*
+	from	im_user_absences a
+"
+db_foreach im_user_absences_select $im_user_absences_sql {
+
+    db_dml im_user_absences_update "
+	update im_user_absences set
+		absence_name = '[anonymize_name $absence_name]',
+		contact_info = '[anonymize_name $contact_info]',
+		description = '[anonymize_name $description]'
+    	where
+		absence_id = :absence_id
+    "
+}
+
+# ---------------------- im_employees -------------------------------
+
+
+set im_employees_sql "
+	select	e.*
+	from	im_employees e
+"
+db_foreach im_employees_select $im_employees_sql {
+
+    db_dml im_employees_update "
+	update im_employees set
+		personnel_number = '[anonymize_name $personnel_number]',
+		ss_number = '[anonymize_name $ss_number]',
+		educational_history = '[anonymize_name $educational_history]',
+		termination_reason = '[anonymize_name $termination_reason]',
+		last_degree_completed = '[anonymize_name $last_degree_completed]',
+		skills = '[anonymize_name $skills]'
+    	where
+		employee_id= :employee_id
+    "
+}
+
+
 ad_returnredirect $return_url

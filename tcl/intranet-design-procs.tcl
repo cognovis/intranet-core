@@ -822,8 +822,16 @@ ad_proc -private im_sub_navbar_menu_helper {
 	order by
 		 sort_order
     "
-    set result [db_list_of_lists subnavbar_menus $menu_select_sql]
-    return $result
+    
+    set result_list [list]
+    db_foreach subnavbar_menus $menu_select_sql {
+	    set name_key "intranet-core.[lang::util::suggest_key $name]"
+	    set name [lang::message::lookup "" $name_key $name]
+        ds_comment "Name: $name_key $name"
+        lappend result_list [list $menu_id $package_name $label $name $url $visible_tcl]
+    }
+#    set result [db_list_of_lists subnavbar_menus $menu_select_sql]
+    return $result_list
 }
 
 

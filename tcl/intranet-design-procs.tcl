@@ -851,7 +851,7 @@ ad_proc -public im_navbar {
 	set admin_p [im_is_user_site_wide_or_intranet_admin $user_id]
 	set locale [lang::user::locale -user_id $user_id]
 	if {![info exists loginpage_p]} { set loginpage_p 0 }
-	set ldap_installed_p [util_memoize [list db_string otp_installed "select count(*) from apm_enabled_package_versions where package_key = 'intranet-ldap'" -default 0]]
+	set ldap_installed_p [util_memoize [list db_string otp_installed "select count(*) from apm_enabled_package_versions where package_key = 'auth-ldap-adldapsearch'" -default 0]]
 	set url_stub [ns_conn url]
 	set page_title [ad_partner_upvar page_title]
 	set section [ad_partner_upvar section]

@@ -188,8 +188,17 @@ im_dynfield::append_attributes_to_form \
     -object_type $object_type \
     -form_id $form_id \
     -object_id $dynfield_project_id 
+ 
 
 
+
+if {[apm_package_installed_p "intranet-freelance"]} {
+    # Append the skills attributes
+    im_freelance_append_skills_to_form \
+        -object_subtype_id $dynfield_project_type_id \
+        -form_id $form_id \
+        -object_id $dynfield_project_id 
+} 
 
 set requires_report_p "f"
 
@@ -345,7 +354,7 @@ ad_form -extend -name $form_id -new_request {
     if { $project_name_exists > 0 } {
 	incr n_error
 	template::element::set_error $form_id project_name "[_ intranet-core.lt_The_specified_name_pr]"
-    }
+}
 
 } -new_data {
     
@@ -561,6 +570,14 @@ ad_form -extend -name $form_id -new_request {
         -object_type $object_type \
         -object_id $project_id \
         -form_id $form_id
+    
+    if {[apm_package_installed_p "intranet-freelance"]} {
+        # Append the skills attributes
+        im_freelance_store_skills_from_form \
+            -object_subtype_id $project_type_id \
+            -form_id $form_id \
+            -object_id $project_id 
+    } 
     
 
     # -----------------------------------------------------------------                                                                                                                     # Create a new Workflow for the project either if:                                                                                                                                      # - specified explicitely in the parameters or                                                                                                                                          # - if there is a WF associated with the project_type                                                                                                                                   # Check if there is a WF associated with the project type                                                                                                                                                       

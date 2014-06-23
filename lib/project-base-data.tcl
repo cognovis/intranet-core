@@ -114,6 +114,17 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
     } 	
 }
 
+# Append the skill information to the multirow
+if {[apm_package_installed_p "intranet-freelance"]} {
+    set counter 0
+    db_foreach skills_for_object "select skill_type_id, skill_id from im_object_freelance_skill_map, im_categories where object_id = :project_id and category_id = skill_type_id order by sort_order " {
+        if {$counter eq 0} {set section_heading "Skills"} else {set section_heading ""}
+        incr counter
+        ds_comment "$skill_type_id :: $skill_id"
+        template::multirow append project_info [im_category_from_id $skill_type_id] "skill_$skill_type_id" $section_heading "" "" "" [im_category_from_id $skill_id]
+    }
+} 
+
 # -----------------------------------
 # Notification Subscription Button
 # -----------------------------------

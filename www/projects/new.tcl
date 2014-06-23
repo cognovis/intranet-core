@@ -540,6 +540,14 @@ ad_form -extend -name $form_id -new_request {
 
     }
     
+    if {[apm_package_installed_p "intranet-freelance"]} {
+        # Append the skills attributes
+        im_freelance_store_skills_from_form \
+            -object_subtype_id $project_type_id \
+            -form_id $form_id \
+            -object_id $project_id 
+    }
+    
 } -edit_data {
     
     set sql "

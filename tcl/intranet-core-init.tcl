@@ -263,7 +263,19 @@ foreach object_type $object_types {
 		   implementation is to be executed only on certain object states.
     } -
 
+    ad_proc -public -callback ${object_type}_on_submit {
+        -form_id:required
+        -object_id:required
+    } {
+        This callback allows for additional validations and it should be called in the on_submit block of a form
+        
+        Usage: 
+            form set_error $form_id $error_field $error_message
+            break
 
+        @param object_id ID of the $object_type
+        @param form_id ID of the form which is being submitted
+    } -
 
 }
 

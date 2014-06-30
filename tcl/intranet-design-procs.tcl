@@ -598,8 +598,6 @@ ad_proc -public im_navbar_tab {
     Creates <li> menu item  
 } {
 
-    # ds_comment "$name / $selected / $url"
-
     if {$selected} {
 	set selected "selected"
         set navbar_selected "navbar_selected"
@@ -827,7 +825,6 @@ ad_proc -private im_sub_navbar_menu_helper {
     db_foreach subnavbar_menus $menu_select_sql {
 	    set name_key "intranet-core.[lang::util::suggest_key $name]"
 	    set name [lang::message::lookup "" $name_key $name]
-        ds_comment "Name: $name_key $name"
         lappend result_list [list $menu_id $package_name $label $name $url $visible_tcl]
     }
 #    set result [db_list_of_lists subnavbar_menus $menu_select_sql]
@@ -1820,7 +1817,6 @@ ad_proc -public im_header_legacy_version_4 {
     append extra_stuff_for_document_head "<!--\[if lt IE 7.\]>\n<script defer type='text/javascript' src='/intranet/js/pngfix.js'></script>\n<!\[endif\]-->\n"
 
     if { [info exists ::acs_blank_master(tinymce)] } {
-	ds_comment "TINYMCE :: $::acs_blank_master__htmlareas"
 	# we are using TinyMCE
 	template::head::add_javascript -src "/resources/acs-templating/tinymce/jscripts/tiny_mce/tiny_mce_src.js" -order tinymce0
 	# get the textareas where we apply tinymce

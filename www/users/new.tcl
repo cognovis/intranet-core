@@ -212,7 +212,13 @@ if {!$current_user_is_admin_p && $editing_self_p} { set edit_profiles_p 0}
 # Until now site-wide admins were necessary to change a users state
 
 set status_options "{{[lang::message::lookup "" intranet-core.Member_state_active "active"]} approved} {{[lang::message::lookup "" intranet-core.Member_state_deleted "deleted"]} banned }"
-set status_option_value [db_string get_status_option_value "select member_state from cc_users where user_id = :user_id" -default 0]
+if {[exists_and_not_null user_id]} {
+    set status_option_value [db_string get_status_option_value "select member_state from cc_users where user_id = :user_id" -default 0]
+} else {
+    set status_option_value ""
+}
+
+
 
 if {$edit_profiles_p} {
     ad_form -extend -name register -form {
@@ -236,13 +242,14 @@ if {$edit_profiles_p} {
 # Find out all the groups of the user and map these
 # groups to im_category "Intranet User Type"
 
-set user_subtypes [im_user_subtypes $user_id]
-
-if { ""==$user_subtypes} {
-    set user_subtypes $profile_org    
-}
 
 if {[exists_and_not_null user_id]} {
+    set user_subtypes [im_user_subtypes $user_id]
+
+    if { ""==$user_subtypes} {
+	set user_subtypes $profile_org    
+    }
+
     im_dynfield::append_attributes_to_form \
 	-object_subtype_id $user_subtypes \
 	-object_type "person" \
@@ -250,6 +257,7 @@ if {[exists_and_not_null user_id]} {
 	-object_id $user_id \
 	-page_url "/intranet/users/new" 
 } else {
+    set user_subtypes $profile_org    
     im_dynfield::append_attributes_to_form \
 	-object_subtype_id $user_subtypes \
 	-object_type "person" \

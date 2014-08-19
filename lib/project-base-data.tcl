@@ -93,6 +93,8 @@ db_multirow -extend {attrib_var value} project_info dynfield_attribs_sql "
                     set value [template::util::richtext::get_property html_value "[set $attribute_name]"]
                 }
             }
+	}
+	switch $widget_name {
             project_parent_options {
     	        set parent_project_id $project(parent_id_orig)
                 set project_url [export_vars -base "/intranet/projects/view" -url {{project_id $parent_project_id}}]

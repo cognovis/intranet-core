@@ -32,4 +32,7 @@ update acs_rel_types
 set object_type_two = 'party'
 where rel_type = 'im_company_employee_rel';
 
+update acs_rel_types 
+set object_type_two = 'party'
+where rel_type = 'im_key_account_rel';
 

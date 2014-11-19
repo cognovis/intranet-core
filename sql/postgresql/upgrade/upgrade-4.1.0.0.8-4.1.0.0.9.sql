@@ -1,5 +1,5 @@
 -- 4.1.0.0.8-4.1.0.0.9.sql
-SELECT acs_log__debug('/packages/intranet-helpdesk/sql/postgresql/upgrade/upgrade-4.1.0.0.8-4.1.0.0.9.sql','');
+SELECT acs_log__debug('/packages/intranet-core/sql/postgresql/upgrade/upgrade-4.1.0.0.8-4.1.0.0.9.sql','');
 
 -- ------------------------------------------------------
 -- Allow to add queues to tickets
@@ -25,4 +25,11 @@ SELECT acs_permission__grant_permission(
         (select group_id from groups where group_name = 'Employees'),
         'read'
 );
+
+
+-- Allow parties (=groups) as employees of a company
+update acs_rel_types 
+set object_type_two = 'party'
+where rel_type = 'im_company_employee_rel';
+
 

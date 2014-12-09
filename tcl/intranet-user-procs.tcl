@@ -1966,7 +1966,7 @@ ad_proc im_user_timesheet_absences_options_2 {
         lappend user_selection_type_list [list $text $value]
     }
 
-    if {$user_selection_in_types eq 0} {
+    if {$user_selection_in_types eq 0 && $user_selection ne {}} {
         lappend user_selection_type_list [list [im_name_from_id $user_selection] $user_selection]
     }
 

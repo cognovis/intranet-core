@@ -437,71 +437,6 @@ ad_proc im_user_timesheet_absences_select {
 }
 
 
-ad_proc -public im_user_timesheet_absences_options {
-    {-enable_groups_p 0}
-} {
-    Returns the options for a drop-down box with users for the
-    absences and timesheet_absences_ "log for user" pages.
-} {
-    set current_user_id [ad_maybe_redirect_for_registration]
-    set view_absences_all_p [im_permission $current_user_id "view_absences_all"]
-    set add_absences_all_p [im_permission $current_user_id "add_absences_all"]
-    set view_absences_direct_reports_p [im_permission $current_user_id "view_absences_direct_reports"]
-    set add_absences_direct_reports_p [im_permission $current_user_id "add_absences_direct_reports"]
-    set name_order [parameter::get -package_id [apm_package_id_from_key intranet-core] -parameter "NameOrder" -default 1]
-
-    set all_user_options [im_user_options -include_empty_p 0 -group_name "Employees"]
-    set direct_reports_options [im_user_direct_reports_options -user_id $current_user_id]
-    set direct_report_ids [im_user_direct_reports_ids -user_id $current_user_id]
-
-    foreach t $direct_reports_options {
-	set uid [lindex $t 1]
-	set direct_reports_hash($uid) $uid
-    }
-
-    set other_options [list]
-    foreach t $all_user_options {
-	set uname [lindex $t 0]
-	set uid [lindex $t 1]
-	if {![info exists direct_reports_hash($uid)]} {
-	    lappend other_options $t
-	}
-	set direct_reports_hash($uid) $uid
-    }
-
-    # Show always "mine" 
-    set user_selection_options [list]
-    lappend user_selection_options [list [lang::message::lookup "" intranet-timesheet2.Mine Mine] "mine"]
-
-    # Direct direct_reports 
-    if {$view_absences_direct_reports_p || $add_absences_all_p || $view_absences_all_p} { 
-	if {0 != [llength $direct_reports_options] } {
-	    lappend user_selection_options [list [lang::message::lookup "" intranet-timesheet2.Direct_reports "Direct reports"] "direct_reports"]
-	    foreach t $direct_reports_options {
-		set uname [lindex $t 0]
-		set uid [lindex $t 1]
-		lappend user_selection_options [list "&nbsp;&nbsp;&nbsp;&nbsp;$uname" $uid]
-	    }
-	}
-    }
-
-    # All
-    if {$add_absences_all_p || $view_absences_all_p} {
-	lappend user_selection_options [list [lang::message::lookup "" intranet-timesheet2.All "All"] "all"] 
-	foreach t $other_options { 
-	    set uname [lindex $t 0]
-	    set uid [lindex $t 1]
-	    lappend user_selection_options [list "&nbsp;&nbsp;&nbsp;&nbsp;$uname" $uid]
-	}
-	if {$enable_groups_p} {
-	    lappend user_selection_options [list [lang::message::lookup "" intranet-timesheet2.Employees "Employees"] "employees"]
-	    lappend user_selection_options [list [lang::message::lookup "" intranet-timesheet2.Providers "Providers"] "providers"]
-	    lappend user_selection_options [list [lang::message::lookup "" intranet-timesheet2.Customers "Customers"] "customers"]
-	}
-    }
-    return $user_selection_options
-}
-
 
 # *********************************************************
 # OPTIONS & SELECTS
@@ -1789,7 +1724,7 @@ ad_proc -public im_menu_users_admin_links {
 
 
 
-ad_proc im_user_timesheet_absences_options_2 {
+ad_proc im_user_timesheet_absences_options {
     {-enable_groups_p 0}
     {-project_id ""}
     {-user_selection ""}
@@ -1951,7 +1886,7 @@ ad_proc im_user_timesheet_absences_options_2 {
     }
 
     # All
-    if {$add_absences_all_p || $view_absences_all_p} {
+    if {$add_absences_all_p || $view_absences_all_p || $enable_groups_p} {
         lappend user_selection_types "employees"
         lappend user_selection_types [lang::message::lookup "" intranet-timesheet2.Employees "Employees"] 
         lappend user_selection_types "providers"

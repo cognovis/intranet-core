@@ -678,6 +678,22 @@ ad_proc -public im_sub_categories {
     returns a list of the transitive closure (all sub-
     categories) plus the original input categories.
 } {
+    return [util_memoize \
+        [list im_sub_categories_helper \
+	 -include_disabled_p $include_disabled_p \
+	     $category_list] 60]
+} 
+
+
+
+ad_proc -public im_sub_categories_helper {
+    {-include_disabled_p 0}
+    category_list
+} {
+    Takes a single category or a list of categories and
+    returns a list of the transitive closure (all sub-
+    categories) plus the original input categories.
+} {
     # Add a dummy value so that an empty input list doesn't
     # give a syntax error...
     lappend category_list 0

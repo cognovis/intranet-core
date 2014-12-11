@@ -1731,6 +1731,8 @@ ad_proc im_user_timesheet_absences_options {
 } {
     Returns the options for a drop-down box with users for the
     absences and timesheet_absences_ "log for user" pages.
+
+    @param project_id if set to "-1" do not display project_options
 } {
 
     set current_user_id [ad_maybe_redirect_for_registration]
@@ -1871,7 +1873,8 @@ ad_proc im_user_timesheet_absences_options {
 
     # Deal with project managers and display their projects in this list
 
-    db_foreach manager_of_project_ids "select distinct r.object_id_one, p.project_nr || ' - ' || p.project_name as project_name
+    if {$project_id ne "-1"} {
+	db_foreach manager_of_project_ids "select distinct r.object_id_one, p.project_nr || ' - ' || p.project_name as project_name
         from acs_rels r, im_biz_object_members bom, im_projects p
         where r.object_id_two = :current_user_id
         and r.rel_id = bom.rel_id
@@ -1880,9 +1883,9 @@ ad_proc im_user_timesheet_absences_options {
         and p.project_type_id not in (100,101)
         union select project_id,project_name from im_projects where project_id=:project_id order by project_name" {
         
-        lappend user_selection_types $object_id_one
-        lappend user_selection_types $project_name
-
+	    lappend user_selection_types $object_id_one
+	    lappend user_selection_types $project_name
+	}
     }
 
     # All

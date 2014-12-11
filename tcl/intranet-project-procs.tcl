@@ -246,6 +246,9 @@ ad_proc -public im_project_permissions {
     # The user is member of the project
     if {$user_is_project_member_p} { 
 	set read 1
+	if {[im_permission $user_id edit_projects_basedata]} { 
+	    set write 1
+	}
     }
 
     if {$debug} { ns_log Notice "im_project_permissions: view_projects_all" }

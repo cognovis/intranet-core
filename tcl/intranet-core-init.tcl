@@ -545,6 +545,17 @@ ad_proc -public -callback im_before_member_add {
     Callback to be executed before a user is added to a project
 } -
 
+ad_proc -public -callback im_member_add__extend_form {
+    {-object_id:required ""}
+    {-role_id:required ""}
+    {-select_formVar:required ""}
+    {-limit_to_group_id ""}
+    {-notify_checked ""}
+} {
+    Callback that extends the html for selecting employees
+    in intranet/member-add.
+} -
+
 ad_proc -public -callback im_invoices_index_before_render {
     {-view_name:required}
     {-view_type:required}

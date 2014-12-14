@@ -179,6 +179,7 @@
   <msg key="Authoring">Authoring</msg>
   <msg key="Autoedicin">Auto-Edit</msg>
   <msg key="Automotive">Automotive</msg>
+  <msg key="Availability">Availability</msg>
   <msg key="AvailableDays">Available Days</msg>
   <msg key="Average_Quality">Average Quality</msg>
   <msg key="B">B</msg>
@@ -219,6 +220,7 @@
   <msg key="bottom">Bottom</msg>
   <msg key="Branch_Office">Branch Office</msg>
   <msg key="Brazil">Brazil</msg>
+  <msg key="Bridge_Days">Bridge Days</msg>
   <msg key="Browser_Warning">Browser Warning</msg>
   <msg key="Browser_Warning_Msg">Your browser '%browser% %version_major%.x' may not render all pages correctly with this version of ]project-open[.&lt;br&gt;
 We recommend you to upgrade your browser to a more recent version.</msg>
@@ -254,6 +256,7 @@ We recommend you to upgrade your browser to a more recent version.</msg>
   <msg key="CAM">CAM</msg>
   <msg key="Canada">Canada</msg>
   <msg key="Canceled">Canceled</msg>
+  <msg key="Cancelled">Cancelled</msg>
   <msg key="Cant_reproduce">Can not reproduce</msg>
   <msg key="CapacityPlanning">Capacity Planning</msg>
   <msg key="Cash">Cash</msg>
@@ -518,6 +521,7 @@ In some rare cases changes in category types might require flushing the cache ma
   <msg key="Department_Planner">Department Planner</msg>
   <msg key="Departments">Departments</msg>
   <msg key="Description">Description</msg>
+  <msg key="Detailled">Detailled</msg>
   <msg key="Developer_Home">Developer Home</msg>
   <msg key="diagram">Diagram</msg>
   <msg key="directory_path">directory path</msg>
@@ -556,6 +560,7 @@ In some rare cases changes in category types might require flushing the cache ma
   <msg key="Email">Email</msg>
   <msg key="Email_address">Email address</msg>
   <msg key="Email_sent">Email sent</msg>
+  <msg key="Empl_Status">Empl_Status</msg>
   <msg key="Employee">Employee</msg>
   <msg key="Employee_Salary">Employee Salary</msg>
   <msg key="Employees">Employees</msg>
@@ -570,6 +575,7 @@ In some rare cases changes in category types might require flushing the cache ma
   <msg key="en_US">en_US</msg>
   <msg key="End">End</msg>
   <msg key="End_Date">End Date</msg>
+  <msg key="End_date">End_date</msg>
   <msg key="Engineering">Engineering</msg>
   <msg key="ERROR">ERROR</msg>
   <msg key="es">es</msg>
@@ -650,6 +656,7 @@ In some rare cases changes in category types might require flushing the cache ma
   <msg key="Financial_Management">Financial Management</msg>
   <msg key="Finished">Finished</msg>
   <msg key="Finland">Finland</msg>
+  <msg key="First_Name">First_Name</msg>
   <msg key="First_Names">First Names</msg>
   <msg key="First_names">First names</msg>
   <msg key="for">for</msg>
@@ -671,6 +678,7 @@ In some rare cases changes in category types might require flushing the cache ma
   <msg key="Freelance_List_Component">Freelance List Component</msg>
   <msg key="Freelance_Managers">Freelance Managers</msg>
   <msg key="Freelance_Provider">Freelance Provider</msg>
+  <msg key="Freelancer">Freelancer</msg>
   <msg key="Freelancers">Freelancers</msg>
   <msg key="freelancers">Freelancers</msg>
   <msg key="Fuel">Fuel</msg>
@@ -1514,6 +1522,7 @@ other way for the user to find out.</msg>
   <msg key="Marketing">Marketing</msg>
   <msg key="Material">Material</msg>
   <msg key="Materials">Materials</msg>
+  <msg key="MDCRO">MD/ COO</msg>
   <msg key="Meals">Meals</msg>
   <msg key="Med">Med</msg>
   <msg key="Medium">Medium</msg>
@@ -1596,6 +1605,7 @@ other way for the user to find out.</msg>
   <msg key="New_Travel_Expense">New Travel Expense</msg>
   <msg key="New_User">New User</msg>
   <msg key="New_User_Company">New User + Company</msg>
+  <msg key="New_Vacation_Absence">New Vacation Absence</msg>
   <msg key="New_view">New view</msg>
   <msg key="New_Zealand">New Zealand</msg>
   <msg key="News">News</msg>
@@ -1665,6 +1675,7 @@ other way for the user to find out.</msg>
   <msg key="Ok">Ok</msg>
   <msg key="Ok?">Ok?</msg>
   <msg key="Old_Number_Location">Old Number Location</msg>
+  <msg key="Old_User_ID">Old_User_ID</msg>
   <msg key="On_Hold">On Hold</msg>
   <msg key="On_Hold1">On Hold</msg>
   <msg key="On_Track_Status">On Track Status</msg>
@@ -1697,6 +1708,7 @@ other way for the user to find out.</msg>
   <msg key="OS_Name">OS Name</msg>
   <msg key="OS_Version">OS Version</msg>
   <msg key="Other">Other</msg>
+  <msg key="Other_Absences">Other Absences</msg>
   <msg key="Otherr">Other</msg>
   <msg key="Ouch">Ouch!</msg>
   <msg key="Our_employees_related">Our Employees (managing the company)</msg>
@@ -1712,6 +1724,7 @@ other way for the user to find out.</msg>
   <msg key="PageTitleHome">Home</msg>
   <msg key="Paid">Paid</msg>
   <msg key="Panama">Panama</msg>
+  <msg key="PANF">PANF</msg>
   <msg key="Paraguay">Paraguay</msg>
   <msg key="Parameters">Parameters</msg>
   <msg key="Parent_Categories">Parent Categories</msg>
@@ -1824,6 +1837,7 @@ other way for the user to find out.</msg>
   <msg key="Profile_Sales">Sales</msg>
   <msg key="Profile_Senior_Managers">Senior Managers</msg>
   <msg key="Profile_Translation_Vertical">Translation Vertical</msg>
+  <msg key="Profile_Works_Council">Betriebsrat</msg>
   <msg key="Profiles">Profiles</msg>
   <msg key="Profit">Profit</msg>
   <msg key="Profit_amp_Loss">Profit &amp; Loss</msg>
@@ -1853,6 +1867,7 @@ other way for the user to find out.</msg>
   <msg key="Project_Gantt_Scheduling_Summary">Project Gantt Scheduling Summary</msg>
   <msg key="Project_GanttProject_Component">Project Gantt Component</msg>
   <msg key="Project_Hierarchy">Project Hierarchy</msg>
+  <msg key="Project_Leads">Project Leads</msg>
   <msg key="Project_Management">Project Management</msg>
   <msg key="Project_Manager">Project Manager</msg>
   <msg key="Project_Managers">Project Managers</msg>
@@ -1862,7 +1877,7 @@ other way for the user to find out.</msg>
   <msg key="Project_name">Project name</msg>
   <msg key="Project_Notes">Project Notes</msg>
   <msg key="Project_Nr">Project Nr</msg>
-  <msg key="Project_nr">Project nr</msg>
+  <msg key="Project_nr">Project Nr</msg>
   <msg key="Project_Open_Package">]po[ Package</msg>
   <msg key="Project_Open_Process">]po[ Process</msg>
   <msg key="Project_project_name">Project: %project_name%</msg>
@@ -2166,13 +2181,31 @@ other way for the user to find out.</msg>
   <msg key="Star_Transit_XV">Star Transit XV</msg>
   <msg key="Start">Start</msg>
   <msg key="Start_Date">Start Date</msg>
+  <msg key="Start_date">Start_date</msg>
   <msg key="State">State</msg>
   <msg key="Status">Status</msg>
   <msg key="Strategic_Consulting">Strategic Consulting</msg>
+  <msg key="string1_54"></msg>
+  <msg key="string1_55"></msg>
+  <msg key="string1_5000">vacation_approval_wf</msg>
+  <msg key="string1_5001">other</msg>
+  <msg key="string1_5002">hr_vacation_approval_wf</msg>
+  <msg key="string1_5006">vacation_approval_wf</msg>
+  <msg key="string1_5007">BT</msg>
+  <msg key="string1_10244"></msg>
+  <msg key="string1_10245"></msg>
+  <msg key="string2_5000">C2E254</msg>
+  <msg key="string2_5001">FF9584</msg>
+  <msg key="string2_5002">5A6C46</msg>
+  <msg key="string2_5005">5171B2</msg>
+  <msg key="string2_5006">EFCA1A</msg>
+  <msg key="string2_5007">73C6EF</msg>
+  <msg key="Student">Student</msg>
   <msg key="Sub_Projects">Project Hierarchy</msg>
   <msg key="Subjects">Subjects</msg>
   <msg key="Submit">Submit</msg>
   <msg key="Subnet">Subnet</msg>
+  <msg key="Subprojects">Subprojects</msg>
   <msg key="Subscribe">Subscribe</msg>
   <msg key="Subscription_Service">Subscription Service</msg>
   <msg key="Summary">Summary</msg>
@@ -2237,6 +2270,7 @@ other way for the user to find out.</msg>
   <msg key="Time_plan">Time plan</msg>
   <msg key="Time_sheet">Time sheet</msg>
   <msg key="Timesheet">Timesheet</msg>
+  <msg key="Timesheet_Approval_Component">Timesheet Approval</msg>
   <msg key="Timesheet_Budget">Timesheet Budget</msg>
   <msg key="Timesheet_Confirmation_Journal">Timesheet Confirmation Journal</msg>
   <msg key="Timesheet_Confirmation_Workflow">Timesheet Confirmation Workflow</msg>

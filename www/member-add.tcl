@@ -127,6 +127,8 @@ set employee_select [im_employee_select_multiple -limit_to_group_id $limit_to_us
 
 
 set select_form "
+<table><tr>
+<td>
 <form method=POST action=/intranet/member-add-2>
 [export_entire_form]
 <input type=hidden name=target value=\"[im_url_stub]/member-add-2\">
@@ -153,5 +155,14 @@ $employee_select
   </tr>
 </table>
 </form>
+</td>
 "
 
+callback im_member_add__extend_form \
+    -select_formVar select_form \
+    -object_id $object_id \
+    -role_id $role_id \
+    -limit_to_group_id $limit_to_users_in_group_id \
+    -notify_checked $notify_checked
+
+append select_form "</tr></table>"

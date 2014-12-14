@@ -576,6 +576,81 @@ ad_proc im_employee_select_multiple {
 }
 
 
+ad_proc im_student_select_multiple {
+    {-limit_to_group_id ""}
+    {-limit_to_direct_reports_of_user_id ""}
+    select_name
+    { defaults "" }
+    { size "6"}
+    {multiple ""}
+} {
+    set bind_vars [ns_set create]
+    set group_id [im_profile::profile_id_from_name -profile "Students"]
+    set name_order [parameter::get -package_id [apm_package_id_from_key intranet-core] -parameter "NameOrder" -default 1]
+
+    set limit_to_group_sql ""
+    set limit_to_direct_reports_of_user_id_sql ""
+
+    if {"" != $limit_to_group_id && 0 != $limit_to_group_id && [string is integer $limit_to_group_id]} { set limit_to_group_sql "and u.user_id in (select member_id from group_distinct_member_map where group_id = $limit_to_group_id)" }
+    if {"" != $limit_to_direct_reports_of_user_id && 0 != $limit_to_direct_reports_of_user_id && [string is integer $limit_to_direct_reports_of_user_id] } {
+        set limit_to_direct_reports_of_user_id_sql "and u.user_id in (select employee_id from im_employees where supervisor_id = $limit_to_direct_reports_of_user_id)"
+    }
+
+    set sql "
+        select
+                u.user_id,
+                im_name_from_user_id(u.user_id, $name_order) as employee_name
+        from
+                registered_users u,
+                group_distinct_member_map gm
+        where
+                u.user_id = gm.member_id
+                and gm.group_id = $group_id
+                $limit_to_group_sql
+                $limit_to_direct_reports_of_user_id_sql
+        order by lower(im_name_from_user_id(u.user_id, $name_order))
+    "
+    return [im_selection_to_list_box -translate_p "0" $bind_vars category_select $sql $select_name $defaults $size $multiple]
+}
+
+
+ad_proc im_freelancer_select_multiple {
+    {-limit_to_group_id ""}
+    {-limit_to_direct_reports_of_user_id ""}
+    select_name
+    { defaults "" }
+    { size "6"}
+    {multiple ""}
+} {
+    set bind_vars [ns_set create]
+    set group_id [im_profile::profile_id_from_name -profile "Freelancers"]
+    set name_order [parameter::get -package_id [apm_package_id_from_key intranet-core] -parameter "NameOrder" -default 1]
+
+    set limit_to_group_sql ""
+    set limit_to_direct_reports_of_user_id_sql ""
+
+    if {"" != $limit_to_group_id && 0 != $limit_to_group_id && [string is integer $limit_to_group_id]} { set limit_to_group_sql "and u.user_id in (select member_id from group_distinct_member_map where group_id = $limit_to_group_id)" }
+    if {"" != $limit_to_direct_reports_of_user_id && 0 != $limit_to_direct_reports_of_user_id && [string is integer $limit_to_direct_reports_of_user_id] } {
+        set limit_to_direct_reports_of_user_id_sql "and u.user_id in (select employee_id from im_employees where supervisor_id = $limit_to_direct_reports_of_user_id)"
+    }
+
+    set sql "
+        select
+                u.user_id,
+                im_name_from_user_id(u.user_id, $name_order) as employee_name
+        from
+                registered_users u,
+                group_distinct_member_map gm
+        where
+                u.user_id = gm.member_id
+                and gm.group_id = $group_id
+                $limit_to_group_sql
+                $limit_to_direct_reports_of_user_id_sql
+        order by lower(im_name_from_user_id(u.user_id, $name_order))
+    "
+    return [im_selection_to_list_box -translate_p "0" $bind_vars category_select $sql $select_name $defaults $size $multiple]
+}
+
 ad_proc im_pm_select_multiple { select_name { defaults "" } { size "6"} {multiple ""}} {
     set bind_vars [ns_set create]
     set pm_group_id [im_pm_group_id]
@@ -3195,5 +3270,104 @@ ad_proc -public im_menu_users_admin_links {
     }
 
     return $result_list
+}
+
+
+ad_proc -public -impl im_member_add_students -callback im_member_add__extend_form {
+    {-object_id:required ""}
+    {-role_id:required ""}
+    {-select_formVar:required ""}
+    {-limit_to_group_id ""}
+    {-notify_checked ""}
+} {
+    Callback that extends the html for selecting employees
+    in intranet/member-add.
+} {
+
+    upvar $select_formVar select_form
+
+    set students_select [im_student_select_multiple -limit_to_group_id $limit_to_group_id user_id_from_search "" 12 multiple]
+
+    append select_form "
+    <td>
+    <form method=POST action=/intranet/member-add-2>
+    [export_entire_form]
+    <input type=hidden name=target value=\"[im_url_stub]/member-add-2\">
+    <input type=hidden name=passthrough value=\"object_id role_id return_url also_add_to_object_id\">
+    <table cellpadding=0 cellspacing=2 border=0>
+      <tr> 
+        <td class=rowtitle align=middle>[_ intranet-core.Student]</td>
+      </tr>
+      <tr> 
+        <td>
+    $students_select
+        </td>
+      </tr>
+      <tr> 
+        <td>[_ intranet-core.add_as] 
+    [im_biz_object_roles_select role_id $object_id $role_id]
+        </td>
+      </tr>
+      <tr> 
+        <td>
+          <input type=submit value=\"[_ intranet-core.Add]\">
+          <input type=checkbox name=notify_asignee value=1 $notify_checked>[_ intranet-core.Notify]
+        </td>
+      </tr>
+    </table>
+    </form>
+    </td>
+    "
+
+}
+
+
+ad_proc -public -impl im_member_add_freelancers -callback im_member_add__extend_form {
+    {-object_id:required ""}
+    {-role_id:required ""}
+    {-select_formVar:required ""}
+    {-limit_to_users_in_group_id ""}
+    {-notify_checked ""}
+} {
+    Callback that extends the html for selecting employees
+    in intranet/member-add.
+} {
+
+    upvar $select_formVar select_form
+
+    set freelancers_select [im_freelancer_select_multiple -limit_to_group_id $limit_to_group_id user_id_from_search "" 12 multiple]
+
+    append select_form "
+    <td>
+    <form method=POST action=/intranet/member-add-2>
+    [export_entire_form]
+    <input type=hidden name=target value=\"[im_url_stub]/member-add-2\">
+    <input type=hidden name=passthrough value=\"object_id role_id return_url also_add_to_object_id\">
+    <table cellpadding=0 cellspacing=2 border=0>
+      <tr> 
+        <td class=rowtitle align=middle>[_ intranet-core.Freelancer]</td>
+      </tr>
+      <tr> 
+        <td>
+    $freelancers_select
+        </td>
+      </tr>
+      <tr> 
+        <td>[_ intranet-core.add_as] 
+    [im_biz_object_roles_select role_id $object_id $role_id]
+        </td>
+      </tr>
+      <tr> 
+        <td>
+          <input type=submit value=\"[_ intranet-core.Add]\">
+          <input type=checkbox name=notify_asignee value=1 $notify_checked>[_ intranet-core.Notify]
+        </td>
+      </tr>
+    </table>
+    </form>
+    </td>
+    "
+
+
 }
 

@@ -38,7 +38,7 @@ ad_proc -public im_skin_saltnpepper {} { return 40020 }
 # --------------------------------------------------------
 
 ad_proc -public im_gif { 
-    {-translate_p 1} 
+    {-translate_p 0} 
     {-locale ""}
     {-type "gif"}
     {-debug 0 }
@@ -173,16 +173,21 @@ ad_proc -public im_gif_static {
     switch [string tolower $name] {
 	"delete" 	{ return "<img src=$url/delete.gif width=14 height=15 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"help"		{ return "<img src=$navbar_gif_url/help.png border=$border title=\"$alt\" alt=\"$alt\">" }
-	"error"     { return "<img src=$navbar_gif_url/error.png border=$border title=\"$alt\" alt=\"$alt\">" }	
+	"error"         { return "<img src=$navbar_gif_url/error.png border=$border title=\"$alt\" alt=\"$alt\">" }	
 	"category"	{ return "<img src=$url/help.gif width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"new"		{ return "<img src=$url/new.gif width=13 height=15 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"open"		{ return "<img src=$url/open.gif width=16 height=15 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"save"		{ return "<img src=$url/save.gif width=14 height=15 border=$border title=\"$alt\" alt=\"$alt\">" }
-	"incident"	{ return "<img src=$navbar_gif_url/lightning.png width=19 height=19 border=$border title=\"$alt\" alt=\"$alt\">" }
-	"discussion"	{ return "<img src=$navbar_gif_url/group.png width=19 height=19 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"incident"	{ return "<img src=$navbar_gif_url/lightning.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"discussion"	{ return "<img src=$navbar_gif_url/group.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"task"		{ return "<img src=$navbar_gif_url/tick.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
-	"news"		{ return "<img src=$navbar_gif_url/exclamation.png width=19 height=19 border=$border title=\"$alt\" alt=\"$alt\">" }
-	"note"		{ return "<img src=$navbar_gif_url/pencil.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"news"		{ return "<img src=$navbar_gif_url/newspaper.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"note"		{ return "<img src=$navbar_gif_url/note.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"incident_add"	{ return "<img src=$navbar_gif_url/lightning_add.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"discussion_add" { return "<img src=$navbar_gif_url/group_add.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"task_add"	{ return "<img src=$navbar_gif_url/tick_add.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"news_add"	{ return "<img src=$navbar_gif_url/newspaper_add.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
+	"note_add"	{ return "<img src=$navbar_gif_url/note_add.png width=16 height=16 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"reply"		{ return "<img src=$navbar_gif_url/arrow_rotate_clockwise.png width=19 height=19 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"tick"		{ return "<img src=$url/tick.gif width=14 height=15 border=$border title=\"$alt\" alt=\"$alt\">" }
 	"wrong"		{ return "<img src=$url/delete.gif width=14 height=15 border=$border title=\"$alt\" alt=\"$alt\">" }
@@ -259,7 +264,7 @@ ad_proc -public im_admin_category_gif { category_type } {
     set user_admin_p [im_is_user_site_wide_or_intranet_admin $user_id]
     if {$user_admin_p} {
 	set html "
-<A HREF=\"/intranet/admin/categories/?select_category_type=[ns_urlencode $category_type]\">[im_gif new "Admin category type"]</A>"
+<A HREF=\"/intranet/admin/categories/?select_category_type=[ns_urlencode $category_type]\">[im_gif -translate_p 1 new "Admin category type"]</A>"
     }
     return $html
 }
@@ -445,7 +450,7 @@ ad_proc -public im_office_navbar { default_letter base_url next_page_url prev_pa
     set costs [im_navbar_tab "index?view_name=project_costs" [_ intranet-core.Costs] false]
 
     if {[im_permission $user_id add_offices]} {
-	set new_office [im_navbar_tab "new" [im_gif new "Add a new office"] false]
+	set new_office [im_navbar_tab "new" [im_gif -translate_p 1 new "Add a new office"] false]
     } else {
 	set new_office ""
     }
@@ -761,13 +766,13 @@ ad_proc -public im_sub_navbar {
 
     if {$show_help_icon_p} {
 	set help_text [lang::message::lookup "" intranet-core.Navbar_Help_Text "Click here to get help for this page"]
-	append navbar [im_navbar_tab [im_navbar_help_link] [im_gif help $help_text] 0]
+	append navbar [im_navbar_tab [im_navbar_help_link] [im_gif -translate_p 0 help $help_text] 0]
     }
 
     if {$admin_p} {
 	set admin_text [lang::message::lookup "" intranet-core.Navbar_Admin_Text "Click here to configure this navigation bar"]
 	set admin_url [export_vars -base "/intranet/admin/menus/index" {{top_menu_id $parent_menu_id}}]
-	append navbar [im_navbar_tab $admin_url [im_gif wrench $admin_text] 0]
+	append navbar [im_navbar_tab $admin_url [im_gif -translate_p 0 wrench $admin_text] 0]
     }
 
     return "
@@ -923,7 +928,42 @@ ad_proc -public im_navbar {
 		    }
 		    
 		    "finance" {
+
+			# Requires separate handling since menu data stored in im_menus is used to create 
+			# 	a) admin links in sidebar 
+			# 	b) right sub-menu tabs
+			#	c) top menu tabs
+			# Not in all three locations all active menu items should be shown.
+
 			set submenus ""
+
+			# Customer & Provider Docs
+			set menu_select_sql "
+ 			       select  	m.name as r_name,
+					m.menu_id as r_id,
+					m.url as r_url
+			       from    	im_menus m
+			       where   	label = 'invoices_customers'
+		               		and enabled_p = 't'
+		               		and im_object_permission_p(m.menu_id, :user_id, 'read') = 't'
+			"
+
+			if { [db_0or1row get_manu_information $menu_select_sql] } {
+			    append submenus "<li class='unselected'><a href='$r_url'>[lang::message::lookup "" intranet-invoices.CustomerDocuments "Customer Documents"]</a></li>"			
+			}
+			set menu_select_sql "
+ 			       select  	m.name as r_name,
+					m.menu_id as r_id,
+					m.url as r_url
+			       from    	im_menus m
+			       where   	label = 'invoices_providers'
+		               		and enabled_p = 't'
+		               		and im_object_permission_p(m.menu_id, :user_id, 'read') = 't'
+			"
+			if { [db_0or1row get_manu_information $menu_select_sql] } {
+			    append submenus "<li class='unselected'><a href='$r_url'>[lang::message::lookup "" intranet-invoices.ProviderDocuments "Provider Documents"]</a></li>"			
+			}
+
 			# Get a list of Provider links {menu_name menu_link admin_name admin_link}
 			set sub_menu_providers [im_menu_links "invoices_providers"]
 			if { "" != $sub_menu_providers } {
@@ -942,6 +982,7 @@ ad_proc -public im_navbar {
 			    append navbar "<li class='$selected'><a href='$url'><span>$name</span></a></li>"
 			}
 		    }
+
 		    default {
 			# Get first level sub_menus
 			set level_one_menu_list [util_memoize [list im_sub_navbar_menu_helper -locale $locale $user_id $menu_id] 60]	
@@ -976,11 +1017,11 @@ ad_proc -public im_navbar {
 					<li class='unselected'><a href='/intranet/users/view?user_id=$user_id'>[_ intranet-core.My_Account]</a></li>
     	    "
 	    # Allow changing PW only when LDAP is not installed  
-	    if {!$ldap_installed_p} { append navbar "<li class='sm-submenu-item'><a href='/intranet/users/password-update?user_id=$user_id'>[_ intranet-core.Change_Password]</li></a>"}
+	    if {!$ldap_installed_p} { append navbar "<li class='sm-submenu-item'><a href='/intranet/users/password-update?user_id=$user_id'>[_ intranet-core.Change_Password]</a></li>"}
 	    
 	    append navbar "
-		<li class='unselected'><a href='[export_vars -quotehtml -base "/intranet/components/component-action" {page_url {action reset} {plugin_id 0} return_url}]'>[_ intranet-core.Reset_Portlets]</li></a>
-		<li class='unselected'><a href='[export_vars -quotehtml -base "/intranet/components/add-stuff" {page_url return_url}]'>[_ intranet-core.Add_Portlet]</li></a>
+		<li class='unselected'><a href='[export_vars -quotehtml -base "/intranet/components/component-action" {page_url {action reset} {plugin_id 0} return_url}]'>[_ intranet-core.Reset_Portlets]</a></li>
+		<li class='unselected'><a href='[export_vars -quotehtml -base "/intranet/components/add-stuff" {page_url return_url}]'>[_ intranet-core.Add_Portlet]</a></li>
 		</ul>
         	</li>
     	    "
@@ -988,7 +1029,7 @@ ad_proc -public im_navbar {
 	    # if {$admin_p} {
 	    #    set admin_text [lang::message::lookup "" intranet-core.Navbar_Admin_Text "Click here to configure this navigation bar"]
 	    #    set admin_url [export_vars -base "/intranet/admin/menus/index" {{top_menu_id $main_menu_id} {top_menu_depth 1} return_url }]
-	    #    append navbar [im_navbar_tab $admin_url [im_gif wrench $admin_text] 0]
+	    #    append navbar [im_navbar_tab $admin_url [im_gif -translate_p 0 wrench $admin_text] 0]
 	    # }
 	}
 	
@@ -1119,7 +1160,7 @@ ad_proc -public im_navbar_legacy_version_4 {
     if {$admin_p} {
         set admin_text [lang::message::lookup "" intranet-core.Navbar_Admin_Text "Click here to configure this navigation bar"]
         set admin_url [export_vars -base "/intranet/admin/menus/index" {{top_menu_id $main_menu_id} {top_menu_depth 1} return_url }]
-        append navbar [im_navbar_tab $admin_url [im_gif wrench $admin_text] 0]
+        append navbar [im_navbar_tab $admin_url [im_gif -translate_p 0 wrench $admin_text] 0]
     }
 
     set page_url [im_component_page_url]
@@ -1138,7 +1179,7 @@ ad_proc -public im_navbar_legacy_version_4 {
     if {$show_context_help_p} {
         set context_help_html "
             <div class=\"main_users_online\">
-              <a href=\"[im_navbar_help_link]\">&nbsp; [im_gif help [lang::message::lookup "" intranet-core.Context_Help "Context Help"]]</a>
+              <a href=\"[im_navbar_help_link]\">&nbsp; [im_gif -translate_p 0 help [lang::message::lookup "" intranet-core.Context_Help "Context Help"]]</a>
             </div>
         "
     }
@@ -1152,7 +1193,7 @@ ad_proc -public im_navbar_legacy_version_4 {
     if {$show_context_comment_p} {
         set context_comment_html "
             <div class=\"main_users_online\">
-              <a href=\"[export_vars -base "/intranet/report-bug-on-page" {{page_url [im_url_with_query]}}]\">&nbsp; [im_gif bell [lang::message::lookup "" intranet-core.Report_a_bug_on_this_page "Report a bug on this page"]]</a>
+              <a href=\"[export_vars -base "/intranet/report-bug-on-page" {{page_url [im_url_with_query]}}]\">&nbsp; [im_gif -translate_p 0 bell [lang::message::lookup "" intranet-core.Report_a_bug_on_this_page "Report a bug on this page"]]</a>
             </div>
         "
     }
@@ -1500,20 +1541,19 @@ ad_proc -public im_header {
 	if { [empty_string_p $extra_stuff_for_document_head] } {
 	    set extra_stuff_for_document_head [ad_partner_upvar extra_stuff_for_document_head]
 	}
-	
+
+	# ns_log NOTICE "intranet-design-procs:: Browser: $browser, version_major: $version_major"
+
 	# Avoid Quirks mode with IE<10 due to missing doctype 
 	# DOCTYPE definition might be added to document in multiple places. 
-	# following a fallback 
-	
-	ns_log NOTICE "intranet-design-procs:: Browser: $browser, version_major: $version_major"
 	
 	if {[catch {
 	    if { "msie" == $browser && $version_major < 10 } {
-		ns_log NOTICE "intranet-design-procs:: Setting META TAG" 
+		# ns_log NOTICE "intranet-design-procs:: Setting META TAG" 
 		set extra_stuff_for_document_head "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=$version_major\" />\n"
 	    }
 	} err_msg]} {
-	    ns_log NOTICE "intranet-design-procs: Error handling browser version"
+	    ns_log Error "intranet-design-procs: Error handling browser version"
 	    return
 	}
 	
@@ -1691,6 +1731,7 @@ ad_proc -public im_header {
 	set header_html [template::get_header_html]
 	
 	set return_html "
+		<!DOCTYPE html>
 		[ad_header $page_title $extra_stuff_for_document_head]
 		$body_script_html
 		$header_html
@@ -2537,7 +2578,7 @@ ad_proc -public im_project_on_track_bb {
     if {$on_track_status_id == [im_project_on_track_status_red]} { set color "red" }
 
     set border 0
-    return [im_gif "bb_$color" $alt_text $border $size $size]
+    return [im_gif -translate_p 0 "bb_$color" $alt_text $border $size $size]
 }
 
 # Compatibility

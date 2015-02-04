@@ -40,6 +40,8 @@
   <msg key="Start_Date">Start Date</msg>
   <msg key="State">County</msg>
   <msg key="Tasks__Incidents">Tasks / Allocations</msg>
+  <msg key="templatedeodt">template.de.odt</msg>
+  <msg key="templateenodt">template.en.odt</msg>
   <msg key="Work_Postal_Code">Work Post Code</msg>
   <msg key="Work_ZIP">Work Post Code</msg>
   <msg key="ZIP">Post code</msg>

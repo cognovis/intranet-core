@@ -157,7 +157,8 @@
 -- 80000-80099  Customer SOR (100)
 -- 80100-80599  Intranet CRM (500)
 -- 80600-80699  Invoice Cycle (Intranet Service Contracts & Intranet Invoices)
--- 80700-80799  reserved (100)
+-- 80700-80749 	Intranet Translation Purchase Order Task Units
+-- 80750-80799  reserved (50)
 -- 80800-80899  reserved (100)
 -- 80900-80999  reserved (100)
 -- 80100-80599  Intranet Skill [...] 
@@ -364,7 +365,10 @@ SELECT im_category_new (98, 'Software Maintenance', 'Intranet Project Type');
 SELECT im_category_new (99, 'Software Development', 'Intranet Project Type');
 SELECT im_category_new (100, 'Task', 'Intranet Project Type');
 SELECT im_category_new (101, 'Ticket', 'Intranet Project Type');
-update im_categories set enabled_p = 'f' where category_id = 101;
+SELECT im_category_new (102, 'CRM Opportunity', 'Intranet Project Type');
+SELECT im_category_new (103, 'CRM Campaign', 'Intranet Project Type');
+update im_categories set enabled_p = 'f' where category_id in (101, 102, 103);
+
 
 -- 102 - 109 reserved for other Project subclasses
 SELECT im_category_new (2500, 'Translation Project', 'Intranet Project Type');

@@ -3,27 +3,48 @@
 # Copyright (C) 1998-2012 various parties
 # The software is based on ArsDigita ACS 3.4
 #
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see
-# <http://www.gnu.org/licenses/>.
-#
- 
+# This program is free software. You can redistribute it
+# and/or modify it under the terms of the GNU General
+# Public License as published by the Free Software Foundation;
+# either version 2 of the License, or (at your option)
+# any later version. This program is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY;
+# without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+
 ad_page_contract {
-    
     Purpose: form to add a new project or edit an existing one
-    @author Malte Sussdorff (malte.sussdorff@cognovis.de)
-    @creation-date 2011-08-05
+    
+    @param project_id group id
+    @param parent_id the parent project id
+    @param return_url the url to return to
+
+    @author mbryzek@arsdigita.com
+    @author frank.bergmann@project-open.com
+    @author koen.vanwinckel@dotprojects.be
 } {
-    {project_type_id ""}
-    {project_status_id:integer,optional}
-    {company_id ""}
-    {parent_id ""}
-    {project_nr ""}
-    {project_name ""}
-    {workflow_key ""}
-    {return_url ""}
-    {project_id:integer,optional}
+    { project_id:integer "" }
+    { parent_id:integer "" }
+    { company_id:integer "" }
+    { project_type_id:integer "" }
+    { project_status_id:integer "" }
+    { project_name "" }
+    project_nr:optional
+    { workflow_key "" }
+    { workflow_case_id "" }
+    { return_url "" }
 }
+
+
+# Redirect to custom new page if necessary
+callback im_project_new_redirect -object_id $project_id \
+    -status_id $project_status_id -type_id $project_type_id \
+    -project_id $project_id -parent_id $parent_id \
+    -company_id $company_id -project_type_id $project_type_id \
+    -project_name $project_name -project_nr [im_opt_val project_nr] \
+    -workflow_key $workflow_key -return_url $return_url
+
 
 # -----------------------------------------------------------
 # Defaults
@@ -31,7 +52,9 @@ ad_page_contract {
 
 set n_error 0
 set user_id [ad_maybe_redirect_for_registration]
+set todays_date [lindex [split [ns_localsqltimestamp] " "] 0]
 set user_admin_p [im_is_user_site_wide_or_intranet_admin $user_id]
+set required_field "<font color=red size=+1><B>*</B></font>"
 set current_url [im_url_with_query]
 set show_context_help_p 1
 
@@ -385,6 +408,12 @@ ad_form -extend -name $form_id -new_request {
     }]
     if {$project_nr_p} {
         set project_nr [im_next_project_nr]
+    }
+
+    # Make sure company_project_nr has a max length 50
+    if { [string length $company_project_nr] > 50} {
+        incr n_error
+        template::element::set_error $form_id company_project_nr "[_ intranet-core.Max50Chars]"
     }
 
     set previous_company_id [db_string get_previous_company_id "select company_id from im_projects where project_id = :project_id" -default ""]

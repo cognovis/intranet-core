@@ -523,6 +523,7 @@ ad_proc -public im_group_member_component {
     if {"" == $show_percentage_p && ($object_type == "im_project" || $object_type == "im_timesheet_task")} { set show_percentage_p 1 }
     if {"" == $show_percentage_p} { set show_percentage_p 0 }
     if {![im_column_exists im_biz_object_members percentage]} { set show_percentage_p 0 }
+    set group_l10n [lang::message::lookup "" intranet-core.Group "Group"]
 
     # ------------------ limit_to_users_in_group_id ---------------------
     set limit_to_group_id_sql ""
@@ -557,7 +558,10 @@ ad_proc -public im_group_member_component {
 		rels.object_id_two as user_id, 
 		rels.object_id_two as party_id, 
 		im_email_from_user_id(rels.object_id_two) as email,
-		im_name_from_user_id(rels.object_id_two, $name_order) as name,
+		coalesce(
+			im_name_from_user_id(rels.object_id_two, $name_order), 
+			:group_l10n || ': ' || acs_object__name(rels.object_id_two)
+		) as name,
 		im_category_from_id(c.category_id) as member_role,
 		c.category_gif as role_gif,
 		c.category_description as role_description
@@ -615,8 +619,15 @@ ad_proc -public im_group_member_component {
 	# Account, ...
 	set descr $role_description
 	if {"" == $descr} { set descr $member_role }
-	set descr_tr [lang::util::suggest_key $descr]
-	set profile_gif [im_gif $role_gif $descr_tr]
+
+	# Allow for object type specific localization of GIF and comment
+	set member_role_key [lang::util::suggest_key $member_role]
+	set descr_otype_key "intranet-core.Role_${object_type}_$member_role_key"
+	set descr [lang::message::lookup "" $descr_otype_key $descr]
+	set role_gif_key "intranet-core.Role_GIF_[lang::util::suggest_key $role_gif]"
+	set role_gif [lang::message::lookup "" $role_gif_key $role_gif]
+	
+	set profile_gif [im_gif -translate_p 0 $role_gif $descr]
 
 	incr count
 	if { $current_user_id == $user_id } { set found 1 }
@@ -851,16 +862,21 @@ ad_proc -public im_biz_object_related_objects_component {
     { -include_membership_rels_p 0 }
     { -user_friendly_view_p 0  }
     { -show_projects_only 0 }
+    { -show_only_object_type "" }
+    { -show_companies_only 0 }
     { -hide_rel_name_p 0 }
     { -hide_object_chk_p 0 }
     { -hide_direction_pretty_p 0 }
     { -hide_object_type_pretty_p 0 }
     { -hide_object_name_p 0 }
     { -hide_creation_date_formatted_p 0 }
+    { -suppress_invalid_objects_p 0 }
     { -sort_order "" }
     -object_id:required 
 } {
     Returns a HTML component with the list of related objects.
+    Named parameters 'show_projects_only' and show_companies_only are deprecated.
+    Please use parameter: show_only_object_type instead
     @param include_membership_rels_p: Normally, membership rels
 	   are handled by the "membership component". That's not
 	   the case with users.
@@ -871,6 +887,8 @@ ad_proc -public im_biz_object_related_objects_component {
 		    [list include_membership_rels_p $include_membership_rels_p] \
 		    [list user_friendly_view_p $user_friendly_view_p] \
 		    [list show_projects_only $show_projects_only ] \
+		    [list show_only_object_type $show_only_object_type ] \
+		    [list show_companies_only $show_companies_only ] \
 		    [list return_url [im_url_with_query]] \
 		    [list hide_rel_name_p $hide_rel_name_p] \
 		    [list hide_object_chk_p $hide_object_chk_p ] \
@@ -878,12 +896,79 @@ ad_proc -public im_biz_object_related_objects_component {
 		    [list hide_object_type_pretty_p $hide_object_type_pretty_p  ] \
 		    [list hide_object_name_p $hide_object_name_p ] \
 		    [list hide_creation_date_formatted_p $hide_creation_date_formatted_p ] \
+                    [list suppress_invalid_objects_p $suppress_invalid_objects_p ] \
 		    [list sort_order $sort_order ] \
 		    [list object_id $object_id] \
 		    ]
 
     set result [ad_parse_template -params $params "/packages/intranet-core/www/related-objects-component"]
     return [string trim $result]
+}
+
+# ---------------------------------------------------------------
+# Allow the user to add profiles to tickets
+# ---------------------------------------------------------------
+
+ad_proc im_biz_object_add_profile_component {
+    -object_id:required
+} {
+    Component that returns a formatted HTML form allowing
+    users to add a profile to an object
+} {
+    # ------------------------------------------------
+    # Applicability, Defauls & Security
+    set current_user_id [ad_get_user_id]
+    set object_type [util_memoize [list db_string acs_object_type "select object_type from acs_objects where object_id = $object_id" -default ""]]
+    set perm_cmd "${object_type}_permissions \$current_user_id \$object_id view_p read_p write_p admin_p"
+    eval $perm_cmd
+    if {!$write_p} { return "" }
+
+    set object_name [acs_object_name $object_id]
+    set page_title [lang::message::lookup "" intranet-helpdesk.Add_profile "Add profile"]
+
+    set notify_checked ""
+    if {[parameter::get_from_package_key -package_key "intranet-core" -parameter "NotifyNewMembersDefault" -default "1"]} {
+        set notify_checked "checked"
+    }
+    
+    set bind_vars [ns_set create]
+    set profiles_sql "
+	select	g.group_id,
+		g.group_name
+	from	groups g,
+		im_profiles p
+	where	g.group_id = p.profile_id
+	order by lower(g.group_name)
+    "
+    set default ""
+    set list_box [im_selection_to_list_box -translate_p "0" $bind_vars profile_select $profiles_sql user_id_from_search $default 10 0]
+
+    set passthrough {object_id return_url also_add_to_object_id limit_to_users_in_group_id}
+    foreach var $passthrough {
+	if {![info exists $var]} { set $var [im_opt_val $var] }
+}
+
+    set role_id [im_biz_object_role_full_member]
+    set result "
+	<form method=GET action=/intranet/member-add-2>
+	[export_form_vars passthrough]
+	[export_form_vars {notify_asignee 0}]
+	[eval "export_form_vars $passthrough"]
+	<table cellpadding=0 cellspacing=2 border=0>
+	<tr><td>
+	$list_box
+	</td></tr>
+	<tr><td>
+	[_ intranet-core.add_as] [im_biz_object_roles_select role_id $object_id $role_id]
+	</td></tr>
+	<tr><td>
+	<input type=submit value=\"[_ intranet-core.Add]\">
+	</td></tr>
+	</table>
+	</form>
+    "
+
+    return $result
 }
 
 
@@ -914,3 +999,4 @@ ad_proc -public im_biz_object_memberships_helper {
         order by g.group_name
      "]
 }
+

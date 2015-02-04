@@ -29,13 +29,14 @@ ad_page_contract {
     @author Frank Bergmann (frank.bergmann@project-open.com)
 } {
     { user_group_name:trim "Employees" }
+    { include_deleted_users_p "" }
     { order_by "Name" }
     { start_idx:integer 0 }
     { how_many:integer "" }
     { letter:trim "all" }
     { view_name "" }
     { view_type "" }
-    { filter_advanced_p:integer 1 }
+    { filter_advanced_p:integer 0 }
 }
 
 # ---------------------------------------------------------------
@@ -86,15 +87,6 @@ set debug_html ""
 set email ""
 set name_order [parameter::get -package_id [apm_package_id_from_key intranet-core] -parameter "NameOrder" -default 1]
 set show_context_help_p 1
-set extra_wheres [list]
-set extra_froms [list]
-set extra_left_joins [list]
-set extra_selects [list]
-
-set extra_order_by ""
-set column_headers [list]
-set column_headers_admin [list]
-set column_vars [list]
 
 # ---------------------------------------------------------------
 # 2a. Security
@@ -103,8 +95,6 @@ set column_vars [list]
 switch $user_group_name {
     "Employees" - "employees" {
 	set menu_label "users_employees"
-#	lappend extra_froms "im_employees e"
-#	lappend extra_wheres "u.user_id = e.employee_id"
     }
     "Customers" {
 	set menu_label "users_companies"
@@ -139,13 +129,22 @@ if {![string equal "t" $read_p]} {
 # 
 # ---------------------------------------------------------------
 
+set extra_wheres [list]
+set extra_froms [list]
+set extra_left_joins [list]
+set extra_selects [list]
+
+set extra_order_by ""
+set column_headers [list]
+set column_headers_admin [list]
+set column_vars [list]
+
 set freelancers_exist_p [db_table_exists im_freelancers]
 
 # Get the ID of the group of users to show
 # Default 0 corresponds to the list of all users.
 # Use a normalized group_name in lowercase and with
 # all special characters replaced by "_".
-
 set user_group_name [im_mangle_user_group_name $user_group_name]
 set user_group_id 0
 set menu_select_label ""
@@ -251,10 +250,11 @@ set end_idx [expr $start_idx + $how_many - 1]
 
 set admin_html_links ""
 if {[im_permission $user_id "add_users"]} {
+    set object_type "person" 
     append admin_html_links "
 	<li><a href=/intranet/users/new>[_ intranet-core.Add_a_new_User]</a></li>
         <li><a href=\"/intranet/users/index?filter_advanced_p=1\">[_ intranet-core.Advanced_Filtering]</a></li>
-	<li><a href=/intranet/users/upload-contacts?[export_url_vars return_url]>[_ intranet-core.Import_User_CSV]</a></li>
+	<li><a href=/intranet-csv-import/index?[export_url_vars return_url object_type]>[_ intranet-core.Import_User_CSV]</a></li>
         <!--<li><a href=/intranet/users/upload-users>[lang::message::lookup "" intranet-core.BulkUpdateUsers "CSV Bulk Update Users"]</a></li>-->
     "
 }
@@ -355,30 +355,18 @@ set user_status_types [linsert $user_status_types 0 0 All]
 
 
 
-set user_types [list [list "#acs-kernel.common_All#" all]]
+set user_types [list [list [_ intranet-core.All] 0]]
 db_foreach select_user_types "
-	select
-		group_id,
+	select	group_id,
 		group_name
-	from
-		groups,
+	from	groups,
 		im_profiles
-	where
-		group_id = profile_id" \
-    {
+	where	group_id = profile_id
+" {
 	set group_name_pretty [lang::message::lookup "" intranet-core.[lang::util::suggest_key $group_name] $group_name]
 
-        set option [list $group_name_pretty [im_mangle_user_group_name $group_name]]
-        lappend user_types $option
+    lappend user_types [list $group_name_pretty [im_mangle_user_group_name $group_name]]
     }
-
-# company_types will be a list of pairs of (company_type_id, company_type)
-#set user_types [im_memoize_list select_companies_types \
-#	"select company_type_id, company_type
-#           from im_company_types
-#          order by lower(company_type)"]
-#set company_types [linsert $company_types 0 0 All]
-
 
 
 # ---------------------------------------------------------------
@@ -398,6 +386,15 @@ ad_form \
         {view_type:text(select),optional {label "#intranet-openoffice.View_type#"} {options {{Tabelle ""} {Excel xls} {OpenOffice ods} {PDF pdf}} }}
         {user_group_name:text(select),optional {label "\#intranet-core.User_Types\#"} {options $user_types} {value $user_group_name}}
     }
+
+if {$admin_p} {
+    set options_list [list [list [lang::message::lookup "" intranet-core.Include_Deleted "Include Deleted"] "1"]]
+    ad_form -extend -name $form_id -form {
+	{include_deleted_users_p:integer(checkbox),optional {label "[lang::message::lookup {} intranet-helpdesk.Include_Deleted_Users { }]"} {options $options_list} }
+    }
+    template::element::set_value $form_id include_deleted_users_p $include_deleted_users_p
+    }
+
 
 if {$filter_advanced_p} {
 
@@ -438,6 +435,11 @@ if { $user_group_id > 0 } {
     
     set user_sql "cc_users u,"
 
+    lappend extra_wheres "u.member_state = 'approved'"
+}
+
+# Don't show deleted users unless specified (in the future)
+if {1 != $include_deleted_users_p || !$admin_p} {
     lappend extra_wheres "u.member_state = 'approved'"
 }
 
@@ -690,12 +692,14 @@ set table_continuation_html ""
 
 set sub_navbar [im_user_navbar $letter "/intranet/users/index" $next_page_url $previous_page_url [list user_group_name] $menu_select_label]
 
+
 # Compile and execute the formtemplate if advanced filtering is enabled.
-eval [template::adp_compile -string {<formtemplate id="$form_id" style="tiny-plain"></formtemplate>}]
+eval [template::adp_compile -string {<formtemplate style=tiny-plain-po id="$form_id"></formtemplate>}]
 set filter_html $__adp_output
 
+
 set left_navbar_html "
-      <div class='filter-block'>
+    <div class=\"filter-block\">
         <div class='filter-title'>
             \#intranet-core.Filter_Users\#
         </div>
@@ -703,7 +707,7 @@ set left_navbar_html "
       </div>
 "
 
-if { ""!=$admin_html_links } {
+if {"" != $admin_html_links } {
         append left_navbar_html "
               <div class='filter-block'>
                  <div class='filter-title'>

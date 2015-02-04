@@ -1,5 +1,5 @@
-
 @warning;noquote@
+<ul>
 <multiple name="active_projects">
   <if @active_projects.llevel@ gt @active_projects.current_level@>
     <ul>
@@ -27,6 +27,7 @@
 <if @admin@>
 <formtemplate id="new_project"></formtemplate>
 </if>
+</ul>
 
 
 

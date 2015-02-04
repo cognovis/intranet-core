@@ -133,11 +133,33 @@ if {0 == $include_membership_rels_p} {
 
 set where_criteria "and 1=1"
 
+# Deprecated - please use show_only_object_type instead
 if { [info exists show_projects_only] && $show_projects_only } { 
     set where_criteria "and ot.pretty_name = 'Project'" 
     if { !$hide_creation_date_formatted_p  } {
-	set sort_order "o.creation_date ASC"	
+	set sort_order "o.creation_date DESC"	
     }
+}
+
+if { [info exists show_only_object_type] && "" != $show_only_object_type } {
+    set where_criteria "and o.object_type = :show_only_object_type"
+    if { !$hide_creation_date_formatted_p  } {
+        set sort_order "o.creation_date ASC"
+    }
+}
+
+# Deprecated - please use show_only_object_type instead 
+if { [info exists show_companies_only] && $show_companies_only } {
+    set where_criteria "and ot.object_type = 'im_company'"
+    if { !$hide_creation_date_formatted_p  } {
+        set sort_order "o.creation_date DESC"
+    }
+}
+
+if { [info exists suppress_invalid_objects_p] && $suppress_invalid_objects_p } {
+    set suppress_sql "acs_object__name(o.object_id) != '' and "
+} else {
+    set suppress_sql ""
 }
 
 set object_rel_sql "
@@ -170,6 +192,7 @@ set object_rel_sql "
 	where
 		r.rel_type = rt.object_type and
 		o.object_type = ot.object_type and
+		$suppress_sql
 		$membership_rel_exclude_sql
 		(
 			r.object_id_one = :object_id and

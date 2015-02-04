@@ -1190,8 +1190,12 @@ Mit freundlichen Grüßen,
   <msg key="lt_first_names_last_name">%first_names% %last_name% wurde in %system_name% angelegt.</msg>
   <msg key="lt_first_names_last_name_1">%first_names% %last_name%, 
 
+
+
 Sie wurden als Benutzer zu %system_name% unter 
 %system_url% hinzugefügt. 
+
+
 
 Anmeldungsdaten:
 E-Mail Adresse: %email%
@@ -2209,7 +2213,9 @@ Password: %password%
   <msg key="Telephone">Telefon</msg>
   <msg key="Telephony_Request">Telephony Request</msg>
   <msg key="Telephony_request">Telefon</msg>
+  <msg key="templatedeodt">template.de.odt</msg>
   <msg key="templateenadp">template.en.adp</msg>
+  <msg key="templateenodt">template.en.odt</msg>
   <msg key="templateesadp">template.es.adp</msg>
   <msg key="Templates">Vorlagen</msg>
   <msg key="Test_evaluated">Test bewerted</msg>

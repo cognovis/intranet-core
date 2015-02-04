@@ -173,7 +173,9 @@ ad_proc -public im_date_epoch_to_ansi {
 } {
     Returns ansi date for epoch
 } {
-    set ansi [db_string epoch_to_ansi "SELECT to_char(TIMESTAMP WITH TIME ZONE 'epoch' + :epoch * INTERVAL '1 second', 'YYYY-MM-DD')"]
+    if {"" == $epoch} { return "" }
+    im_security_alert_check_float -location "im_date_epoch_to_ansi" -value $epoch
+    set ansi [util_memoize [list db_string epoch_to_ansi "SELECT to_char(TIMESTAMP WITH TIME ZONE 'epoch' + $epoch * INTERVAL '1 second', 'YYYY-MM-DD')"]]
     return $ansi
 }
 
@@ -183,7 +185,9 @@ ad_proc -public im_date_epoch_to_julian {
 } {
     Returns ansi date for epoch
 } {
-    set julian [db_string epoch_to_julian "SELECT to_char(TIMESTAMP WITH TIME ZONE 'epoch' + :epoch * INTERVAL '1 second', 'J')"]
+    if {"" == $epoch} { return "" }
+    im_security_alert_check_float -location "im_date_epoch_to_ansi" -value $epoch
+    set julian [util_memoize [list db_string epoch_to_julian "SELECT to_char(TIMESTAMP WITH TIME ZONE 'epoch' + $epoch * INTERVAL '1 second', 'J')"]]
     return $julian
 }
 
@@ -193,7 +197,9 @@ ad_proc -public im_date_epoch_to_time {
 } {
     Returns ansi date for epoch
 } {
-    set ansi [db_string epoch_to_ansi "SELECT to_char(TIMESTAMP WITH TIME ZONE 'epoch' + :epoch * INTERVAL '1 second', 'HH24:MI:SS')"]
+    if {"" == $epoch} { return "" }
+    im_security_alert_check_float -location "im_date_epoch_to_ansi" -value $epoch
+    set ansi [util_memoize [list db_string epoch_to_ansi "SELECT to_char(TIMESTAMP WITH TIME ZONE 'epoch' + $epoch * INTERVAL '1 second', 'HH24:MI:SS')"]]
     return $ansi
 }
 
@@ -564,60 +570,60 @@ ad_proc -public im_opt_val {
     {-limit_to "nohtml"}
     var_name
 } {
-    Acts like a "$" to evaluate a variable, but
-    returns "" if the variable is not defined,
-    instead of an error.<BR>
-    If no value is found, im_opt_val checks wether there is
-    a HTTP variables with the same name, either in the URL or 
-    as part of a POST.<br>
-    This function is useful for passing optional
-    variables to components, if the component can't
-    be sure that the variable exists in the callers
+    Acts like a "$" to evaluate a variable, but returns "" if the variable 
+    is not defined, instead of an error.<BR>
+    If no value is found, im_opt_val checks whether there is a HTTP variable 
+    with the same name, either in the URL or as part of a POST.<br>
+    This function is useful for passing optional variables to components, 
+    if the component can't be sure that the variable exists in the callers
     context.
 } {
+    set result ""
+
     # Check if the variable exists in the parent's caller environment
     upvar $var_name value
-    if [exists_and_not_null value] { 
-	# return $value
+    if {[info exists value]} { 
+	# Take the value from the caller's environment
+	set result $value
     } else {
-	# get fr´om the list of all HTTP variables.
-	# ns_set get returns "" if not found
+	# Take the value from the HTTP vars or "" otherwise.
 	set form_vars [ns_conn form]
 	if {"" == $form_vars} { set form_vars [ns_set create] }
-	set value [ns_set get $form_vars $var_name]
-    }
+	set result [ns_set get $form_vars $var_name]
 
-    set message ""
-    switch $limit_to {
-	allhtml {
-	    # Do nothing - no checks
-	}
-	nohtml {
-	    # Don't allow any tags
-	    if { [string first < $value] >= 0 } {
-		set message [lang::message::lookup "" intranet-core.No_HTML_allowed_in_varname "No HTML tags allowed in variable '%var_name%'"]
+	# Check the security of the value taken from HTTP vars
+	set message ""
+	switch $limit_to {
+	    allhtml {
+		# Do nothing - no checks
+	    }
+	    nohtml {
+		# Don't allow any tags
+		if { [string first < $result] >= 0 } {
+		    set message [lang::message::lookup "" intranet-core.No_HTML_allowed_in_varname "No HTML tags allowed in variable '%var_name%'"]
+		}
+	    }
+	    html {
+		set message [ad_html_security_check $result]
+	    }
+	    integer {
+		if {![string is integer $result]} { 
+		    set message [lang::message::lookup "" intranet-core.Variable_is_not_an_integer "Variable '%var_name%' is not an integer"]
+		}
+	    }
+	    default {
+		# Do nothing - no checks
 	    }
 	}
-	html {
-	    set message [ad_html_security_check $value]
-	}
-	integer {
-	    if {![string is integer $value]} { 
-		set message [lang::message::lookup "" intranet-core.Variable_is_not_an_integer "Variable '%var_name%' is not an integer"]
-	    }
-	}
-	default {
-	    # Do nothing - no checks
-	}
-    }
 
-    if {"" != $message} {
-	im_security_alert -location im_opt_val -message $message -value $value -severity "Severe"
-	ad_return_complaint 1 "<b>Security Check</b>:<br>$message"
-	ad_script_abort
+	if {"" != $message} {
+	    im_security_alert -location im_opt_val -message $message -value $result -severity "Severe"
+	    ad_return_complaint 1 "<b>Security Check</b>:<br>$message"
+	    ad_script_abort
+	}
     }
     
-    return $value
+    return $result
 } 
 
 
@@ -637,14 +643,10 @@ ad_proc -public im_parameter {
     # Get the package_id. That's because a single package (identified
     # by a "package_key" can be mounted several times in the system.
     db_1row get_package_id "
-select 
-	count(*) as param_count, 
-	min(package_id) as package_id
-from 
-	apm_packages 
-where 
-	package_key = :package_key
-"
+	select	count(*) as param_count, 
+		min(package_id) as package_id
+	from	apm_packages 
+	where	package_key = :package_key"
 
     # Check if the user has specified an non-existing package key.
     # param_count > 1 is impossible because all intranet packages
@@ -748,16 +750,15 @@ ad_proc -public im_email_from_user_id_helper {
     return $user_email
 }
 
+
 # Find out the user initials
 ad_proc -public im_initials_from_user_id {user_id} {
-    set user_name [im_name_from_user_id $user_id]
-    set result ""
-    foreach name $user_name {
-	append result [string toupper [string range $name 0 0]]
-    }
-    return $result
+    return [util_memoize [list im_initials_from_user_id_helper $user_id]]
 }
 
+ad_proc -public im_initials_from_user_id_helper {user_id} {
+    return [db_string user_initials "select im_initials_from_user_id(:user_id)" -default $user_id]
+}
 
 
 ad_proc im_employee_select_optionlist { 

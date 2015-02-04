@@ -278,7 +278,7 @@ if {[im_permission $current_user_id "view_projects_all"]} {
 			   ]
     ad_form -extend -name $form_id -form {
         {mine_p:text(select),optional {label "$min_all_l10n"} {options $mine_p_options }}
-        {project_status_id:text(im_category_tree),optional {label \#intranet-core.Project_Status\#} {value $project_status_id} {custom {category_type "Intranet Project Status" translate_p 1}} }
+        {project_status_id:text(im_category_tree),optional {label \#intranet-core.Project_Status\#} {value $project_status_id} {custom {category_type "Intranet Project Status" translate_p 1 include_empty_name $all_l10n}} }
     }
 }
 ad_form -extend -name $form_id -form {
@@ -466,24 +466,24 @@ switch [string tolower $order_by] {
     }
 }
 
-set where_clause [join $criteria " and "]
+set where_clause [join $criteria " and\n            "]
 if { ![empty_string_p $where_clause] } {
     set where_clause " and $where_clause"
 }
 
-set extra_select [join $extra_selects ","]
+set extra_select [join $extra_selects ",\n\t"]
 if { ![empty_string_p $extra_select] } {
-    set extra_select ",$extra_select"
+    set extra_select ",\n\t$extra_select"
 }
 
-set extra_from [join $extra_froms ","]
+set extra_from [join $extra_froms ",\n\t"]
 if { ![empty_string_p $extra_from] } {
-    set extra_from ",$extra_from"
+    set extra_from ",\n\t$extra_from"
 }
 
-set extra_where [join $extra_wheres " and "]
+set extra_where [join $extra_wheres "and\n\t"]
 if { ![empty_string_p $extra_where] } {
-    set extra_where " and $extra_where"
+    set extra_where ",\n\t$extra_where"
 }
 
 

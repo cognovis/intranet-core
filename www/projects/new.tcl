@@ -37,15 +37,6 @@ ad_page_contract {
 }
 
 
-# Redirect to custom new page if necessary
-callback im_project_new_redirect -object_id $project_id \
-    -status_id $project_status_id -type_id $project_type_id \
-    -project_id $project_id -parent_id $parent_id \
-    -company_id $company_id -project_type_id $project_type_id \
-    -project_name $project_name -project_nr [im_opt_val project_nr] \
-    -workflow_key $workflow_key -return_url $return_url
-
-
 # -----------------------------------------------------------
 # Defaults
 # -----------------------------------------------------------
@@ -171,6 +162,15 @@ if {$project_exists_p} {
     }
 }
 
+
+# Redirect to custom new page if necessary
+callback im_project_new_redirect -object_id $project_id \
+    -status_id $project_status_id -type_id $project_type_id \
+    -project_id $project_id -parent_id $parent_id \
+    -company_id $company_id -project_type_id $project_type_id \
+    -project_name $project_name -project_nr [im_opt_val project_nr] \
+    -workflow_key $workflow_key -return_url $return_url
+    
 # --------------------------------------------
 # Create Form
 # --------------------------------------------
@@ -191,11 +191,6 @@ if {[info exists project_id]} {
     if {0 != $existing_project_type_id && "" != $existing_project_type_id} {
         set dynfield_project_type_id $existing_project_type_id
     }
-}
-
-# Returnredirect to translations for translation projects
-if {[apm_package_installed_p "intranet-translation"] && [im_category_is_a $dynfield_project_type_id [im_project_type_translation]] && ![info exists project_id]} {
-    ad_returnredirect [export_vars -base "/intranet-translation/projects/new" -url {project_type_id project_status_id company_id parent_id project_nr project_name workflow_key return_url project_id}]
 }
 
 set dynfield_project_id 0

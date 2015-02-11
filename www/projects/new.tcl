@@ -24,7 +24,7 @@ ad_page_contract {
     @author frank.bergmann@project-open.com
     @author koen.vanwinckel@dotprojects.be
 } {
-    { project_id:integer "" }
+    { project_id:integer,optional }
     { parent_id:integer "" }
     { company_id:integer "" }
     { project_type_id:integer "" }
@@ -112,7 +112,6 @@ if {[info exists project_id]} {
 }
 
 if {$project_exists_p} {
-    
     # Check project permissions for this user
     im_project_permissions $user_id $project_id view read write admin
     if {!$write} {
@@ -162,11 +161,17 @@ if {$project_exists_p} {
     }
 }
 
-
 # Redirect to custom new page if necessary
-callback im_project_new_redirect -object_id $project_id \
+
+if {[info exists project_id]} {
+    set callback_project_id $project_id
+} else {
+    set callback_project_id ""
+}
+
+callback im_project_new_redirect -object_id $callback_project_id \
     -status_id $project_status_id -type_id $project_type_id \
-    -project_id $project_id -parent_id $parent_id \
+    -project_id $callback_project_id -parent_id $parent_id \
     -company_id $company_id -project_type_id $project_type_id \
     -project_name $project_name -project_nr [im_opt_val project_nr] \
     -workflow_key $workflow_key -return_url $return_url
@@ -264,9 +269,13 @@ ad_form -extend -name $form_id -new_request {
     # Calculate the next project number by calculating the maximum of
     # the "reasonably build numbers" currently available
     set project_nr [im_next_project_nr -customer_id $company_id -parent_id $parent_id]
+    if {$project_name eq ""} {
+	set project_name $project_nr
+    }
 
     # Now set the values
     template::element::set_value $form_id project_nr $project_nr
+    template::element::set_value $form_id project_name $project_name
 
     set company_enabled_p [db_string company "select 1 from im_dynfield_type_attribute_map tam, im_dynfield_attributes da, acs_attributes a where a.attribute_id = da.acs_attribute_id and a.attribute_name = 'company_id' and tam.attribute_id = da.attribute_id and tam.object_type_id = :project_type_id and tam.display_mode in ('edit','display')" -default 0]
     if {$company_enabled_p} {

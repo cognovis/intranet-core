@@ -40,66 +40,89 @@ insert into acs_object_type_tables (object_type,table_name,id_column)
 values ('im_profile', 'im_profiles', 'profile_id');
 
 
--- Add URLs so that we can show URLs for the object
-insert into im_biz_object_urls (object_type, url_type, url) values (
-'group','view','/admin/groups/one?group_id=');
-insert into im_biz_object_urls (object_type, url_type, url) values (
-'group','edit','/admin/groups/one?group_id=');
-
-insert into im_biz_object_urls (object_type, url_type, url) values (
-'im_profile','view','/admin/groups/one?group_id=');
-insert into im_biz_object_urls (object_type, url_type, url) values (
-'im_profile','edit','/admin/groups/one?group_id=');
-
-
 
 -------------------------------------------------------------
 -- DB-neutral API for permissions
 --
 
-create or replace function im_object_permission_p (integer, integer, varchar)
-returns char as '
+
+
+-- added
+select define_function_args('im_object_permission_p','object_id,user_id,privilege');
+
+--
+-- procedure im_object_permission_p/3
+--
+CREATE OR REPLACE FUNCTION im_object_permission_p(
+   p_object_id integer,
+   p_user_id integer,
+   p_privilege varchar
+) RETURNS char AS $$
 DECLARE
-	p_object_id	alias for $1;
-	p_user_id	alias for $2;
-	p_privilege	alias for $3;
 BEGIN
 	return acs_permission__permission_p(p_object_id, p_user_id, p_privilege);
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_grant_permission (integer, integer, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('im_grant_permission','object_id,party_id,privilege');
+
+--
+-- procedure im_grant_permission/3
+--
+CREATE OR REPLACE FUNCTION im_grant_permission(
+   p_object_id integer,
+   p_party_id integer,
+   p_privilege varchar
+) RETURNS integer AS $$
 DECLARE
-	p_object_id	alias for $1;
-	p_party_id	alias for $2;
-	p_privilege	alias for $3;
 BEGIN
 	PERFORM acs_permission__grant_permission(p_object_id, p_party_id, p_privilege);
 	return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-create or replace function im_revoke_permission (integer, integer, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('im_revoke_permission','object_id,party_id,privilege');
+
+--
+-- procedure im_revoke_permission/3
+--
+CREATE OR REPLACE FUNCTION im_revoke_permission(
+   p_object_id integer,
+   p_party_id integer,
+   p_privilege varchar
+) RETURNS integer AS $$
 DECLARE
-	p_object_id	alias for $1;
-	p_party_id	alias for $2;
-	p_privilege	alias for $3;
 BEGIN
 	PERFORM acs_permission__revoke_permission(p_object_id, p_party_id, p_privilege);
 	return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 -------------------------------------------------------------
 -- Shortcut proc to setup loads of privileges.
 --
-create or replace function im_priv_create (varchar, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('im_priv_create','priv_name,profile_name');
+
+--
+-- procedure im_priv_create/2
+--
+CREATE OR REPLACE FUNCTION im_priv_create(
+   p_priv_name varchar,
+   p_profile_name varchar
+) RETURNS integer AS $$
 DECLARE
-	p_priv_name		alias for $1;
-	p_profile_name		alias for $2;
 
 	v_profile_id		integer;
 	v_object_id		integer;
@@ -111,7 +134,7 @@ BEGIN
 
 	-- Get the Main Site id, used as the global identified for permissions
 	select package_id into v_object_id from apm_packages 
-	where package_key=''acs-subsite'';
+	where package_key='acs-subsite';
 
 	select count(*) into v_count from acs_permissions
 	where object_id = v_object_id and grantee_id = v_profile_id and privilege = p_priv_name;
@@ -121,7 +144,8 @@ BEGIN
 	END IF;
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- add the same relation types for im_profile as for "group".
@@ -151,15 +175,22 @@ insert into group_types (group_type) values ('im_profile');
 
 
 
-create or replace function im_profile__new (varchar, varchar) 
-returns integer as '
+
+
+-- added
+
+--
+-- procedure im_profile__new/2
+--
+CREATE OR REPLACE FUNCTION im_profile__new(
+   pretty_name varchar,
+   profile_gif varchar
+) RETURNS integer AS $$
 DECLARE
-	pretty_name	alias for $1;
-	profile_gif	alias for $2;
 BEGIN
 	return im_profile__new(
 	null,
-	''im_profile'',
+	'im_profile',
 	now(),
 	0,
 	null,
@@ -168,16 +199,25 @@ BEGIN
 	null,
 	null,
 	pretty_name,
-	''closed'',
+	'closed',
 	profile_gif
 	);
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_profile__name (integer) 
-returns varchar as '
+
+
+-- added
+select define_function_args('im_profile__name','profile_id');
+
+--
+-- procedure im_profile__name/1
+--
+CREATE OR REPLACE FUNCTION im_profile__name(
+   p_profile_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_profile_id		alias for $1;
 	
 	v_profile_name		varchar;
 BEGIN
@@ -187,27 +227,34 @@ BEGIN
 	where	group_id = p_profile_id;
 
 	return v_profile_name;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_profile__new (
-	integer, varchar, timestamptz, integer, varchar, integer,
-	varchar, varchar, varchar, varchar, varchar
-) returns integer as '
+
+
+-- added
+select define_function_args('im_profile__new','profile_id,object_type,creation_date,creation_user,creation_ip,context_id,email,url,group_name,join_policy,profile_gif');
+
+--
+-- procedure im_profile__new/11
+--
+CREATE OR REPLACE FUNCTION im_profile__new(
+   p_profile_id integer,
+   p_object_type varchar,
+   p_creation_date timestamptz,
+   p_creation_user integer,
+   p_creation_ip varchar,
+   p_context_id integer,
+   p_email varchar,
+   p_url varchar,
+   p_group_name varchar,
+   p_join_policy varchar,
+   p_profile_gif varchar
+) RETURNS integer AS $$
 DECLARE
-	p_profile_id	alias for $1;
-	p_object_type	alias for $2;
-	p_creation_date	alias for $3;
-	p_creation_user	alias for $4;
-	p_creation_ip	alias for $5;
-	p_context_id	alias for $6;
 
-	p_email		alias for $7;
-	p_url		alias for $8;
-	p_group_name	alias for $9;
-	p_join_policy	alias for $10;
-	p_profile_gif	alias for $11;
 
 	v_group_id integer;
 BEGIN
@@ -234,13 +281,23 @@ BEGIN
 
 	return v_group_id;
 
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_profile__delete (integer) returns integer as '
+
+
+-- added
+select define_function_args('im_profile__delete','v_profile_id');
+
+--
+-- procedure im_profile__delete/1
+--
+CREATE OR REPLACE FUNCTION im_profile__delete(
+   v_profile_id integer
+) RETURNS integer AS $$
 DECLARE
-	v_profile_id		alias for $1;
 BEGIN
 	delete from im_profiles
 	where profile_id=v_profile_id;
@@ -248,20 +305,29 @@ BEGIN
 	PERFORM acs_group__delete( v_profile_id );
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 
 -- Return a string with all profiles of the user
-create or replace function im_profiles_from_user_id(integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_profiles_from_user_id','v_user_id');
+
+--
+-- procedure im_profiles_from_user_id/1
+--
+CREATE OR REPLACE FUNCTION im_profiles_from_user_id(
+   v_user_id integer
+) RETURNS varchar AS $$
 DECLARE
-	v_user_id	alias for $1;
 	v_profiles	varchar;
 	row		RECORD;
 BEGIN
-	v_profiles := '''';
+	v_profiles := '';
 	FOR row IN
 		select	group_name
 		from	groups g,
@@ -271,24 +337,33 @@ BEGIN
 			and g.group_id = m.group_id
 			and g.group_id = p.profile_id
 	LOOP
-	    IF '''' != v_profiles THEN v_profiles := v_profiles || '', ''; END IF;
+	    IF '' != v_profiles THEN v_profiles := v_profiles || ', '; END IF;
 	    v_profiles := v_profiles || row.group_name;
 	END LOOP;
 
 	return v_profiles;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select im_profiles_from_user_id(624);
 
 
 
 
 -- Function to add a new member to a user_group
-create or replace function user_group_member_add ( integer, integer, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('user_group_member_add','group_id,user_id,role');
+
+--
+-- procedure user_group_member_add/3
+--
+CREATE OR REPLACE FUNCTION user_group_member_add(
+   p_group_id integer,
+   p_user_id integer,
+   p_role varchar
+) RETURNS integer AS $$
 DECLARE
-	p_group_id	alias for $1;
-	p_user_id	alias for $2;
-	p_role		alias for $3;
 
 	v_rel_id		integer;
 BEGIN
@@ -299,16 +374,25 @@ BEGIN
 		null		-- creation_ip
 	);
 	return v_rel_id;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Function to add a new member to a user_group
-create or replace function user_group_member_del (integer, integer)
-returns integer as '
+
+
+-- added
+select define_function_args('user_group_member_del','group_id,user_id');
+
+--
+-- procedure user_group_member_del/2
+--
+CREATE OR REPLACE FUNCTION user_group_member_del(
+   p_group_id integer,
+   p_user_id integer
+) RETURNS integer AS $$
 DECLARE
 	row		RECORD;
-	p_group_id	alias for $1;
-	p_user_id	alias for $2;
 
 	v_rel_id	integer;
 BEGIN
@@ -322,7 +406,8 @@ BEGIN
 	end loop;
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -------------------------------------------------------------
@@ -331,11 +416,19 @@ end;' language 'plpgsql';
 -- Profiles are just regular groups that are used to define
 -- user permissions using the intranet-core object.
 
-create or replace function im_create_profile (varchar, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('im_create_profile','v_pretty_name,v_profile_gif');
+
+--
+-- procedure im_create_profile/2
+--
+CREATE OR REPLACE FUNCTION im_create_profile(
+   v_pretty_name varchar,
+   v_profile_gif varchar
+) RETURNS integer AS $$
 DECLARE
-	v_pretty_name	alias for $1;
-	v_profile_gif	alias for $2;
 
 	v_group_id	integer;
 	v_rel_id	integer;
@@ -358,20 +451,21 @@ BEGIN
 
 	v_rel_id := composition_rel__new (
 		null,			-- rel_id
-		''composition_rel'',	-- rel_type
+		'composition_rel',	-- rel_type
 		-2,			-- object_id_one
 		v_group_id,		-- object_id_two
 		0,			-- creation_user
 		null			-- creation_ip
 	);
 	
-	select acs_object_id_seq.nextval into v_category_id;
+	-- select acs_object_id_seq.nextval into v_category_id;
+        select nextval('t_acs_attribute_id_seq') into v_category_id; 
 
 	-- Add the group to the Intranet User Type categories
 	perform im_category_new (
 		v_category_id,  -- category_id
 		v_pretty_name, 		    -- category
-		''Intranet User Type'',     -- category_type
+		'Intranet User Type',     -- category_type
 		null	   		    -- description
 	);
 
@@ -379,13 +473,22 @@ BEGIN
 
 	end if;
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-create or replace function im_drop_profile (varchar) 
-returns integer as '
+
+
+-- added
+select define_function_args('im_drop_profile','v_pretty_name');
+
+--
+-- procedure im_drop_profile/1
+--
+CREATE OR REPLACE FUNCTION im_drop_profile(
+   v_pretty_name varchar
+) RETURNS integer AS $$
 DECLARE
 	row		RECORD;
-	v_pretty_name	alias for $1;
 
 	v_group_id	integer;
 BEGIN
@@ -417,10 +520,11 @@ BEGIN
 	PERFORM im_profile__delete(v_group_id);
 
 	-- now delete the category
-	delete from im_categories where category = v_pretty_name and category_type = ''Intranet User Type'';
+	delete from im_categories where category = v_pretty_name and category_type = 'Intranet User Type';
         
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 select im_create_profile ('P/O Admins','admin');
 select im_create_profile ('Customers','customer'); 
@@ -499,6 +603,8 @@ select acs_privilege__add_child('admin', 'edit_internal_offices');
 -- Projects
 select acs_privilege__create_privilege('add_projects','Add Projects','Add Projects');
 select acs_privilege__add_child('admin', 'add_projects');
+select acs_privilege__create_privilege('view_project_members','View Project Members','View Project Members');
+select acs_privilege__add_child('admin', 'view_project_members');
 select acs_privilege__create_privilege('view_projects_all','View All Projects','View All Projects');
 select acs_privilege__add_child('admin', 'view_projects_all');
 select acs_privilege__create_privilege('edit_projects_all','Edit All Projects','Edit All Projects');
@@ -618,11 +724,19 @@ select im_priv_create('require_manual_login','Accounting');
 
 -- Shortcut proc define subgroup behaviour
 --
-create or replace function im_subgroup_create (varchar, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('im_subgroup_create','parent_name,subgroup_name');
+
+--
+-- procedure im_subgroup_create/2
+--
+CREATE OR REPLACE FUNCTION im_subgroup_create(
+   p_parent_name varchar,
+   p_subgroup_name varchar
+) RETURNS integer AS $$
 DECLARE
-	p_parent_name	alias for $1;
-	p_subgroup_name alias for $2;
 
 	v_rel_id		integer;
 	v_parent_id		integer;
@@ -643,7 +757,8 @@ BEGIN
 		null
 	);
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Shortcut to grant privileges about one group to
@@ -653,12 +768,20 @@ end;' language 'plpgsql';
 --	grants administration privileges of freelancers to
 --	staff employees.
 --
-create or replace function im_user_matrix_grant (varchar, varchar, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('im_user_matrix_grant','group_name,grantee_group_name,privilege');
+
+--
+-- procedure im_user_matrix_grant/3
+--
+CREATE OR REPLACE FUNCTION im_user_matrix_grant(
+   p_group_name varchar,
+   p_grantee_group_name varchar,
+   p_privilege varchar
+) RETURNS integer AS $$
 DECLARE
-	p_group_name		alias for $1;
-	p_grantee_group_name	alias for $2;
-	p_privilege		alias for $3;
 
 	v_group_id		integer;
 	v_grantee_id		integer;
@@ -677,18 +800,27 @@ BEGIN
 		p_privilege
 	);
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 
 ------------------------------------------------------------
 -- Check whether user_id is (some kind of) member of group_id.
-create or replace function ad_group_member_p (integer, integer)
-returns char as '
+
+
+-- added
+select define_function_args('ad_group_member_p','user_id,group_id');
+
+--
+-- procedure ad_group_member_p/2
+--
+CREATE OR REPLACE FUNCTION ad_group_member_p(
+   p_user_id integer,
+   p_group_id integer
+) RETURNS char AS $$
 DECLARE
-	p_user_id	alias for $1;
-	p_group_id	alias for $2;
 
 	ad_group_member_count	integer;
 BEGIN
@@ -696,11 +828,12 @@ BEGIN
 	where object_id_one = p_group_id and object_id_two = p_user_id;
 
 	if ad_group_member_count = 0 then
-		return ''f'';
+		return 'f';
 	else
-		return ''t'';
+		return 't';
 	end if;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 ------------------------------------------------------------
@@ -708,11 +841,19 @@ end;' language 'plpgsql';
 -- ToDo: Hardcoded implementation - replace by privilege
 -- scheme that works through all types of business objects.
 --
-create or replace function ad_group_member_admin_role_p (integer, integer)
-returns integer as '
+
+
+-- added
+select define_function_args('ad_group_member_admin_role_p','user_id,group_id');
+
+--
+-- procedure ad_group_member_admin_role_p/2
+--
+CREATE OR REPLACE FUNCTION ad_group_member_admin_role_p(
+   p_user_id integer,
+   p_group_id integer
+) RETURNS integer AS $$
 DECLARE
-	p_user_id	alias for $1;
-	p_group_id	alias for $2;
 
 	ad_group_member_count	integer;
 BEGIN
@@ -723,12 +864,42 @@ BEGIN
 		and r.object_id_two = p_user_id
 		and r.rel_id = m.rel_id
 		and m.object_role_id = c.category_id
-		and (c.category = ''Project Manager'' or c.category = ''Key Account'');
+		and (c.category = 'Project Manager' or c.category = 'Key Account');
 
 	if ad_group_member_count = 0 then
-		return ''f'';
+		return 'f';
 	else
-		return ''t'';
+		return 't';
 	end if;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
+
+
+--
+-- update function for categories, moved here from 
+-- intranet-core/sql/postgresql/intranet-users.sql
+-- since there exists no im_profiles jet.
+---
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
+	row		RECORD;
+	v_category_id	integer;
+BEGIN
+	FOR row IN
+		select	g.*
+		from	groups g,
+			im_profiles p
+		where	p.profile_id = g.group_id
+        LOOP
+		PERFORM im_category_new(nextval('im_categories_seq')::integer, row.group_name, 'Intranet User Type');
+		update im_categories set aux_int1 = row.group_id where category = row.group_name and category_type = 'Intranet User Type';
+        END LOOP;
+
+        RETURN 0;
+END;
+$$ LANGUAGE plpgsql;
+select inline_0();
+drop function inline_0();

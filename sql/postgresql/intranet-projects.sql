@@ -72,6 +72,8 @@ create table im_projects (
 	-- Should be customer_project_nr. Refers to the customers
 	-- reference to our project.
 	company_project_nr		varchar(200),
+	-- Field indicating the final_customer if we are a subcontractor
+	final_company			varchar(200),
 	-- type of actions pursued during the project 
 	-- implementation, for example "ERP Installation" or
 	-- "ERP Upgrade", ...
@@ -168,24 +170,27 @@ create index im_project_parent_id_idx on im_projects(parent_id);
 -- Speed up child-sortkey queries
 create index im_project_treesort_idx on im_projects(tree_sortkey);
 
--- Create unique indices instead of constraints
--- because we need the coalesce(parent_id,0).
-create unique index im_projects_name_un on im_projects (project_name, company_id, coalesce(parent_id,0));
-create unique index im_projects_nr_un on im_projects (project_nr, company_id, coalesce(parent_id,0));
-create unique index im_projects_path_un on im_projects (project_path, company_id, coalesce(parent_id,0));
-
+-- Relaxed unique constraint for tasks...
+alter table im_projects add constraint 
+im_projects_path_un UNIQUE (project_nr, company_id, parent_id);
 
 
 
 
 -- This is the sortkey code
 --
-create or replace function im_project_insert_tr ()
-returns opaque as '
-declare
+
+
+--
+-- procedure im_project_insert_tr/0
+--
+CREATE OR REPLACE FUNCTION im_project_insert_tr(
+
+) RETURNS trigger AS $$
+DECLARE
 	v_max_child_sortkey		im_projects.max_child_sortkey%TYPE;
 	v_parent_sortkey		im_projects.tree_sortkey%TYPE;
-begin
+BEGIN
 
 	if new.parent_id is null
 	then
@@ -210,7 +215,8 @@ begin
 	new.max_child_sortkey := null;
 
 	return new;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 create trigger im_project_insert_tr
 before insert on im_projects
@@ -219,12 +225,19 @@ execute procedure im_project_insert_tr();
 
 
 
-create or replace function im_projects_update_tr () returns opaque as '
-declare
+
+
+--
+-- procedure im_projects_update_tr/0
+--
+CREATE OR REPLACE FUNCTION im_projects_update_tr(
+
+) RETURNS trigger AS $$
+DECLARE
 	v_parent_sk	varbit default null;
 	v_max_child_sortkey	varbit;
 	v_old_parent_length	integer;
-begin
+BEGIN
 	if new.project_id = old.project_id
 	and ((new.parent_id = old.parent_id)
 		or (new.parent_id is null
@@ -259,13 +272,20 @@ begin
 	WHERE tree_sortkey between new.tree_sortkey and tree_right(new.tree_sortkey);
 
 	return new;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 create trigger im_projects_update_tr after update
 on im_projects
 for each row
 execute procedure im_projects_update_tr ();
 
+
+-- Create unique indices instead of constraints
+-- because we need the coalesce(parent_id,0).
+create unique index im_projects_name_un on im_projects (project_name, company_id, coalesce(parent_id,0));
+create unique index im_projects_nr_un on im_projects (project_nr, company_id, coalesce(parent_id,0));
+--create unique index im_projects_path_un on im_projects (project_path, company_id, coalesce(parent_id,0));
 
 
 -- Optional Indices for larger systems:
@@ -278,25 +298,31 @@ execute procedure im_projects_update_tr ();
 -- Project Package
 -- ------------------------------------------------------------
 
-create or replace function im_project__new (
-	integer, varchar, timestamptz, integer, varchar, integer,
-	varchar, varchar, varchar, integer, integer, integer, integer
-) returns integer as '
-DECLARE
-	p_project_id	alias for $1;
-	p_object_type	alias for $2;
-	p_creation_date   alias for $3;
-	p_creation_user   alias for $4;
-	p_creation_ip	alias for $5;
-	p_context_id	alias for $6;
 
-	p_project_name	alias for $7;
-	p_project_nr	alias for $8;
-	p_project_path	alias for $9;
-	p_parent_id	alias for $10;
-	p_company_id	alias for $11;
-	p_project_type_id	alias for $12;
-	p_project_status_id alias for $13;
+
+-- added
+select define_function_args('im_project__new','project_id,object_type,creation_date,creation_user,creation_ip,context_id,project_name,project_nr,project_path,parent_id,company_id,project_type_id,project_status_id');
+
+--
+-- procedure im_project__new/13
+--
+CREATE OR REPLACE FUNCTION im_project__new(
+   p_project_id integer,
+   p_object_type varchar,
+   p_creation_date timestamptz,
+   p_creation_user integer,
+   p_creation_ip varchar,
+   p_context_id integer,
+   p_project_name varchar,
+   p_project_nr varchar,
+   p_project_path varchar,
+   p_parent_id integer,
+   p_company_id integer,
+   p_project_type_id integer,
+   p_project_status_id integer
+) RETURNS integer AS $$
+DECLARE
+
 
 	v_project_id	integer;
 BEGIN
@@ -321,11 +347,21 @@ BEGIN
 		p_project_status_id
 	);
 	return v_project_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-create or replace function im_project__delete (integer) returns integer as '
+
+
+-- added
+select define_function_args('im_project__delete','v_project_id');
+
+--
+-- procedure im_project__delete/1
+--
+CREATE OR REPLACE FUNCTION im_project__delete(
+   v_project_id integer
+) RETURNS integer AS $$
 DECLARE
-	v_project_id		alias for $1;
 BEGIN
 	-- Erase the im_projects item associated with the id
 	delete from 	im_projects
@@ -338,11 +374,21 @@ BEGIN
 	PERFORM	acs_object__delete(v_project_id);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-create or replace function im_project__name (integer) returns varchar as '
+
+
+-- added
+select define_function_args('im_project__name','v_project_id');
+
+--
+-- procedure im_project__name/1
+--
+CREATE OR REPLACE FUNCTION im_project__name(
+   v_project_id integer
+) RETURNS varchar AS $$
 DECLARE
-	v_project_id	alias for $1;
 	v_name		varchar;
 BEGIN
 	select	project_name
@@ -351,7 +397,8 @@ BEGIN
 	where	project_id = v_project_id;
 
 	return v_name;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- What types of urls do we ask for when creating a new project
@@ -390,11 +437,19 @@ create index im_proj_url_url_proj_idx on
 im_project_url_map(url_type_id, project_id);
 
 
-create or replace function im_proj_url_from_type ( integer, varchar) 
-returns varchar as '
+
+
+-- added
+select define_function_args('im_proj_url_from_type','v_project_id,v_url_type');
+
+--
+-- procedure im_proj_url_from_type/2
+--
+CREATE OR REPLACE FUNCTION im_proj_url_from_type(
+   v_project_id integer,
+   v_url_type varchar
+) RETURNS varchar AS $$
 DECLARE
-	v_project_id	alias for $1;
-	v_url_type	alias for $2;
 	v_url 		varchar;
 BEGIN
 	begin
@@ -408,16 +463,25 @@ BEGIN
 	
 	end;
 	return v_url;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 -- Helper functions to make our queries easier to read
 -- and to avoid outer joins with parent projects etc.
-create or replace function im_project_name_from_id (integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_project_name_from_id','project_id');
+
+--
+-- procedure im_project_name_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_project_name_from_id(
+   p_project_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_project_id	alias for $1;
 	v_project_name	varchar;
 BEGIN
 	select project_name
@@ -426,13 +490,22 @@ BEGIN
 	where project_id = p_project_id;
 
 	return v_project_name;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_project_nr_from_id (integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_project_nr_from_id','project_id');
+
+--
+-- procedure im_project_nr_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_project_nr_from_id(
+   p_project_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_project_id	alias for $1;
 	v_name		varchar;
 BEGIN
 	select project_nr
@@ -441,14 +514,23 @@ BEGIN
 	where project_id = p_project_id;
 
 	return v_name;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_project_managers_enumerator (integer) 
-returns setof integer as '
-declare
-	p_project_id		alias for $1;
+
+
+-- added
+select define_function_args('im_project_managers_enumerator','project_id');
+
+--
+-- procedure im_project_managers_enumerator/1
+--
+CREATE OR REPLACE FUNCTION im_project_managers_enumerator(
+   p_project_id integer
+) RETURNS setof integer AS $$
+DECLARE
 
 	v_project_id		integer;
 	v_parent_id		integer;
@@ -468,15 +550,24 @@ BEGIN
 	END LOOP;
 
 	RETURN;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 -- Indent a project 4 spaces for everyl level...
-CREATE or REPLACE FUNCTION im_project_level_spaces(integer)
-RETURNS varchar as $body$
+
+
+-- added
+select define_function_args('im_project_level_spaces','level');
+
+--
+-- procedure im_project_level_spaces/1
+--
+CREATE OR REPLACE FUNCTION im_project_level_spaces(
+   p_level integer
+) RETURNS varchar AS $$
 DECLARE
-	p_level		alias for $1;
 	v_result	varchar;
 	i		integer;
 BEGIN
@@ -485,16 +576,25 @@ BEGIN
 		v_result := v_result || '    ';
 	END LOOP;
 	RETURN v_result;
-END; $body$ LANGUAGE 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 
 -- Returns a space separated list of the project_nr of the parents
-CREATE or REPLACE FUNCTION im_project_nr_parent_list(integer, varchar, integer)
-RETURNS varchar as $body$
+
+
+-- added
+select define_function_args('im_project_nr_parent_list','project_id,spacer,level');
+
+--
+-- procedure im_project_nr_parent_list/3
+--
+CREATE OR REPLACE FUNCTION im_project_nr_parent_list(
+   p_project_id integer,
+   p_spacer varchar,
+   p_level integer
+) RETURNS varchar AS $$
 DECLARE
-	p_project_id		alias for $1;
-	p_spacer		alias for $2;
-	p_level			alias for $3;
 
 	v_result		varchar;
 	v_project_nr		varchar;
@@ -518,15 +618,22 @@ BEGIN
 	v_result := v_result || v_project_nr;
 
 	RETURN v_result;
-END; $body$ LANGUAGE 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 
 -- Shortcut function with only one argument
-CREATE or REPLACE FUNCTION im_project_nr_parent_list(integer)
-RETURNS varchar as $body$
+
+
+--
+-- procedure im_project_nr_parent_list/1
+--
+CREATE OR REPLACE FUNCTION im_project_nr_parent_list(
+   p_project_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_project_id		alias for $1;
 BEGIN
 	RETURN im_project_nr_parent_list(p_project_id, ' ', 0);
-END; $body$ LANGUAGE 'plpgsql';
+END;
+$$ language 'plpgsql';
 

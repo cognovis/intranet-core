@@ -19,23 +19,32 @@
 -- Populate all the status/type/url with the different types of 
 -- data we are collecting
 
-create or replace function im_first_letter_default_to_a (varchar) 
-returns char as '
+
+
+-- added
+select define_function_args('im_first_letter_default_to_a','string');
+
+--
+-- procedure im_first_letter_default_to_a/1
+--
+CREATE OR REPLACE FUNCTION im_first_letter_default_to_a(
+   p_string varchar
+) RETURNS char AS $$
 DECLARE
-	p_string	alias for $1;
 	v_initial	char(1);
 BEGIN
 	v_initial := substr(upper(p_string),1,1);
 
 	IF v_initial IN (
-		''A'',''B'',''C'',''D'',''E'',''F'',''G'',''H'',''I'',''J'',''K'',''L'',''M'',
-		''N'',''O'',''P'',''Q'',''R'',''S'',''T'',''U'',''V'',''W'',''X'',''Y'',''Z''
+		'A','B','C','D','E','F','G','H','I','J','K','L','M',
+		'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'
 	) THEN
 		RETURN v_initial;
 	END IF;
 	
-	RETURN ''A'';
-end;' language 'plpgsql';
+	RETURN 'A';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -80,8 +89,14 @@ create table im_start_months (
 -- Populate im_start_weeks. Start with Sunday, 
 -- Jan 7th 1996 and end after inserting 1000 weeks. Note 
 -- that 1000 is a completely arbitrary number. 
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
 	v_max 			integer;
 	v_i				integer;
@@ -92,7 +107,7 @@ BEGIN
 
 	FOR v_i IN 0..v_max-1 LOOP
 		-- for convenience, select out the next start block to insert into a variable
-		select ''1996-01-07''::date + v_i*7 
+		select '1996-01-07'::date + v_i*7 
 		into v_next_start_week 
 		from dual;
 	
@@ -105,18 +120,19 @@ BEGIN
 		-- set the start_of_larger_unit_p flag if this is the first
 		-- start block of the month
 		update im_start_weeks
-		set start_of_larger_unit_p=''t''
+		set start_of_larger_unit_p='t'
 		where start_block = v_next_start_week::date
 		and not exists (
 			select 1 
 				from im_start_weeks
-				where to_char(start_block,''YYYY-MM'') = 
-				to_char(v_next_start_week,''YYYY-MM'')
-				and start_of_larger_unit_p=''t''
+				where to_char(start_block,'YYYY-MM') = 
+				to_char(v_next_start_week,'YYYY-MM')
+				and start_of_larger_unit_p='t'
 		);
 	END LOOP;
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -124,100 +140,126 @@ drop function inline_0 ();
 
 -- Populate im_start_months. Start with im_start_weeks
 -- dates and check for the beginning of a new month.
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
 	row RECORD;
 BEGIN
 	for row in
 		select distinct
-			to_char(start_block, ''YYYY-MM'') || ''-01'' as first_day_in_month
+			to_char(start_block, 'YYYY-MM') || '-01' as first_day_in_month
 		from im_start_weeks
 	loop
 		insert into im_start_months (
 			start_block
 		) values (
-			to_date(row.first_day_in_month,''YYYY-MM-DD'')
+			to_date(row.first_day_in_month,'YYYY-MM-DD')
 		);
 	end loop;
 	return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
 
 -- create function to add_months
-CREATE OR REPLACE FUNCTION add_months(date, int4)
-RETURNS date AS
-'
-DECLARE 
-	p_date_in alias for $1;		-- date_id
-	p_months alias for $2;		-- months to add
-
+CREATE OR REPLACE FUNCTION add_months(
+       p_date_in date, 		-- date_id
+       p_months int4		-- months to add
+) RETURNS date AS $$
+DECLARE
 	v_date_out	date;
-begin
-	select p_date_in + "interval"(p_months || '' months'') into v_date_out;
+BEGIN
+	select p_date_in + "interval"( p_months || ' months') into v_date_out;
 	return v_date_out;
-end;'
-LANGUAGE 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION last_day(date)
-RETURNS date AS '
-DECLARE 
-	p_date_in alias for $1;		-- date_id
 
+CREATE OR REPLACE FUNCTION last_day(
+       p_date_in date		-- date_id
+) RETURNS date AS $$
+DECLARE
 	v_date_out	date;
-begin
-	select to_date(date_trunc(''month'',add_months(p_date_in,1))::text, ''YYYY-MM-DD''::text) - 1 into v_date_out;
+BEGIN
+	select to_date(date_trunc('month',add_months(p_date_in,1))::text, 'YYYY-MM-DD'::text) - 1 into v_date_out;
 	return v_date_out;
-end;' LANGUAGE 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 -- select last_day(to_date('2012-01-20', 'yyyy-mm-dd'));
 
 
 
-CREATE OR REPLACE FUNCTION trunc(date,varchar)
-returns date as '
+
+
+-- added
+select define_function_args('trunc','date_in,field');
+
+--
+-- procedure trunc/2
+--
+CREATE OR REPLACE FUNCTION trunc(
+   p_date_in date, -- date_in
+   p_field varchar -- field
+
+) RETURNS date AS $$
 DECLARE 
-	p_date_in	alias for $1;	-- date_in
-	p_field		alias for $2;	-- field
 
 	v_date_out	date;
 BEGIN
 	select date_trunc("p_field",p_date_in) into v_date_out;
 	return v_date_out;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-create or replace function next_day (date, varchar) returns date as '
-declare
-	p_date_in alias for $1;		-- date_in
-	p_day	alias for $2;		-- day
+
+
+-- added
+select define_function_args('next_day','date_in,day');
+
+--
+-- procedure next_day/2
+--
+CREATE OR REPLACE FUNCTION next_day(
+   p_date_in date, -- date_in
+   p_day varchar   -- day
+
+) RETURNS date AS $$
+DECLARE
 
 	v_date_out	date;
 	value_to_add integer;
 	
-begin
-	if lower(p_day) = ''sunday'' or lower(p_day) = ''sun'' then 
+BEGIN
+	if lower(p_day) = 'sunday' or lower(p_day) = 'sun' then 
 	value_to_add := 0;
 	else
-		if lower(p_day) = ''monday'' or lower(p_day) = ''mon'' then 
+		if lower(p_day) = 'monday' or lower(p_day) = 'mon' then 
 			value_to_add := 1;
 		else
-		if lower(p_day) = ''tuesday'' or lower(p_day) = ''tue'' then 
+		if lower(p_day) = 'tuesday' or lower(p_day) = 'tue' then 
 			value_to_add := 2;
 		else
-		if lower(p_day) = ''wednesday'' or lower(p_day) = ''wed'' then 
+		if lower(p_day) = 'wednesday' or lower(p_day) = 'wed' then 
 			value_to_add := 3;
 		else
-		if lower(p_day) = ''thursday'' or lower(p_day) = ''thu'' then 
+		if lower(p_day) = 'thursday' or lower(p_day) = 'thu' then 
 		value_to_add := 4;
 		else
-		if lower(p_day) = ''friday'' or lower(p_day) = ''fri'' then 
+		if lower(p_day) = 'friday' or lower(p_day) = 'fri' then 
 			value_to_add := 5;
 		else
-			if lower(p_day) = ''saturday'' or lower(p_day) = ''sat'' then 
+			if lower(p_day) = 'saturday' or lower(p_day) = 'sat' then 
 			value_to_add := 6;
 			end if;
 		end if;
@@ -227,9 +269,10 @@ begin
 		end if;
 	end if;
 
-	select p_date_in - date_part(''dow'', p_date_in)::int + value_to_add into v_date_out;
+	select p_date_in - date_part('dow', p_date_in)::int + value_to_add into v_date_out;
 	return v_date_out;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -238,12 +281,19 @@ end;' language 'plpgsql';
 -------------------------------------------------------------
 
 
-create or replace function im_day_enumerator (
-	date, date
-) returns setof date as '
-declare
-	p_start_date		alias for $1;
-	p_end_date		alias for $2;
+
+
+-- added
+select define_function_args('im_day_enumerator','start_date,end_date');
+
+--
+-- procedure im_day_enumerator/2
+--
+CREATE OR REPLACE FUNCTION im_day_enumerator(
+   p_start_date date,
+   p_end_date date
+) RETURNS setof date AS $$
+DECLARE
 	v_date			date;
 BEGIN
 	v_date := p_start_date;
@@ -252,29 +302,38 @@ BEGIN
 		v_date := v_date + 1;
 	END LOOP;
 	RETURN;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_day_enumerator_weekdays (
-	date, date
-) returns setof date as '
-declare
-	p_start_date		alias for $1;
-	p_end_date		alias for $2;
+
+
+-- added
+select define_function_args('im_day_enumerator_weekdays','start_date,end_date');
+
+--
+-- procedure im_day_enumerator_weekdays/2
+--
+CREATE OR REPLACE FUNCTION im_day_enumerator_weekdays(
+   p_start_date date,
+   p_end_date date
+) RETURNS setof date AS $$
+DECLARE
 	v_date			date;
 	v_weekday		integer;
 BEGIN
 	v_date := p_start_date;
 	WHILE (v_date < p_end_date) LOOP
 
-		v_weekday := to_char(v_date, ''D'');
+		v_weekday := to_char(v_date, 'D');
 		IF v_weekday != 1 AND v_weekday != 7 THEN
 			RETURN NEXT v_date;
 		END IF;
 		v_date := v_date + 1;
 	END LOOP;
 	RETURN;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -------------------------------------------------------------
@@ -282,10 +341,17 @@ end;' language 'plpgsql';
 -- printable or searchable...
 -------------------------------------------------------------
 
-create or replace function im_name_from_id(integer)
-returns varchar as '
+
+
+-- added
+
+--
+-- procedure im_name_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_name_from_id(
+   v_integer integer
+) RETURNS varchar AS $$
 DECLARE
-	v_integer	alias for $1;
 	v_result	varchar;
 BEGIN
 	-- Try with category - probably the fastest
@@ -299,120 +365,125 @@ BEGIN
 	into v_result;
 
 	return v_result;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_name_from_id(varchar)
-returns varchar as '
+
+
+--
+-- procedure im_name_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_name_from_id(
+   v_result varchar
+) RETURNS varchar AS $$
 DECLARE
-	v_result	alias for $1;
 BEGIN
 	return v_result;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_name_from_id(numeric)
-returns varchar as '
+
+
+--
+-- procedure im_name_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_name_from_id(
+   v_result numeric
+) RETURNS varchar AS $$
 DECLARE
-	v_result	alias for $1;
 BEGIN
 	return v_result::varchar;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_name_from_id(double precision)
-returns varchar as '
+
+
+--
+-- procedure im_name_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_name_from_id(
+   v_result double precision
+) RETURNS varchar AS $$
 DECLARE
-	v_result	alias for $1;
 BEGIN
 	return v_result::varchar;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_name_from_id(timestamptz)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_name_from_id','v_timestamp');
+
+--
+-- procedure im_name_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_name_from_id(
+   v_timestamp timestamptz
+) RETURNS varchar AS $$
 DECLARE
-	v_timestamp	alias for $1;
 BEGIN
-	return to_char(v_timestamp, ''YYYY-MM-DD'');
-END;' language 'plpgsql';
+	return to_char(v_timestamp, 'YYYY-MM-DD');
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_integer_from_id(integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_integer_from_id','v_result');
+
+--
+-- procedure im_integer_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_integer_from_id(
+   v_result integer
+) RETURNS varchar AS $$
 DECLARE
-	v_result	alias for $1;
-BEGIN
-	return v_result::varchar;
-END;' language 'plpgsql';
-
-
-
-create or replace function im_integer_from_id(varchar)
-returns varchar as '
-DECLARE
-	v_result	alias for $1;
-BEGIN
-	return v_result;
-END;' language 'plpgsql';
-
-
-
-
-create or replace function im_integer_from_id(numeric)
-returns varchar as '
-DECLARE
-	v_result	alias for $1;
 BEGIN
 	return v_result::varchar;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_boolean_from_id(varchar)
-returns varchar as $$
+
+
+--
+-- procedure im_integer_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_integer_from_id(
+   v_result varchar
+) RETURNS varchar AS $$
 DECLARE
-	p_boolean	alias for $1;
-	v_result	varchar;
 BEGIN
-	v_result := p_boolean;
-	IF 't' = lower(p_boolean) THEN v_result := 'true'; END IF;
-	IF 'f' = lower(p_boolean) THEN v_result := 'false'; END IF;
-	IF '1' = lower(p_boolean) THEN v_result := 'true'; END IF;
-	IF '0' = lower(p_boolean) THEN v_result := 'false'; END IF;
 	return v_result;
-END;$$ language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_boolean_from_id(integer)
-returns varchar as $$
+
+
+
+
+--
+-- procedure im_integer_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_integer_from_id(
+   v_result numeric
+) RETURNS varchar AS $$
 DECLARE
-	p_boolean	alias for $1;
-	v_result	varchar;
 BEGIN
-	v_result := p_boolean;
-	IF 1 = p_boolean THEN v_result := 'true'; END IF;
-	IF 0 = p_boolean THEN v_result := 'false'; END IF;
-	return v_result;
-END;$$ language 'plpgsql';
-
-
-
-create or replace function im_boolean_from_id(boolean)
-returns varchar as $$
-DECLARE
-	p_boolean	alias for $1;
-	v_result	varchar;
-BEGIN
-	v_result := p_boolean;
-	IF true = p_boolean THEN v_result := 'true'; END IF;
-	IF false = p_boolean THEN v_result := 'false'; END IF;
-	return v_result;
-END;$$ language 'plpgsql';
-
+	return v_result::varchar;
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -421,10 +492,18 @@ END;$$ language 'plpgsql';
 -- ------------------------------------------------------------------
 
 -- Return a suitable GIF for traffic light status display
-create or replace function im_traffic_light_from_id(integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_traffic_light_from_id','status_id');
+
+--
+-- procedure im_traffic_light_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_traffic_light_from_id(
+   p_status_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_status_id	alias for $1;
 
 	v_category	varchar;
 	v_gif		varchar;
@@ -435,13 +514,14 @@ BEGIN
 	where	category_id = p_status_id;
 
 	-- Take the GIF specified in the category
-	IF v_gif is null OR v_gif = '''' THEN 
+	IF v_gif is null OR v_gif = '' THEN 
 		-- No GIF specified - take the default one...
-		v_gif := ''/intranet/images/navbar_default/bb_''||lower(v_category)|| ''.gif'';
+		v_gif := '/intranet/images/navbar_default/bb_'||lower(v_category)|| '.gif';
 	END IF;
 
-	return ''<img src="'' || v_gif || ''" border=0 title="" alt="">'';
-END;' language 'plpgsql';
+	return '<img src="' || v_gif || '" border=0 title="" alt="">';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -475,13 +555,21 @@ where object_type = 'im_note';
 -- ------------------------------------------------------------------
 
 
-create or replace function im_lang_add_message(text, text, text, text)
-returns integer as $body$
+
+
+-- added
+select define_function_args('im_lang_add_message','locale,package_key,message_key,message');
+
+--
+-- procedure im_lang_add_message/4
+--
+CREATE OR REPLACE FUNCTION im_lang_add_message(
+   p_locale text,
+   p_package_key text,
+   p_message_key text,
+   p_message text
+) RETURNS integer AS $$
 DECLARE
-	p_locale	alias for $1;
-	p_package_key	alias for $2;
-	p_message_key	alias for $3;
-	p_message	alias for $4;
 
 	v_count		integer;
 BEGIN
@@ -516,7 +604,8 @@ BEGIN
 	END IF;
 
 	return 1;
-END;$body$ language 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 
 
@@ -524,9 +613,18 @@ END;$body$ language 'plpgsql';
 -- Special dereferencing function for links                                                                                                      
 -- ------------------------------------------------------------------                                                                            
 
-create or replace function im_link_from_id (integer) returns varchar as '
+
+
+-- added
+select define_function_args('im_link_from_id','object_id');
+
+--
+-- procedure im_link_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_link_from_id(
+   p_object_id integer
+) RETURNS varchar AS $$
 DECLARE
-        p_object_id     alias for $1;
         v_name          varchar;
         v_url           varchar;
 BEGIN
@@ -538,8 +636,9 @@ BEGIN
         where ibou.object_type = ao.object_type
         and ao.object_id = p_object_id;
 
-        return ''<a href='' || v_url || p_object_id || ''>'' || v_name || ''</a>'';
-end;' language 'plpgsql';
+        return '<a href=' || v_url || p_object_id || '>' || v_name || '</a>';
+END;
+$$ LANGUAGE plpgsql;
 
 
 

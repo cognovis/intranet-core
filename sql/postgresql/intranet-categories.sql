@@ -105,10 +105,18 @@ create index im_cat_hierarchy_child_id_idx on im_category_hierarchy(child_id);
 
 
 -- Some helper functions to make our queries easier to read
-create or replace function im_category_from_id (integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_category_from_id','category_id');
+
+--
+-- procedure im_category_from_id/1
+--
+CREATE OR REPLACE FUNCTION im_category_from_id(
+   p_category_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_category_id	alias for $1;
 	v_category	varchar(50);
 BEGIN
 	select category
@@ -117,7 +125,8 @@ BEGIN
 	where category_id = p_category_id;
 
 	return v_category;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -------------------------------------------------------------
@@ -125,11 +134,18 @@ end;' language 'plpgsql';
 -------------------------------------------------------------
 
 
-create or replace function im_sub_categories (
-	integer
-) returns setof integer as '
-declare
-	p_cat			alias for $1;
+
+
+-- added
+select define_function_args('im_sub_categories','cat');
+
+--
+-- procedure im_sub_categories/1
+--
+CREATE OR REPLACE FUNCTION im_sub_categories(
+   p_cat integer
+) RETURNS setof integer AS $$
+DECLARE
 	v_cat			integer;
 	row			RECORD;
 BEGIN
@@ -144,18 +160,26 @@ BEGIN
 	END LOOP;
 
 	RETURN;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 -- Test query
 -- select * from im_sub_categories(81);
 
 
 
-create or replace function im_category_parents (
-	integer
-) returns setof integer as $body$
-declare
-	p_cat			alias for $1;
+
+
+-- added
+select define_function_args('im_category_parents','cat');
+
+--
+-- procedure im_category_parents/1
+--
+CREATE OR REPLACE FUNCTION im_category_parents(
+   p_cat integer
+) RETURNS setof integer AS $$
+DECLARE
 	v_cat			integer;
 	row			RECORD;
 BEGIN
@@ -171,7 +195,8 @@ BEGIN
 	END LOOP;
 
 	RETURN;
-end;$body$ language 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 
 -- Select out the lowest parent of the category.
@@ -179,11 +204,18 @@ end;$body$ language 'plpgsql';
 -- isn't correct. 
 -- ToDo: Pull out the real top-level parent
 --
-create or replace function im_category_min_parent (
-	integer
-) returns integer as $body$
-declare
-	p_cat			alias for $1;
+
+
+-- added
+select define_function_args('im_category_min_parent','cat');
+
+--
+-- procedure im_category_min_parent/1
+--
+CREATE OR REPLACE FUNCTION im_category_min_parent(
+   p_cat integer
+) RETURNS integer AS $$
+DECLARE
 	v_cat			integer;
 BEGIN
 	select	min(c.category_id) into v_cat
@@ -194,7 +226,8 @@ BEGIN
 		(c.enabled_p = 't' OR c.enabled_p is NULL);
 
 	RETURN v_cat;
-end;$body$ language 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 
 -- Test query
@@ -202,19 +235,26 @@ select * from im_category_parents(81);
 
 
 
-create or replace function im_category_path_to_category (integer)
-returns varchar as $body$
+CREATE OR REPLACE FUNCTION im_category_path_to_category (integer) RETURNS varchar AS $$
 BEGIN
 	RETURN im_category_path_to_category($1,0);
 END;
-$body$ language 'plpgsql';
+$$ language 'plpgsql';
 
 
-create or replace function im_category_path_to_category (integer, integer)
-returns varchar as $body$
-declare
-	p_cat_id		alias for $1;
-	p_loop			alias for $2;
+
+
+-- added
+select define_function_args('im_category_path_to_category','cat_id,loop');
+
+--
+-- procedure im_category_path_to_category/2
+--
+CREATE OR REPLACE FUNCTION im_category_path_to_category(
+   p_cat_id integer,
+   p_loop integer
+) RETURNS varchar AS $$
+DECLARE
 	v_cat			varchar;
 	v_path			varchar;
 	v_longest_path		varchar;
@@ -246,7 +286,8 @@ BEGIN
 	END LOOP;
 
 	RETURN v_longest_path || v_cat;
-end;$body$ language 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 -- Test query
 select im_category_path_to_category (83);
@@ -260,14 +301,21 @@ select im_category_path_to_category (83);
 -------------------------------------------------------------
 
 
-CREATE OR REPLACE FUNCTION im_category_new (
-	integer, varchar, varchar, varchar
-) RETURNS integer as '
+
+
+-- added
+select define_function_args('im_category_new','category_id,category,category_type,description');
+
+--
+-- procedure im_category_new/4
+--
+CREATE OR REPLACE FUNCTION im_category_new(
+   p_category_id integer,
+   p_category varchar,
+   p_category_type varchar,
+   p_description varchar
+) RETURNS integer AS $$
 DECLARE
-	p_category_id		alias for $1;
-	p_category		alias for $2;
-	p_category_type		alias for $3;
-	p_description		alias for $4;
 
 	v_count			integer;
 BEGIN
@@ -280,52 +328,72 @@ BEGIN
 	values (p_category_id, p_category, p_category_type, p_description);
 
 	RETURN 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION im_category_new (
-	integer, varchar, varchar
-) RETURNS integer as '
+
+
+--
+-- procedure im_category_new/3
+--
+CREATE OR REPLACE FUNCTION im_category_new(
+   p_category_id integer,
+   p_category varchar,
+   p_category_type varchar
+) RETURNS integer AS $$
 DECLARE
-	p_category_id		alias for $1;
-	p_category		alias for $2;
-	p_category_type		alias for $3;
 BEGIN
 	RETURN im_category_new(p_category_id, p_category, p_category_type, NULL);
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Compatibility for Malte
 -- ToDo: Remove
-CREATE OR REPLACE FUNCTION im_category__new (
-        integer, varchar, varchar, varchar
-) RETURNS integer as '
+
+
+-- added
+select define_function_args('im_category__new','category_id,category,category_type,description');
+
+--
+-- procedure im_category__new/4
+--
+CREATE OR REPLACE FUNCTION im_category__new(
+   p_category_id integer,
+   p_category varchar,
+   p_category_type varchar,
+   p_description varchar
+) RETURNS integer AS $$
 DECLARE
-        p_category_id           alias for $1;
-        p_category              alias for $2;
-        p_category_type         alias for $3;
-        p_description           alias for $4;
 BEGIN
         RETURN im_category_new(p_category_id, p_category, p_category_type, p_description);
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION im_category_hierarchy_new (
-	integer, integer
-) RETURNS integer as '
+
+
+-- added
+
+--
+-- procedure im_category_hierarchy_new/2
+--
+CREATE OR REPLACE FUNCTION im_category_hierarchy_new(
+   p_child_id integer,
+   p_parent_id integer
+) RETURNS integer AS $$
 DECLARE
-	p_child_id		alias for $1;
-	p_parent_id		alias for $2;
 
 	row			RECORD;
 	v_count			integer;
 BEGIN
 	IF p_child_id is null THEN 
-		RAISE NOTICE ''im_category_hierarchy_new: bad category 1: "%" '',p_child_id;
+		RAISE NOTICE 'im_category_hierarchy_new: bad category 1: "%" ',p_child_id;
 		return 0;
 	END IF;
 
 	IF p_parent_id is null THEN 
-		RAISE NOTICE ''im_category_hierarchy_new: bad category 2: "%" '',p_parent_id; 
+		RAISE NOTICE 'im_category_hierarchy_new: bad category 2: "%" ',p_parent_id; 
 		return 0;
 	END IF;
 	IF p_child_id = p_parent_id THEN return 0; END IF;
@@ -347,16 +415,24 @@ BEGIN
 	END LOOP;
 
 	RETURN 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION im_category_hierarchy_new (
-	varchar, varchar, varchar
-) RETURNS integer as '
+
+
+-- added
+select define_function_args('im_category_hierarchy_new','child,parent,cat_type');
+
+--
+-- procedure im_category_hierarchy_new/3
+--
+CREATE OR REPLACE FUNCTION im_category_hierarchy_new(
+   p_child varchar,
+   p_parent varchar,
+   p_cat_type varchar
+) RETURNS integer AS $$
 DECLARE
-	p_child			alias for $1;
-	p_parent		alias for $2;
-	p_cat_type		alias for $3;
 
 	v_child_id		integer;
 	v_parent_id		integer;
@@ -364,21 +440,22 @@ BEGIN
 	select	category_id into v_child_id from im_categories
 	where	category = p_child and category_type = p_cat_type;
 	IF v_child_id is null THEN 
-		RAISE NOTICE ''im_category_hierarchy_new: bad category 1: "%" '',p_child; 
+		RAISE NOTICE 'im_category_hierarchy_new: bad category 1: "%" ',p_child; 
 		return 0;
 	END IF;
 
 	select	category_id into v_parent_id from im_categories
 	where	category = p_parent and category_type = p_cat_type;
 	IF v_parent_id is null THEN 
-		RAISE NOTICE ''im_category_hierarchy_new: bad category 2: "%" '',p_parent; 
+		RAISE NOTICE 'im_category_hierarchy_new: bad category 2: "%" ',p_parent; 
 		return 0;
 	END IF;
 
 	return im_category_hierarchy_new (v_child_id, v_parent_id);
 
 	RETURN 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 

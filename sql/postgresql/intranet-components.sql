@@ -148,27 +148,33 @@ create or replace view im_component_plugin_user_map_all as (
 
 
 
-create or replace function im_component_plugin__new (
-	integer, varchar, timestamptz, integer, varchar, integer, 
-	varchar, varchar, varchar, varchar, varchar, integer, varchar
-) returns integer as '
-declare
-	p_plugin_id	alias for $1;	-- default null
-	p_object_type	alias for $2;	-- default ''acs_object''
-	p_creation_date	alias for $3;	-- default now()
-	p_creation_user	alias for $4;	-- default null
-	p_creation_ip	alias for $5;	-- default null
-	p_context_id	alias for $6;	-- default null
-	p_plugin_name	alias for $7;
-	p_package_name	alias for $8;
-	p_location	alias for $9;
-	p_page_url	alias for $10;
-	p_view_name	alias for $11;
-	p_sort_order	alias for $12;
-	p_component_tcl	alias for $13;
+
+
+-- added
+
+--
+-- procedure im_component_plugin__new/13
+--
+CREATE OR REPLACE FUNCTION im_component_plugin__new(
+   p_plugin_id integer,         -- default null
+   p_object_type varchar,       -- default 'acs_object'
+   p_creation_date timestamptz, -- default now()
+   p_creation_user integer,     -- default null
+   p_creation_ip varchar,       -- default null
+   p_context_id integer,        -- default null
+   p_plugin_name varchar,
+   p_package_name varchar,
+   p_location varchar,
+   p_page_url varchar,
+   p_view_name varchar,
+   p_sort_order integer,
+   p_component_tcl varchar
+
+) RETURNS integer AS $$
+DECLARE
 
 	v_plugin_id	integer;
-begin
+BEGIN
 	v_plugin_id := im_component_plugin__new (
 		p_plugin_id, p_object_type, p_creation_date,
 		p_creation_user, p_creation_ip, p_context_id,
@@ -178,36 +184,43 @@ begin
 		p_component_tcl, null
 	);
 	return v_plugin_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 
-create or replace function im_component_plugin__new (
-	integer, varchar, timestamptz, integer, varchar, integer, 
-	varchar, varchar, varchar, varchar, varchar, integer, 
-	varchar, varchar
-) returns integer as '
-declare
-	p_plugin_id	alias for $1;	-- default null
-	p_object_type	alias for $2;	-- default ''acs_object''
-	p_creation_date	alias for $3;	-- default now()
-	p_creation_user	alias for $4;	-- default null
-	p_creation_ip	alias for $5;	-- default null
-	p_context_id	alias for $6;	-- default null
 
-	p_plugin_name	alias for $7;
-	p_package_name	alias for $8;
-	p_location	alias for $9;
-	p_page_url	alias for $10;
-	p_view_name	alias for $11;	-- default null
-	p_sort_order	alias for $12;
-	p_component_tcl	alias for $13;
-	p_title_tcl	alias for $14;
+
+-- added
+select define_function_args('im_component_plugin__new','plugin_id;null,object_type;acs_object,creation_date;now(),creation_user;null,creation_ip;null,context_id;null,plugin_name,package_name,location,page_url,view_name;null,sort_order,component_tcl,title_tcl');
+
+--
+-- procedure im_component_plugin__new/14
+--
+CREATE OR REPLACE FUNCTION im_component_plugin__new(
+   p_plugin_id integer,         -- default null
+   p_object_type varchar,       -- default 'acs_object'
+   p_creation_date timestamptz, -- default now()
+   p_creation_user integer,     -- default null
+   p_creation_ip varchar,       -- default null
+   p_context_id integer,        -- default null
+   p_plugin_name varchar,
+   p_package_name varchar,
+   p_location varchar,
+   p_page_url varchar,
+   p_view_name varchar,         -- default null
+   p_sort_order integer,
+   p_component_tcl varchar,
+   p_title_tcl varchar
+
+) RETURNS integer AS $$
+DECLARE
+
 
 	v_plugin_id	im_component_plugins.plugin_id%TYPE;
 	v_count		integer;
-begin
+BEGIN
 	select count(*) into v_count from im_component_plugins
 	where plugin_name = p_plugin_name;
 	IF v_count > 0 THEN return 0; END IF;
@@ -232,12 +245,22 @@ begin
 	);
 
 	return v_plugin_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 -- Delete a single component
-create or replace function im_component_plugin__delete (integer) returns integer as '
+
+
+-- added
+select define_function_args('im_component_plugin__delete','plugin_id');
+
+--
+-- procedure im_component_plugin__delete/1
+--
+CREATE OR REPLACE FUNCTION im_component_plugin__delete(
+   p_plugin_id integer
+) RETURNS integer AS $$
 DECLARE
-	p_plugin_id	alias for $1;
 BEGIN
 	-- Delete references to object per user
 	delete from	im_component_plugin_user_map
@@ -254,14 +277,24 @@ BEGIN
 	PERFORM acs_object__delete(p_plugin_id);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Delete all menus of a module.
 -- Used in <module-name>-drop.sql
-create or replace function im_component_plugin__del_module (varchar) returns integer as '
+
+
+-- added
+select define_function_args('im_component_plugin__del_module','module_name');
+
+--
+-- procedure im_component_plugin__del_module/1
+--
+CREATE OR REPLACE FUNCTION im_component_plugin__del_module(
+   p_module_name varchar
+) RETURNS integer AS $$
 DECLARE
-	p_module_name	alias for $1;
 	row		RECORD;
 BEGIN
 	for row in 
@@ -276,22 +309,33 @@ BEGIN
 	end loop;
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Return the module name
-create or replace function im_component_plugin__name (integer) returns varchar as '
+
+
+-- added
+select define_function_args('im_component_plugin__name','plugin_id');
+
+--
+-- procedure im_component_plugin__name/1
+--
+CREATE OR REPLACE FUNCTION im_component_plugin__name(
+   p_plugin_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_plugin_id	alias for $1;
 	v_name		varchar(200);
 BEGIN
-	select	page_url || ''.'' || location
+	select	page_url || '.' || location
 	into	v_name
 	from	im_component_plugins
 	where	plugin_id = p_plugin_id;
 
 	return v_name;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -592,8 +636,14 @@ where page_url = '/intranet/users/view' and plugin_name = 'User Offices';
 
 ------------------------------------------------------------------
 -- Set permissions on all Plugin Components for Employees, Freelancers and Customers.
-create or replace function inline_0 ()
-returns varchar as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS varchar AS $$
 DECLARE
 	v_count		integer;
 	v_plugin_id	integer;
@@ -603,9 +653,9 @@ DECLARE
 	v_freel_id	integer;
 	v_cust_id	integer;
 BEGIN
-	select group_id into v_emp_id from groups where group_name = ''Employees'';
-	select group_id into v_freel_id from groups where group_name = ''Freelancers'';
-	select group_id into v_cust_id from groups where group_name = ''Customers'';
+	select group_id into v_emp_id from groups where group_name = 'Employees';
+	select group_id into v_freel_id from groups where group_name = 'Freelancers';
+	select group_id into v_cust_id from groups where group_name = 'Customers';
 
 	-- Check if permissions were already configured
 	-- Stop if there is just a single configured plugin.
@@ -620,13 +670,14 @@ BEGIN
 		select	plugin_id
 		from	im_component_plugins pl
 	LOOP
-		PERFORM im_grant_permission(row.plugin_id, v_emp_id, ''read'');
-		PERFORM im_grant_permission(row.plugin_id, v_freel_id, ''read'');
-		PERFORM im_grant_permission(row.plugin_id, v_cust_id, ''read'');
+		PERFORM im_grant_permission(row.plugin_id, v_emp_id, 'read');
+		PERFORM im_grant_permission(row.plugin_id, v_freel_id, 'read');
+		PERFORM im_grant_permission(row.plugin_id, v_cust_id, 'read');
 	END LOOP;
 
 	return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0();
 drop function inline_0();
 

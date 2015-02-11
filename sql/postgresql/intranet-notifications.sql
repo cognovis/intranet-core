@@ -17,15 +17,24 @@
 
 
 -- Determine the default locale for the user
-create or replace function acs_lang_get_locale_for_user (integer) returns text as '
-declare
-	p_user_id	alias for $1;
+
+
+-- added
+select define_function_args('acs_lang_get_locale_for_user','user_id');
+
+--
+-- procedure acs_lang_get_locale_for_user/1
+--
+CREATE OR REPLACE FUNCTION acs_lang_get_locale_for_user(
+   p_user_id integer
+) RETURNS text AS $$
+DECLARE
 
 	v_workflow_key		varchar(100);
 	v_transition_key	varchar(100);
 	v_acs_lang_package_id	integer;
 	v_locale		varchar(10);
-begin
+BEGIN
 	-- Get the users local from preferences
 	select	locale into v_locale
 	from	user_preferences
@@ -36,9 +45,9 @@ begin
 		select	package_id
 		into	v_acs_lang_package_id
 		from	apm_packages
-		where	package_key = ''acs-lang'';
+		where	package_key = 'acs-lang';
 
-		v_locale := apm__get_value (v_acs_lang_package_id, ''SiteWideLocale'');
+		v_locale := apm__get_value (v_acs_lang_package_id, 'SiteWideLocale');
 	END IF;
 
 	-- Partial locale - lookup complete one
@@ -46,31 +55,41 @@ begin
 		select	locale into v_locale
 		from	ad_locales
 		where	language = v_locale
-			and enabled_p = ''t''
-			and (default_p = ''t''
+			and enabled_p = 't'
+			and (default_p = 't'
 			   or (select count(*) from ad_locales where language = v_locale) = 1
 			);
 	END IF;
 
 	-- Default: English
 	IF v_locale is null THEN
-		v_locale := ''en_US'';
+		v_locale := 'en_US';
 	END IF;
 
 	return v_locale;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Determine the message string for (locale, package_key, message_key):
-create or replace function acs_lang_lookup_message (text, text, text) returns text as $body$
-declare
-	p_locale		alias for $1;
-	p_package_key		alias for $2;
-	p_message_key		alias for $3;
+
+
+-- added
+select define_function_args('acs_lang_lookup_message','locale,package_key,message_key');
+
+--
+-- procedure acs_lang_lookup_message/3
+--
+CREATE OR REPLACE FUNCTION acs_lang_lookup_message(
+   p_locale text,
+   p_package_key text,
+   p_message_key text
+) RETURNS text AS $$
+DECLARE
 	v_message		text;
 	v_locale		text;
 	v_acs_lang_package_id	integer;
-begin
+BEGIN
 	-- --------------------------------------------
 	-- Check full locale
 	select	message into v_message
@@ -131,6 +150,7 @@ begin
 	v_message := 'MISSING ' || p_locale || ' TRANSLATION for ' || p_package_key || '.' || p_message_key;
 	return v_message;	
 
-end;$body$ language 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 

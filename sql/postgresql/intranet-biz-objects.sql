@@ -56,7 +56,7 @@ CREATE TABLE im_biz_objects (
 	lock_user		integer
 				constraint im_biz_object_lock_user_fk
 				references persons,
-	lock_date		timestamptz
+	lock_date		timestamptz,
 	lock_ip			text
 );
 
@@ -78,11 +78,10 @@ add status_type_table character varying(30);
 -- ---------------------------------------------------------------
 -- Find out the status and type of business objects in a generic way
 
-CREATE OR REPLACE FUNCTION im_biz_object__get_type_id (integer)
-RETURNS integer AS '
-DECLARE
-	p_object_id		alias for $1;
-
+CREATE OR REPLACE FUNCTION im_biz_object__get_type_id (
+       p_object_id integer
+) RETURNS integer AS $$
+DECLARE 
 	v_query			varchar;
 	v_object_type		varchar;
 	v_supertype		varchar;
@@ -101,7 +100,7 @@ BEGIN
 		and o.object_type = ot.object_type;
 
 	-- Check if the object has a supertype and update table necessary
-	WHILE v_table is null AND ''acs_object'' != v_supertype AND ''im_biz_object'' != v_supertype LOOP
+	WHILE v_table is null AND 'acs_object' != v_supertype AND 'im_biz_object' != v_supertype LOOP
 		select	ot.supertype, ot.table_name
 		into	v_supertype, v_table
 		from	acs_object_types ot
@@ -117,8 +116,8 @@ BEGIN
 	END IF;
 
 	-- Funny way, but this is the only option to EXECUTE in PG 8.0 and below.
-	v_query := '' select '' || v_type_column || '' as result_id '' || '' from '' || v_table || 
-		'' where '' || v_id_column || '' = '' || p_object_id;
+	v_query := ' select ' || v_type_column || ' as result_id ' || ' from ' || v_table || 
+		' where ' || v_id_column || ' = ' || p_object_id;
 	FOR row IN EXECUTE v_query
 	LOOP
 		v_result_id := row.result_id;
@@ -126,7 +125,8 @@ BEGIN
 	END LOOP;
 
 	return v_result_id;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Get the object status for generic objects
@@ -137,11 +137,10 @@ END;' language 'plpgsql';
 -- We will pull out this information and then dynamically create a SQL
 -- statement to extract this information.
 ---
-CREATE OR REPLACE FUNCTION im_biz_object__get_status_id (integer)
-RETURNS integer AS '
-DECLARE
-	p_object_id		alias for $1;
-
+CREATE OR REPLACE FUNCTION im_biz_object__get_status_id (
+       p_object_id integer
+) RETURNS integer AS $$
+DECLARE 
 	v_object_type		varchar;
 	v_supertype		varchar;
 
@@ -161,7 +160,7 @@ BEGIN
 
 	-- In the case that the information about should not be set up correctly:
 	-- Check if the object has a supertype and update table and id_column if necessary
-	WHILE v_status_table is null AND ''acs_object'' != v_supertype AND ''im_biz_object'' != v_supertype LOOP
+	WHILE v_status_table is null AND 'acs_object' != v_supertype AND 'im_biz_object' != v_supertype LOOP
 		select	ot.supertype, ot.status_type_table, ot.id_column
 		into	v_supertype, v_status_table, v_status_table_id_col
 		from	acs_object_types ot
@@ -178,8 +177,8 @@ BEGIN
 	END IF;
 
 	-- Funny way, but this is the only option to get a value from an EXECUTE in PG 8.0 and below.
-	v_query := '' select '' || v_status_column || '' as result_id '' || '' from '' || v_status_table || 
-		'' where '' || v_status_table_id_col || '' = '' || p_object_id;
+	v_query := ' select ' || v_status_column || ' as result_id ' || ' from ' || v_status_table || 
+		' where ' || v_status_table_id_col || ' = ' || p_object_id;
 	FOR row IN EXECUTE v_query
 	LOOP
 		v_result_id := row.result_id;
@@ -187,7 +186,8 @@ BEGIN
 	END LOOP;
 
 	return v_result_id;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -195,10 +195,11 @@ END;' language 'plpgsql';
 -- Set the status of Biz Objects in a generic way
 
 
-CREATE OR REPLACE FUNCTION im_biz_object__set_status_id (integer, integer) RETURNS integer AS '
-DECLARE
-	p_object_id		alias for $1;
-	p_status_id		alias for $2;
+CREATE OR REPLACE FUNCTION im_biz_object__set_status_id (
+       p_object_id integer,
+       p_status_id integer
+) RETURNS integer AS $$
+DECLARE 
 	v_object_type		varchar;
 	v_supertype		varchar;	v_table			varchar;
 	v_id_column		varchar;	v_column		varchar;
@@ -212,7 +213,7 @@ BEGIN
 		and o.object_type = ot.object_type;
 
 	-- Check if the object has a supertype and update table and id_column if necessary
-	WHILE ''acs_object'' != v_supertype AND ''im_biz_object'' != v_supertype LOOP
+	WHILE 'acs_object' != v_supertype AND 'im_biz_object' != v_supertype LOOP
 		select	ot.supertype, ot.table_name, ot.id_column
 		into	v_supertype, v_table, v_id_column
 		from	acs_object_types ot
@@ -220,7 +221,7 @@ BEGIN
 	END LOOP;
 
 	IF v_table is null OR v_id_column is null OR v_column is null THEN
-		RAISE NOTICE ''im_biz_object__set_status_id: Bad metadata: Null value for %'',v_object_type;
+		RAISE NOTICE 'im_biz_object__set_status_id: Bad metadata: Null value for %',v_object_type;
 		return 0;
 	END IF;
 
@@ -228,23 +229,26 @@ BEGIN
 	set	last_modified = now()
 	where	object_id = p_object_id;
 
-	EXECUTE ''update ''||v_table||'' set ''||v_column||''=''||p_status_id||
-		'' where ''||v_id_column||''=''||p_object_id;
+	EXECUTE 'update '||v_table||' set '||v_column||'='||p_status_id||
+		' where '||v_id_column||'='||p_object_id;
 
 	return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 -- compatibility for WF calls
-CREATE OR REPLACE FUNCTION im_biz_object__set_status_id (integer, varchar, integer) RETURNS integer AS '
-DECLARE
-	p_object_id		alias for $1;
-	p_dummy			alias for $2;
-	p_status_id		alias for $3;
+CREATE OR REPLACE FUNCTION im_biz_object__set_status_id (
+       p_object_id integer,
+       p_dummy varchar,
+       p_status_id integer
+) RETURNS integer AS $$
+DECLARE 
 BEGIN
 	return im_biz_object__set_status_id (p_object_id, p_status_id::integer);
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -308,18 +312,26 @@ CREATE TABLE im_biz_object_tree_status (
 -----------------------------------------------------------
 --- Business Object PL/SQL API
 --
-create or replace function im_biz_object__new (integer,varchar,timestamptz,integer,varchar,integer)
-returns integer as '
-declare
-	p_object_id	alias for $1;
-	p_object_type	alias for $2;
-	p_creation_date	alias for $3;
-	p_creation_user	alias for $4;
-	p_creation_ip	alias for $5;
-	p_context_id	alias for $6;
+
+
+-- added
+select define_function_args('im_biz_object__new','object_id,object_type,creation_date,creation_user,creation_ip,context_id');
+
+--
+-- procedure im_biz_object__new/6
+--
+CREATE OR REPLACE FUNCTION im_biz_object__new(
+   p_object_id integer,
+   p_object_type varchar,
+   p_creation_date timestamptz,
+   p_creation_user integer,
+   p_creation_ip varchar,
+   p_context_id integer
+) RETURNS integer AS $$
+DECLARE
 
 	v_object_id	integer;
-begin
+BEGIN
 	v_object_id := acs_object__new (
 		p_object_id,
 		p_object_type,
@@ -331,44 +343,71 @@ begin
 	insert into im_biz_objects (object_id) values (v_object_id);
 	return v_object_id;
 
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 -- Delete a single object (if we know its ID...)
-create or replace function im_biz_object__delete (integer)
-returns integer as '
-declare
-	object_id	alias for $1;
+
+
+-- added
+select define_function_args('im_biz_object__delete','object_id');
+
+--
+-- procedure im_biz_object__delete/1
+--
+CREATE OR REPLACE FUNCTION im_biz_object__delete(
+   object_id integer
+) RETURNS integer AS $$
+DECLARE
 	v_object_id	integer;
-begin
+BEGIN
 	-- Erase the im_biz_objects item associated with the id
 	delete from 	im_biz_objects
 	where		object_id = del.object_id;
 
 	PERFORM acs_object.del(del.object_id);
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_biz_object__name (integer)
-returns varchar as '
-declare
-	object_id	alias for $1;
-begin
+
+
+-- added
+select define_function_args('im_biz_object__name','object_id');
+
+--
+-- procedure im_biz_object__name/1
+--
+CREATE OR REPLACE FUNCTION im_biz_object__name(
+   object_id integer
+) RETURNS varchar AS $$
+DECLARE
+BEGIN
 	return "undefined for im_biz_object";
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Function to determine the type_id of a "im_biz_object".
 -- It's a bit ugly to do this via SWITCH, but there aren't many
 -- new "Biz Objects" to be added to the system...
 
-create or replace function im_biz_object__type (integer)
-returns integer as '
-declare
-	p_object_id		alias for $1;
+
+
+-- added
+select define_function_args('im_biz_object__type','object_id');
+
+--
+-- procedure im_biz_object__type/1
+--
+CREATE OR REPLACE FUNCTION im_biz_object__type(
+   p_object_id integer
+) RETURNS integer AS $$
+DECLARE
 	v_object_type		varchar;
 	v_biz_object_type_id	integer;
-begin
+BEGIN
 
 	-- get the object type
 	select	object_type
@@ -379,14 +418,14 @@ begin
 	-- Initialize the return value
 	v_biz_object_type_id = null;
 
-	IF ''im_project'' = v_object_type THEN
+	IF 'im_project' = v_object_type THEN
 
 		select	project_type_id
 		into	v_biz_object_type_id
 		from	im_projects
 		where	project_id = p_object_id;
 
-	ELSIF ''im_company'' = v_object_type THEN
+	ELSIF 'im_company' = v_object_type THEN
 
 		select	company_type_id
 		into	v_biz_object_type_id
@@ -397,35 +436,8 @@ begin
 
 	return v_biz_object_type_id;
 
-end;' language 'plpgsql';
-
-
-
-
-
--- ------------------------------------------------------------
--- Valid Roles for Biz Objects
--- ------------------------------------------------------------
-
--- Maps from (acs_object_type + object_type_id) into object_role_id.
--- For example projects (im_project) with type "translation" can 
--- have the object_roles "Translator", "Editor", "Project Manager" etc.
--- This table doesn't actually restrict (RI) the roles between
--- business objects and members, but serves to select "appropriate"
--- membership relationships in the add_member.tcl page and its
--- neighbours.
---
-create table im_biz_object_role_map (
-	acs_object_type	varchar(1000),
-	object_type_id	integer
-			constraint im_bizo_rmap_object_type_fk
-			references im_categories,
-	object_role_id	integer
-			constraint im_bizo_rmap_object_role_fk
-			references im_categories,
-	constraint im_bizo_rmap_un
-	unique (acs_object_type, object_type_id, object_role_id)
-);
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- ------------------------------------------------------------
@@ -468,110 +480,244 @@ select acs_rel_type__create_type (
 	null				-- max_n_rels_two
 );
 
--- ------------------------------------------------------------
--- Biz Object Groups - Translates Biz Object membership into a parallel group
--- ------------------------------------------------------------
 
+-------------------------------------------------------------------
+-- Create relationships between BizObject and Persons
+-------------------------------------------------------------------
 
--- Create Biz Object Group datatype as a dynamically managed group
-select acs_object_type__create_type (
-	'im_biz_object_group',
-	'Biz Object Group',
-	'Biz Object Groups',
-	'group',
-	'im_biz_object_groups',
-	'group_id',
-	'im_biz_object_group',
+-------------------------------------------------------------------
+-- "Employee of a Company" relationship
+-- It doesn't matter if it's the "internal" company, a customer
+-- company or a provider company.
+-- Instances of this relationship are created whenever ...??? ToDo
+-- Usually included DynFields:
+--	- Position
+--
+-- ]po[ HR information is actually attached to a specific subtype
+-- of this rel "internal employee"
+-- In ]po[ we will create a "im_company_employee_rel" IF:
+--	- The user is an "Employee" and its the "internal" company.
+--	- The user is a "Customer" and the company is a "customer".
+--	- The user is a "Freelancer" and the company is a "provider".
+
+SELECT acs_rel_type__create_role('employee', '#acs-translations.role_employee#', '#acs-translations.role_employee_plural#');
+SELECT acs_rel_type__create_role('employer', '#acs-translations.role_employer#', '#acs-translations.role_employer_plural#');
+
+SELECT acs_object_type__create_type(
+	'im_company_employee_rel',
+	'#intranet-contacts.company_employee_rel#',
+	'#intranet-contacts.company_employee_rels#',
+	'im_biz_object_member',
+	'im_company_employee_rels',
+	'employee_rel_id',
+	'intranet-contacts.comp_emp', 
 	'f',
 	null,
-	null
+	NULL
+);
+
+create table im_company_employee_rels (
+	employee_rel_id		integer
+				REFERENCES acs_rels
+				ON DELETE CASCADE
+	CONSTRAINT im_company_employee_rel_id_pk PRIMARY KEY
 );
 
 
-insert into acs_object_type_tables VALUES ('im_biz_object_group', 'im_biz_object_groups', 'group_id');
-
--- Mark biz_object_group as a dynamically managed object type
-update acs_object_types 
-set dynamic_p='t' 
-where object_type = 'im_biz_object_group';
-
-
--- Copy group type_rels to groups
-insert into group_type_rels (group_rel_type_id, rel_type, group_type)
-select	nextval('t_acs_object_id_seq'), 
-	r.rel_type, 
-	'im_biz_object_group'
-from	group_type_rels r
-where	r.group_type = 'group';
-
-
-create table im_biz_object_groups (
-	group_id	integer
-			constraint im_biz_object_groups_id_pk primary key
-			constraint im_biz_object_groups_id_fk references groups,
-			-- The ID of the business object for which this group is created
-	biz_object_id	integer
-			constraint im_biz_object_groups_biz_object_fk references acs_objects
-);
-
--- Unique index: Do not allow duplicate biz object groups for a single biz object
-create unique index im_biz_object_groups_un on im_biz_object_groups (coalesce(biz_object_id,0));
 
 
 
-select define_function_args('im_biz_object_group__new','group_id,group_name,email,url,last_modified;now(),modifying_ip,object_type;im_biz_object_group,context_id,creation_user,creation_date;now(),creation_ip,join_policy,biz_object_id');
 
-create or replace function im_biz_object_group__new(integer,varchar,varchar,varchar,timestamptz,varchar,varchar,integer,integer,timestamptz,varchar,varchar,integer)
-returns integer as $$
-declare
-	p_group_id		alias for $1;
-	p_group_name		alias for $2;
-	p_email			alias for $3;
-	p_url			alias for $4;
-	p_last_modified		alias for $5;
-	p_modifying_ip		alias for $6;
 
-	p_object_type		alias for $7;
-	p_context_id		alias for $8;
-	p_creation_user		alias for $9;
-	p_creation_date		alias for $10;
-	p_creation_ip		alias for $11;
-	p_join_policy		alias for $12;
-	p_biz_object_id		alias for $13;
+--
+-- procedure im_company_employee_rel__new/7
+--
+CREATE OR REPLACE FUNCTION im_company_employee_rel__new (
+	integer, varchar, integer, integer, integer, integer, varchar, integer
+) RETURNS integer AS $$
+DECLARE
+	p_rel_id		alias for $1;	-- null
+	p_rel_type		alias for $2;	-- im_company_employee_rel
+	p_object_id_one		alias for $3;
+	p_object_id_two		alias for $4;
+	p_context_id		alias for $5;
+	p_creation_user		alias for $6;	-- null
+	p_creation_ip		alias for $7;	-- null
 
-	v_group_id 		im_biz_object_groups.group_id%TYPE;
-begin
-	v_group_id := acs_group__new (
-		p_group_id, p_object_type, 
-		p_creation_date, p_creation_user, 
-		p_creation_ip, p_email, 
-		p_url, p_group_name, 
-		p_join_policy, p_context_id
+	v_rel_id	integer;
+BEGIN
+	v_rel_id := acs_rel__new (
+		p_rel_id,
+		p_rel_type,
+		p_object_id_one,
+		p_object_id_two,
+		p_context_id,
+		p_creation_user,
+		p_creation_ip
 	);
-	insert into im_biz_object_groups (group_id, biz_object_id) values (v_group_id, p_biz_object_id);
-	return v_group_id;
-end;$$ language 'plpgsql';
 
-create or replace function im_biz_object_group__delete (integer)
-returns integer as $$
-declare
-	p_group_id	alias for $1;
-begin
-	delete from im_biz_object_groups where group_id = p_group_id;
-	perform acs_group__delete( p_group_id );
-	return 1;
-end;$$ language 'plpgsql';
+	insert into im_company_employee_rels (
+	       rel_id, sort_order
+	) values (
+	       v_rel_id, p_sort_order
+	);
 
-create or replace function im_biz_object_group__name (integer)
-returns varchar as $$
-declare
-	p_group_id	alias for $1;
-	v_name		varchar;
-begin
-	select	group_name into v_name from groups
-	where	group_id = p_group_id;
-	return v_name;
-end;$$ language 'plpgsql';
+	return v_rel_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+-- added
+select define_function_args('im_company_employee_rel__delete','rel_id');
+
+--
+-- procedure im_company_employee_rel__delete/1
+--
+CREATE OR REPLACE FUNCTION im_company_employee_rel__delete(
+   p_rel_id integer
+) RETURNS integer AS $$
+DECLARE
+BEGIN
+	delete	from im_company_employee_rels
+	where	rel_id = p_rel_id;
+
+	PERFORM acs_rel__delete(p_rel_id);
+	return 0;
+END;
+$$ LANGUAGE plpgsql;
+
+
+------------------------------------------------------------------
+-- "Key Account Manager" relationship
+--
+-- A "key account" is a member of group "Employees" who is entitled
+-- to manage a customer or provider company.
+--
+-- Typical extension field for this relationship:
+--	- Contract Value (to be signed by this key account)
+--
+-- Instances of this rel are created by ]po[ if and only if we
+-- create a im_biz_object_membership rel with type "Key Account".
+
+SELECT acs_rel_type__create_role('key_account', '#acs-translations.role_key_account#', '#acs-translations.role_key_account_plural#');
+SELECT acs_rel_type__create_role('company', '#acs-translations.role_company#', '#acs-translations.role_company_plural#');
+
+SELECT acs_object_type__create_type (
+	'im_key_account_rel',
+	'#intranet-contacts.key_account_rel#',
+	'#intranet-contacts.key_account_rels#',
+	'im_biz_object_member',
+	'im_key_account_rels',
+	'key_account_rel_id',
+	'intranet-contacts.key_account', 
+	'f',
+	null,
+	NULL
+);
+
+create table im_key_account_rels (
+	key_account_rel_id	integer
+				REFERENCES acs_rels
+				ON DELETE CASCADE
+	CONSTRAINT im_key_account_rel_id_pk PRIMARY KEY
+);
+
+
+
+
+
+
+
+
+--
+-- procedure im_key_account_rel__new/7
+--
+CREATE OR REPLACE FUNCTION im_key_account_rel__new (
+	integer, varchar, integer, integer, integer, integer, varchar, integer
+) RETURNS integer AS $$
+DECLARE
+	p_rel_id		alias for $1;	-- null
+	p_rel_type		alias for $2;	-- im_key_account_rel
+	p_object_id_one		alias for $3;
+	p_object_id_two		alias for $4;
+	p_context_id		alias for $5;
+	p_creation_user		alias for $6;	-- null
+	p_creation_ip		alias for $7;	-- null
+
+	v_rel_id	integer;
+BEGIN
+	v_rel_id := acs_rel__new (
+		p_rel_id,
+		p_rel_type,
+		p_object_id_one,
+		p_object_id_two,
+		p_context_id,
+		p_creation_user,
+		p_creation_ip
+	);
+
+	insert into im_key_account_rels (
+	       rel_id, sort_order
+	) values (
+	       v_rel_id, p_sort_order
+	);
+
+	return v_rel_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+-- added
+select define_function_args('im_key_account_rel__delete','rel_id');
+
+--
+-- procedure im_key_account_rel__delete/1
+--
+CREATE OR REPLACE FUNCTION im_key_account_rel__delete(
+   p_rel_id integer
+) RETURNS integer AS $$
+DECLARE
+BEGIN
+	delete	from im_key_account_rels
+	where	rel_id = p_rel_id;
+
+	PERFORM acs_rel__delete(p_rel_id);
+	return 0;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+
+-- ------------------------------------------------------------
+-- Valid Roles for Biz Objects
+-- ------------------------------------------------------------
+
+-- Maps from (acs_object_type + object_type_id) into object_role_id.
+-- For example projects (im_project) with type "translation" can 
+-- have the object_roles "Translator", "Editor", "Project Manager" etc.
+-- This table doesn't actually restrict (RI) the roles between
+-- business objects and members, but serves to select "appropriate"
+-- membership relationships in the add_member.tcl page and its
+-- neighbours.
+--
+create table im_biz_object_role_map (
+	acs_object_type	varchar(1000),
+	object_type_id	integer
+			constraint im_bizo_rmap_object_type_fk
+			references im_categories,
+	object_role_id	integer
+			constraint im_bizo_rmap_object_role_fk
+			references im_categories,
+	constraint im_bizo_rmap_un
+	unique (acs_object_type, object_type_id, object_role_id)
+);
 
 
 
@@ -581,18 +727,26 @@ end;$$ language 'plpgsql';
 
 -- New version of the PlPg/SQL routine with percentage parameter
 --
-create or replace function im_biz_object_member__new (
-integer, varchar, integer, integer, integer, numeric, integer, varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('im_biz_object_member__new','rel_id,rel_type,object_id,user_id,object_role_id,percentage,creation_user,creation_ip');
+
+--
+-- procedure im_biz_object_member__new/8
+--
+CREATE OR REPLACE FUNCTION im_biz_object_member__new(
+   p_rel_id integer,         -- null
+   p_rel_type varchar,       -- im_biz_object_member
+   p_object_id integer,      -- object_id_one
+   p_user_id integer,        -- object_id_two
+   p_object_role_id integer, -- type of relationship
+   p_percentage numeric,     -- percentage of assignation
+   p_creation_user integer,  -- null
+   p_creation_ip varchar     -- null
+
+) RETURNS integer AS $$
 DECLARE
-	p_rel_id		alias for $1;	-- null
-	p_rel_type		alias for $2;	-- im_biz_object_member
-	p_object_id		alias for $3;	-- object_id_one
-	p_user_id		alias for $4;	-- object_id_two
-	p_object_role_id	alias for $5;	-- type of relationship
-	p_percentage		alias for $6;	-- percentage of assignation
-	p_creation_user		alias for $7;	-- null
-	p_creation_ip		alias for $8;	-- null
 
 	v_rel_id		integer;
 	v_count			integer;
@@ -628,22 +782,28 @@ BEGIN
 	);
 
 	return v_rel_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Downward compatibility - offers the same API as before
 -- with percentage = null
-create or replace function im_biz_object_member__new (
-integer, varchar, integer, integer, integer, integer, varchar)
-returns integer as '
+
+
+--
+-- procedure im_biz_object_member__new/7
+--
+CREATE OR REPLACE FUNCTION im_biz_object_member__new(
+   p_rel_id integer,         -- null
+   p_rel_type varchar,       -- im_biz_object_member
+   p_object_id integer,      -- object_id_one
+   p_user_id integer,        -- object_id_two
+   p_object_role_id integer, -- type of relationship
+   p_creation_user integer,  -- null
+   p_creation_ip varchar     -- null
+
+) RETURNS integer AS $$
 DECLARE
-	p_rel_id		alias for $1;	-- null
-	p_rel_type		alias for $2;	-- im_biz_object_member
-	p_object_id		alias for $3;	-- object_id_one
-	p_user_id		alias for $4;	-- object_id_two
-	p_object_role_id	alias for $5;	-- type of relationship
-	p_creation_user		alias for $6;	-- null
-	p_creation_ip		alias for $7;	-- null
 BEGIN
 	return im_biz_object_member__new (
 		p_rel_id, 
@@ -655,18 +815,27 @@ BEGIN
 		p_creation_user, 
 		p_creation_ip
 	);
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 
 
 
-create or replace function im_biz_object_member__delete (integer, integer)
-returns integer as '
+
+
+-- added
+select define_function_args('im_biz_object_member__delete','object_id,user_id');
+
+--
+-- procedure im_biz_object_member__delete/2
+--
+CREATE OR REPLACE FUNCTION im_biz_object_member__delete(
+   p_object_id integer,
+   p_user_id integer
+) RETURNS integer AS $$
 DECLARE
-	p_object_id	alias for $1;
-	p_user_id	alias for $2;
 
 	v_rel_id	integer;
 BEGIN
@@ -681,17 +850,26 @@ BEGIN
 
 	PERFORM acs_rel__delete(v_rel_id);
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 
 -- Return a TCL list of the member_ids of the members of a 
 -- business object.
-create or replace function im_biz_object_member__list (integer)
-returns varchar as $body$
+
+
+-- added
+select define_function_args('im_biz_object_member__list','object_id');
+
+--
+-- procedure im_biz_object_member__list/1
+--
+CREATE OR REPLACE FUNCTION im_biz_object_member__list(
+   p_object_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_object_id	alias for $1;
 	v_members	varchar;
 	row		record;
 BEGIN
@@ -712,39 +890,8 @@ BEGIN
 	END LOOP;
 
 	return v_members;
-end;$body$ language 'plpgsql';
-
-
-
-
--- Return a TCL list of the member_ids of the members of a 
--- business object.
-create or replace function im_biz_object_pm__list (integer)
-returns varchar as $body$
-DECLARE
-	p_object_id	alias for $1;
-	v_members	varchar;
-	row		record;
-BEGIN
-	v_members := '';
-	FOR row IN 
-		select	r.rel_id,
-			r.object_id_two as party_id,
-			coalesce(bom.object_role_id::varchar, '""') as role_id,
-			coalesce(bom.percentage::varchar, '""') as percentage
-		from	acs_rels r,
-			im_biz_object_members bom
-		where	r.rel_id = bom.rel_id and
-			r.object_id_one = p_object_id and
-			bom.object_role_id = 1301
-		order by party_id
-	LOOP
-		IF '' != v_members THEN v_members := v_members || ' '; END IF;
-		v_members := v_members || '{' || row.party_id || ' ' || row.role_id || ' ' || row.percentage || ' ' || row.rel_id || '}';
-	END LOOP;
-
-	return v_members;
-end;$body$ language 'plpgsql';
+END;
+$$ language 'plpgsql';
 
 
 

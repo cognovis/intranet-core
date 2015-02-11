@@ -52,6 +52,29 @@ insert into im_biz_object_urls (object_type, url_type, url) values (
 insert into im_biz_object_urls (object_type, url_type, url) values (
 'im_company','edit','/intranet/companies/new?company_id=');
 
+-- populate employee relationship
+insert into acs_rel_types (
+	rel_type, object_type_one, role_one,
+	min_n_rels_one, max_n_rels_one,
+	object_type_two, role_two,min_n_rels_two, max_n_rels_two
+) values (
+	'im_company_employee_rel', 'im_company', 'employer', 
+	'1', NULL,
+	'person', 'employee', '1', NULL
+);
+
+-- populate key_account relationship
+insert into acs_rel_types (
+	rel_type, object_type_one, role_one,
+	min_n_rels_one, max_n_rels_one,
+	object_type_two, role_two,min_n_rels_two, max_n_rels_two
+) values (
+	'im_key_account_rel', 'im_company', 'company',
+	'1', NULL,
+	'person', 'key_account', '1', NULL
+);
+
+
 
 
 create table im_companies (
@@ -140,23 +163,29 @@ create table im_companies (
 );
 
 
-create or replace function im_company__new (
-	integer, varchar, timestamptz, integer, varchar, integer,
-	varchar, varchar, integer, integer, integer
-) returns integer as '
-DECLARE
-	p_company_id      alias for $1;
-	p_object_type     alias for $2;
-	p_creation_date   alias for $3;
-	p_creation_user   alias for $4;
-	p_creation_ip     alias for $5;
-	p_context_id      alias for $6;
 
-	p_company_name	      alias for $7;
-	p_company_path	      alias for $8;
-	p_main_office_id      alias for $9;
-	p_company_type_id     alias for $10;
-	p_company_status_id   alias for $11;
+
+-- added
+select define_function_args('im_company__new','company_id,object_type,creation_date,creation_user,creation_ip,context_id,company_name,company_path,main_office_id,company_type_id,company_status_id');
+
+--
+-- procedure im_company__new/11
+--
+CREATE OR REPLACE FUNCTION im_company__new(
+   p_company_id integer,
+   p_object_type varchar,
+   p_creation_date timestamptz,
+   p_creation_user integer,
+   p_creation_ip varchar,
+   p_context_id integer,
+   p_company_name varchar,
+   p_company_path varchar,
+   p_main_office_id integer,
+   p_company_type_id integer,
+   p_company_status_id integer
+) RETURNS integer AS $$
+DECLARE
+
 
 	v_company_id	      integer;
 BEGIN
@@ -187,12 +216,22 @@ BEGIN
 	where	office_id = p_main_office_id;
 
 	return v_company_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_company__delete (integer) returns integer as '
+
+
+-- added
+select define_function_args('im_company__delete','company_id');
+
+--
+-- procedure im_company__delete/1
+--
+CREATE OR REPLACE FUNCTION im_company__delete(
+   p_company_id integer
+) RETURNS integer AS $$
 DECLARE
-	p_company_id	     alias for $1;
 
 	v_office_id	     integer;
 BEGIN
@@ -222,12 +261,22 @@ BEGIN
 	PERFORM acs_object__delete(p_company_id);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_company__name (integer) returns varchar as '
+
+
+-- added
+select define_function_args('im_company__name','company_id');
+
+--
+-- procedure im_company__name/1
+--
+CREATE OR REPLACE FUNCTION im_company__name(
+   p_company_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_company_id	alias for $1;
 	v_name		varchar;
 BEGIN
 	select	company_name
@@ -236,19 +285,29 @@ BEGIN
 	where	company_id = p_company_id;
 
 	return v_name;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Returns a TCL list of company_id suitable to stuff into a
 -- TCL hash array of all companies associated to a specific user.
-create or replace function im_company_list_for_user_html (integer) returns varchar as '
+
+
+-- added
+select define_function_args('im_company_list_for_user_html','user_id');
+
+--
+-- procedure im_company_list_for_user_html/1
+--
+CREATE OR REPLACE FUNCTION im_company_list_for_user_html(
+   p_user_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_user_id	alias for $1;
 
 	v_html		varchar;
 	row		RECORD;
 BEGIN
-	v_html := '''';
+	v_html := '';
 	FOR row IN
 		select	c.company_id
 		from	im_companies c,
@@ -258,10 +317,11 @@ BEGIN
 		order by
 			lower(c.company_name)
 	LOOP
-		IF '''' != v_html THEN v_html := v_html || '' ''; END IF;
+		IF '' != v_html THEN v_html := v_html || ' '; END IF;
 		v_html := v_html || row.company_id;
 	END LOOP;
 
 	return v_html;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 

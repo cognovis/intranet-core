@@ -36,10 +36,18 @@ create table country_codes (
 
 
 
-create or replace function im_country_from_code (varchar)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_country_from_code','cc');
+
+--
+-- procedure im_country_from_code/1
+--
+CREATE OR REPLACE FUNCTION im_country_from_code(
+   p_cc varchar
+) RETURNS varchar AS $$
 DECLARE
-        p_cc		alias for $1;
         v_country	varchar;
 BEGIN
     select country_name
@@ -48,7 +56,8 @@ BEGIN
     where iso = p_cc;
 
     return v_country;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 

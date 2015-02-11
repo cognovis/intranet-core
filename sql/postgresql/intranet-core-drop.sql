@@ -20,8 +20,14 @@
 -- Cleanup Projects
 -- Needs to happen _before_ removing permissions etc.
 --
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
         row RECORD;
 BEGIN
@@ -36,7 +42,8 @@ BEGIN
 
     end loop;
     return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -45,22 +52,29 @@ drop function inline_0 ();
 -- ------------------------------------------------------------
 -- Cleanup users
 -- ------------------------------------------------------------
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
         row RECORD;
 BEGIN
     for row in
         select party_id
         from parties
-        where email like ''%project-open.com''
+        where email like '%project-open.com'
     loop
 
         acs.remove_user(row.party_id);
 
     end loop;
     return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -140,8 +154,14 @@ select im_drop_profile ('Project Managers');
 select im_drop_profile ('Senior Managers'); 
 select im_drop_profile ('Accounting'); 
 
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
         row RECORD;
 BEGIN
@@ -152,7 +172,8 @@ BEGIN
 	PERFORM im_profile__delete(row.profile_id);
      end loop;
      return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 select inline_0 ();
 
@@ -198,10 +219,18 @@ select  acs_object_type__drop_type ('im_profile', 'f');
 
 
 -- before remove priviliges remove granted permissions
-create or replace function inline_revoke_permission (varchar)
-returns integer as '
+
+
+-- added
+select define_function_args('inline_revoke_permission','priv_name');
+
+--
+-- procedure inline_revoke_permission/1
+--
+CREATE OR REPLACE FUNCTION inline_revoke_permission(
+   p_priv_name varchar
+) RETURNS integer AS $$
 DECLARE
-	p_priv_name	alias for $1;
 BEGIN
      lock table acs_permissions_lock;
 
@@ -210,7 +239,8 @@ BEGIN
 
      return 0;
 
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -330,8 +360,14 @@ drop table im_views;
 -- Projects
 --
 
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
         row RECORD;
 BEGIN
@@ -342,7 +378,8 @@ BEGIN
         im_project__delete(row.project_id);
     end loop;
     return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -369,8 +406,14 @@ select acs_object_type__drop_type ('im_project', 'f');
 -- Companies
 --
 
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
         row RECORD;
 BEGIN
@@ -381,7 +424,8 @@ BEGIN
         im_company__delete(row.company_id);
     end loop;
     return 0;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 

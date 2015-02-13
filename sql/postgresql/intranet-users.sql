@@ -60,60 +60,30 @@ values ('user', 'users', 'user_id');
 
 
 insert into acs_object_type_tables (object_type,table_name,id_column)
-values ('user', 'persons', 'person_id');
+select 'user', 'persons', 'person_id' where not exists (select 1 from acs_object_type_tables where table_name = 'persons');
 
 insert into acs_object_type_tables (object_type,table_name,id_column)
-values ('user','users_contact','user_id');
+select 'user','users_contact','user_id' where not exists (select 1 from acs_object_type_tables where table_name = 'users_contact');
 
 insert into acs_object_type_tables (object_type,table_name,id_column)
-values ('user','parties','party_id');
+select 'user','parties','party_id' where not exists (select 1 from acs_object_type_tables where table_name = 'parties');
 
 insert into acs_object_type_tables (object_type,table_name,id_column)
-values ('user','im_employees','employee_id');
+select 'user','im_employees','employee_id' where not exists (select 1 from acs_object_type_tables where table_name = 'im_employees');
 
 insert into acs_object_type_tables (object_type,table_name,id_column)
-values ('user', 'users', 'user_id');
-
+select 'user', 'users', 'user_id' where not exists (select 1 from acs_object_type_tables where table_name = 'users');
     
-insert into im_employees (employee_id) 
-select person_id 
-from persons
-where person_id not in (select employee_id from im_employees);
-
-
-
 -- Fix bad entries from OpenACS
 update acs_attributes 
 	set table_name = 'persons' 
 where object_type = 'person' and table_name is null;
 
--- Update status and type for persons/users
-update acs_object_types
-	set type_category_type = 'Intranet User Type',
-	set type_category_status = 'Intranet User Status',
-where object_type = 'person';
+-- the following happens in intranet-dynfield/sql/postgresql/intranet-dynfield-create.sql
+-- update acs_object_types set type_category_type = 'Intranet User Type' where object_type = 'person';
 
-
-create or replace function inline_0 ()
-returns integer as '
-declare
-	row		RECORD;
-	v_category_id	integer;
-begin
-	FOR row IN
-		select	g.*
-		from	groups g,
-			im_profiles p
-		where	p.profile_id = g.group_id
-        LOOP
-		PERFORM im_category_new(nextval(''im_categories_seq'')::integer, row.group_name, ''Intranet User Type'');
-		update im_categories set aux_int1 = row.group_id where category = row.group_name and category_type = ''Intranet User Type'';
-        END LOOP;
-
-        RETURN 0;
-end;' language 'plpgsql';
-select inline_0();
-drop function inline_0();
+-- the following seems to be outdated
+-- update acs_object_types set type_category_status = 'Intranet User Status' where object_type = 'person';
 
 
 
@@ -231,24 +201,41 @@ from
 
 -- ToDo: Localize this function for Japanese
 --
-create or replace function im_name_from_user_id(integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_name_from_user_id','v_user_id');
+
+--
+-- procedure im_name_from_user_id/1
+--
+CREATE OR REPLACE FUNCTION im_name_from_user_id(
+   v_user_id integer
+) RETURNS varchar AS $$
 DECLARE
-	v_user_id	alias for $1;
 	v_full_name	text;
 BEGIN
-	select first_names || '' '' || last_name into v_full_name 
+	select first_names || ' ' || last_name into v_full_name 
 	from persons
 	where person_id = v_user_id;
 
 	return v_full_name;
 
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-create or replace function im_email_from_user_id(integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_email_from_user_id','v_user_id');
+
+--
+-- procedure im_email_from_user_id/1
+--
+CREATE OR REPLACE FUNCTION im_email_from_user_id(
+   v_user_id integer
+) RETURNS varchar AS $$
 DECLARE
-	v_user_id	alias for $1;
 	v_email varchar(100);
 BEGIN
 	select email
@@ -257,31 +244,49 @@ BEGIN
 	where party_id = v_user_id;
 
 	return v_email;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_initials_from_user_id(integer)
-returns varchar as '
+
+
+-- added
+select define_function_args('im_initials_from_user_id','v_user_id');
+
+--
+-- procedure im_initials_from_user_id/1
+--
+CREATE OR REPLACE FUNCTION im_initials_from_user_id(
+   v_user_id integer
+) RETURNS varchar AS $$
 DECLARE
-	v_user_id	alias for $1;
 	v_initials	varchar(2);
 BEGIN
 	select substr(first_names,1,1) || substr(last_name,1,1) into v_initials
 	from persons
 	where person_id = v_user_id;
 	return v_initials;
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Shortcut to add a user to a profile (group)
 -- Example:
 --      im_profile_add_user('Employees', 456)
 --
-create or replace function im_profile_add_user (varchar, integer)
-returns integer as '
+
+
+-- added
+select define_function_args('im_profile_add_user','group_name,grantee_id');
+
+--
+-- procedure im_profile_add_user/2
+--
+CREATE OR REPLACE FUNCTION im_profile_add_user(
+   p_group_name varchar,
+   p_grantee_id integer
+) RETURNS integer AS $$
 DECLARE
-        p_group_name    alias for $1;
-        p_grantee_id    alias for $2;
 
         v_group_id      integer;
         v_rel_id        integer;
@@ -296,215 +301,16 @@ BEGIN
         select  count(*) into v_count from acs_rels
         where   object_id_one = v_group_id
                 and object_id_two = p_grantee_id
-                and rel_type = ''membership_rel'';
+                and rel_type = 'membership_rel';
         IF v_count > 0 THEN RETURN 0; END IF;
 
         v_rel_id := membership_rel__new(v_group_id, p_grantee_id);
 
         RETURN v_rel_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-
-
-
--------------------------------------------------------------------
--- Create relationships between BizObject and Persons
--------------------------------------------------------------------
-
-
--------------------------------------------------------------------
--- "Employee of a Company" relationship
--- It doesn't matter if it's the "internal" company, a customer
--- company or a provider company.
--- Instances of this relationship are created whenever ...??? ToDo
--- Usually included DynFields:
---	- Position
---
--- ]po[ HR information is actually attached to a specific subtype
--- of this rel "internal employee"
--- In ]po[ we will create a "im_company_employee_rel" IF:
---	- The user is an "Employee" and its the "internal" company.
---	- The user is a "Customer" and the company is a "customer".
---	- The user is a "Freelancer" and the company is a "provider".
-
-SELECT acs_rel_type__create_role('employee', '#acs-translations.role_employee#', '#acs-translations.role_employee_plural#');
-SELECT acs_rel_type__create_role('employer', '#acs-translations.role_employer#', '#acs-translations.role_employer_plural#');
-
-SELECT acs_object_type__create_type(
-	'im_company_employee_rel',			-- object_type
-	'#intranet-contacts.company_employee_rel#',	-- pretty_name
-	'#intranet-contacts.company_employee_rels#',	-- pretty_plural
-	'im_biz_object_member',				-- supertype
-	'im_company_employee_rels',			-- table_name
-	'employee_rel_id',				-- id_column
-	'intranet-contacts.comp_emp', 			-- package_name
-	'f',						-- abstract_p
-	null,						-- type_extension_table
-	NULL						-- name_method
-);
-
-create table im_company_employee_rels (
-	employee_rel_id		integer
-				REFERENCES acs_rels
-				ON DELETE CASCADE
-	CONSTRAINT im_company_employee_rel_id_pk PRIMARY KEY
-);
-
-
-insert into acs_rel_types (
-	rel_type, object_type_one, role_one,
-	min_n_rels_one, max_n_rels_one,
-	object_type_two, role_two,min_n_rels_two, max_n_rels_two
-) values (
-	'im_company_employee_rel', 'im_company', 'employer', 
-	'1', NULL,
-	'party', 'employee', '1', NULL
-);
-
-
-
-create or replace function im_company_employee_rel__new (
-	integer, varchar, integer, integer, integer, integer, varchar, integer
-) returns integer as '
-DECLARE
-	p_rel_id		alias for $1;	-- null
-	p_rel_type		alias for $2;	-- im_company_employee_rel
-	p_object_id_one		alias for $3;
-	p_object_id_two		alias for $4;
-	p_context_id		alias for $5;
-	p_creation_user		alias for $6;	-- null
-	p_creation_ip		alias for $7;	-- null
-
-	v_rel_id	integer;
-BEGIN
-	v_rel_id := acs_rel__new (
-		p_rel_id,
-		p_rel_type,
-		p_object_id_one,
-		p_object_id_two,
-		p_context_id,
-		p_creation_user,
-		p_creation_ip
-	);
-
-	insert into im_company_employee_rels (
-	       rel_id, sort_order
-	) values (
-	       v_rel_id, p_sort_order
-	);
-
-	return v_rel_id;
-end;' language 'plpgsql';
-
-
-create or replace function im_company_employee_rel__delete (integer)
-returns integer as '
-DECLARE
-	p_rel_id	alias for $1;
-BEGIN
-	delete	from im_company_employee_rels
-	where	rel_id = p_rel_id;
-
-	PERFORM acs_rel__delete(p_rel_id);
-	return 0;
-end;' language 'plpgsql';
-
-
-
-------------------------------------------------------------------
--- "Key Account Manager" relationship
---
--- A "key account" is a member of group "Employees" who is entitled
--- to manage a customer or provider company.
---
--- Typical extension field for this relationship:
---	- Contract Value (to be signed by this key account)
---
--- Instances of this rel are created by ]po[ if and only if we
--- create a im_biz_object_membership rel with type "Key Account".
-
-SELECT acs_rel_type__create_role('key_account', '#acs-translations.role_key_account#', '#acs-translations.role_key_account_plural#');
-SELECT acs_rel_type__create_role('company', '#acs-translations.role_company#', '#acs-translations.role_company_plural#');
-
-SELECT acs_object_type__create_type (
-	'im_key_account_rel',
-	'#intranet-contacts.key_account_rel#',
-	'#intranet-contacts.key_account_rels#',
-	'im_biz_object_member',
-	'im_key_account_rels',
-	'key_account_rel_id',
-	'intranet-contacts.key_account', 
-	'f',
-	null,
-	NULL
-);
-
-create table im_key_account_rels (
-	key_account_rel_id	integer
-				REFERENCES acs_rels
-				ON DELETE CASCADE
-	CONSTRAINT im_key_account_rel_id_pk PRIMARY KEY
-);
-
-
-insert into acs_rel_types (
-	rel_type, object_type_one, role_one,
-	min_n_rels_one, max_n_rels_one,
-	object_type_two, role_two,min_n_rels_two, max_n_rels_two
-) values (
-	'im_key_account_rel', 'im_company', 'company',
-	'1', NULL,
-	'party', 'key_account', '1', NULL
-);
-
-
-
-create or replace function im_key_account_rel__new (
-	integer, varchar, integer, integer, integer, integer, varchar, integer
-) returns integer as '
-DECLARE
-	p_rel_id		alias for $1;	-- null
-	p_rel_type		alias for $2;	-- im_key_account_rel
-	p_object_id_one		alias for $3;
-	p_object_id_two		alias for $4;
-	p_context_id		alias for $5;
-	p_creation_user		alias for $6;	-- null
-	p_creation_ip		alias for $7;	-- null
-
-	v_rel_id	integer;
-BEGIN
-	v_rel_id := acs_rel__new (
-		p_rel_id,
-		p_rel_type,
-		p_object_id_one,
-		p_object_id_two,
-		p_context_id,
-		p_creation_user,
-		p_creation_ip
-	);
-
-	insert into im_key_account_rels (
-	       rel_id, sort_order
-	) values (
-	       v_rel_id, p_sort_order
-	);
-
-	return v_rel_id;
-end;' language 'plpgsql';
-
-
-create or replace function im_key_account_rel__delete (integer)
-returns integer as '
-DECLARE
-	p_rel_id	alias for $1;
-BEGIN
-	delete	from im_key_account_rels
-	where	rel_id = p_rel_id;
-
-	PERFORM acs_rel__delete(p_rel_id);
-	return 0;
-end;' language 'plpgsql';
 
 
 

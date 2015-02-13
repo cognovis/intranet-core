@@ -98,26 +98,32 @@ create table im_offices (
 );
 
 
-create or replace function im_office__new (
-	integer, varchar, timestamptz, integer, varchar, integer,
-	varchar, varchar, integer, integer, integer
-) returns integer as '
-declare
-        p_office_id     alias for $1;
-        p_object_type     alias for $2;
-        p_creation_date   alias for $3;
-        p_creation_user   alias for $4;
-        p_creation_ip     alias for $5;
-        p_context_id      alias for $6;
 
-	p_office_name	alias for $7;
-	p_office_path	alias for $8;
-	p_office_type_id  alias for $9;
-	p_office_status_id alias for $10;
-	p_company_id	alias for $11;
+
+-- added
+select define_function_args('im_office__new','office_id,object_type,creation_date,creation_user,creation_ip,context_id,office_name,office_path,office_type_id,office_status_id,company_id');
+
+--
+-- procedure im_office__new/11
+--
+CREATE OR REPLACE FUNCTION im_office__new(
+   p_office_id integer,
+   p_object_type varchar,
+   p_creation_date timestamptz,
+   p_creation_user integer,
+   p_creation_ip varchar,
+   p_context_id integer,
+   p_office_name varchar,
+   p_office_path varchar,
+   p_office_type_id integer,
+   p_office_status_id integer,
+   p_company_id integer
+) RETURNS integer AS $$
+DECLARE
+
 
         v_object_id     integer;
-begin
+BEGIN
 	v_object_id := acs_object__new (
 		p_office_id,
 		p_object_type,
@@ -139,13 +145,23 @@ begin
 	insert into im_biz_objects (object_id) values (v_object_id);
 
 	return v_object_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Delete a single office (if we know its ID...)
-create or replace function im_office__delete (integer) returns integer as '
+
+
+-- added
+select define_function_args('im_office__delete','v_office_id');
+
+--
+-- procedure im_office__delete/1
+--
+CREATE OR REPLACE FUNCTION im_office__delete(
+   v_office_id integer
+) RETURNS integer AS $$
 DECLARE
-	v_office_id		alias for $1;
 BEGIN
 	-- Erase the im_offices item associated with the id
 	delete from im_offices
@@ -161,11 +177,21 @@ BEGIN
 	PERFORM	acs_object__delete(v_office_id);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
-create or replace function im_office__name (integer) returns varchar as '
+
+
+-- added
+select define_function_args('im_office__name','office_id');
+
+--
+-- procedure im_office__name/1
+--
+CREATE OR REPLACE FUNCTION im_office__name(
+   p_office_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_office_id	alias for $1;
 	v_name	im_offices.office_name%TYPE;
 BEGIN
 	select	office_name
@@ -174,5 +200,6 @@ BEGIN
 	where	office_id = p_office_id;
 
 	return v_name;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 

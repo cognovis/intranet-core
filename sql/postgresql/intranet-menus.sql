@@ -106,26 +106,35 @@ CREATE TABLE im_menus (
 	unique(label)
 );
 
-create or replace function im_menu__new (integer, varchar, timestamptz, integer, varchar, integer,
-varchar, varchar, varchar, varchar, integer, integer, varchar) returns integer as '
-declare
-	p_menu_id		alias for $1;	-- default null
-	p_object_type		alias for $2;	-- default acs_object
-	p_creation_date		alias for $3;	-- default now()
-	p_creation_user		alias for $4;	-- default null
-	p_creation_ip		alias for $5;	-- default null
-	p_context_id		alias for $6;	-- default null
 
-	p_package_name		alias for $7;
-	p_label			alias for $8;
-	p_name			alias for $9;
-	p_url			alias for $10;
-	p_sort_order		alias for $11;
-	p_parent_menu_id	alias for $12;
-	p_visible_tcl		alias for $13;  -- default null
+
+-- added
+select define_function_args('im_menu__new','menu_id;null,object_type;acs_object,creation_date;now(),creation_user;null,creation_ip;null,context_id;null,package_name,label,name,url,sort_order,parent_menu_id,visible_tcl;null');
+
+--
+-- procedure im_menu__new/13
+--
+CREATE OR REPLACE FUNCTION im_menu__new(
+   p_menu_id integer,           -- default null
+   p_object_type varchar,       -- default acs_object
+   p_creation_date timestamptz, -- default now()
+   p_creation_user integer,     -- default null
+   p_creation_ip varchar,       -- default null
+   p_context_id integer,        -- default null
+   p_package_name varchar,
+   p_label varchar,
+   p_name varchar,
+   p_url varchar,
+   p_sort_order integer,
+   p_parent_menu_id integer,
+   p_visible_tcl varchar        -- default null
+
+) RETURNS integer AS $$
+DECLARE
+
 
 	v_menu_id		im_menus.menu_id%TYPE;
-begin
+BEGIN
 	select	menu_id into v_menu_id
 	from	im_menus m where m.label = p_label;
 	IF v_menu_id is not null THEN return v_menu_id; END IF;
@@ -147,15 +156,25 @@ begin
 		p_sort_order, p_parent_menu_id, p_visible_tcl
 	);
 	return v_menu_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 -- Delete a single menu (if we know its ID...)
 -- Delete a single component
-create or replace function im_menu__delete (integer) returns integer as '
+
+
+-- added
+select define_function_args('im_menu__delete','menu_id');
+
+--
+-- procedure im_menu__delete/1
+--
+CREATE OR REPLACE FUNCTION im_menu__delete(
+   p_menu_id integer
+) RETURNS integer AS $$
 DECLARE
-	p_menu_id	alias for $1;
 BEGIN
 	-- Erase the im_menus item associated with the id
 	delete from 	im_menus
@@ -167,14 +186,24 @@ BEGIN
 	
 	PERFORM acs_object__delete(p_menu_id);
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Delete all menus of a module.
 -- Used in <module-name>-drop.sql
-create or replace function im_menu__del_module (varchar) returns integer as '
+
+
+-- added
+select define_function_args('im_menu__del_module','module_name');
+
+--
+-- procedure im_menu__del_module/1
+--
+CREATE OR REPLACE FUNCTION im_menu__del_module(
+   p_module_name varchar
+) RETURNS integer AS $$
 DECLARE
-	p_module_name	alias for $1;
 	row		RECORD;
 BEGIN
 	-- First we have to delete the references to parent menus...
@@ -202,36 +231,55 @@ BEGIN
 	end loop;
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 -- Returns the name of the menu
-create or replace function im_menu__name (integer) returns varchar as '
+
+
+-- added
+select define_function_args('im_menu__name','menu_id');
+
+--
+-- procedure im_menu__name/1
+--
+CREATE OR REPLACE FUNCTION im_menu__name(
+   p_menu_id integer
+) RETURNS varchar AS $$
 DECLARE
-	p_menu_id	alias for $1;
 	v_name		im_menus.name%TYPE;
 BEGIN
 	select	name into v_name from im_menus
 	where	menu_id = p_menu_id;
 
 	return v_name;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function im_new_menu (varchar, varchar, varchar, varchar, integer, varchar, varchar) 
-returns integer as '
-declare
-	p_package_name		alias for $1;
-	p_label			alias for $2;
-	p_name			alias for $3;
-	p_url			alias for $4;
-	p_sort_order		alias for $5;
-	p_parent_menu_label	alias for $6;
-	p_visible_tcl		alias for $7;
+
+
+-- added
+select define_function_args('im_new_menu','package_name,label,name,url,sort_order,parent_menu_label,visible_tcl');
+
+--
+-- procedure im_new_menu/7
+--
+CREATE OR REPLACE FUNCTION im_new_menu(
+   p_package_name varchar,
+   p_label varchar,
+   p_name varchar,
+   p_url varchar,
+   p_sort_order integer,
+   p_parent_menu_label varchar,
+   p_visible_tcl varchar
+) RETURNS integer AS $$
+DECLARE
 
 	v_menu_id		integer;
 	v_parent_menu_id	integer;
-begin
+BEGIN
 	-- Check for duplicates
 	select	menu_id into v_menu_id
 	from	im_menus m where m.label = p_label;
@@ -243,7 +291,7 @@ begin
 
 	v_menu_id := im_menu__new (
 		null,					-- p_menu_id
-		''im_menu'',				-- object_type
+		'im_menu',				-- object_type
 		now(),					-- creation_date
 		null,					-- creation_user
 		null,					-- creation_ip
@@ -258,27 +306,37 @@ begin
 	);
 
 	return v_menu_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
-create or replace function im_new_menu_perms (varchar, varchar) 
-returns integer as '
-declare
-	p_label			alias for $1;
-	p_group			alias for $2;
+
+
+-- added
+select define_function_args('im_new_menu_perms','label,group');
+
+--
+-- procedure im_new_menu_perms/2
+--
+CREATE OR REPLACE FUNCTION im_new_menu_perms(
+   p_label varchar,
+   p_group varchar
+) RETURNS integer AS $$
+DECLARE
 	v_menu_id		integer;
 	v_group_id		integer;
-begin
+BEGIN
 	select	menu_id into v_menu_id
 	from	im_menus where label = p_label;
 
 	select	group_id into v_group_id
 	from	groups where lower(group_name) = lower(p_group);
 
-	PERFORM acs_permission__grant_permission(v_menu_id, v_group_id, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu_id, v_group_id, 'read');
 	return v_menu_id;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -288,9 +346,10 @@ end;' language 'plpgsql';
 -- -----------------------------------------------------
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_top_menu		integer;
@@ -324,14 +383,14 @@ declare
 	v_freelancers		integer;
 	v_proman		integer;
 	v_admins		integer;
-begin
-	select group_id into v_admins from groups where group_name = ''P/O Admins'';
-	select group_id into v_senman from groups where group_name = ''Senior Managers'';
-	select group_id into v_proman from groups where group_name = ''Project Managers'';
-	select group_id into v_accounting from groups where group_name = ''Accounting'';
-	select group_id into v_employees from groups where group_name = ''Employees'';
-	select group_id into v_customers from groups where group_name = ''Customers'';
-	select group_id into v_freelancers from groups where group_name = ''Freelancers'';
+BEGIN
+	select group_id into v_admins from groups where group_name = 'P/O Admins';
+	select group_id into v_senman from groups where group_name = 'Senior Managers';
+	select group_id into v_proman from groups where group_name = 'Project Managers';
+	select group_id into v_accounting from groups where group_name = 'Accounting';
+	select group_id into v_employees from groups where group_name = 'Employees';
+	select group_id into v_customers from groups where group_name = 'Customers';
+	select group_id into v_freelancers from groups where group_name = 'Freelancers';
 
 
 	-- The top menu - the father of all menus.
@@ -339,43 +398,43 @@ begin
 	-- as a parent_menu_id from main and project.
 	v_top_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''top'',		-- label
-		''Top Menu'',		-- name
-		''/'',			-- url
+		'intranet-core',	-- package_name
+		'top',		-- label
+		'Top Menu',		-- name
+		'/',			-- url
 		10,			-- sort_order
 		null,			-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_top_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_top_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_top_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_top_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_top_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_top_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_top_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_top_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_top_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_top_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_top_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_top_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_top_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_top_menu, v_freelancers, 'read');
 
 
-	-- The Main menu: It''s not displayed itself neither
+	-- The Main menu: It's not displayed itself neither
 	-- but serves as the starting point for the main menu
 	-- hierarchy.
 	v_main_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''main'',		-- label
-		''Main Menu'',		-- name
-		''/'',			-- url
+		'intranet-core',	-- package_name
+		'main',		-- label
+		'Main Menu',		-- name
+		'/',			-- url
 		10,			-- sort_order
 		v_top_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
@@ -383,164 +442,164 @@ begin
 
 	v_home_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''home'',		-- label
-		''Home'',		-- name
-		''/intranet/'',		-- url
+		'intranet-core',	-- package_name
+		'home',		-- label
+		'Home',		-- name
+		'/intranet/',		-- url
 		10,			-- sort_order
 		v_main_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_home_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_home_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_home_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_home_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_home_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_home_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_home_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_home_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_home_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_home_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_home_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_home_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_home_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_home_menu, v_freelancers, 'read');
 
 	v_project_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''projects'',			-- label
-		''Projects'',			-- name
-		''/intranet/projects/'',	-- url
+		'intranet-core',		-- package_name
+		'projects',			-- label
+		'Projects',			-- name
+		'/intranet/projects/',	-- url
 		40,				-- sort_order
 		v_main_menu,			-- parent_menu_id
 		null				-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_project_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_project_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_project_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_project_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_project_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_project_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_project_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_project_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_project_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_project_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_project_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_project_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_project_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_project_menu, v_freelancers, 'read');
 
 	v_company_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''companies'',			-- label
-		''Companies'',			-- name
-		''/intranet/companies/'',	-- url
+		'intranet-core',		-- package_name
+		'companies',			-- label
+		'Companies',			-- name
+		'/intranet/companies/',	-- url
 		50,				-- sort_order
 		v_main_menu,			-- parent_menu_id
 		null				-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_company_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_company_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_company_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_company_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_company_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_company_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_company_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_company_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_company_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_company_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_company_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_company_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_company_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_company_menu, v_freelancers, 'read');
 
 	v_user_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''user'',		-- label
-		''Users'',		-- name
-		''/intranet/users/'',	-- url
+		'intranet-core',	-- package_name
+		'user',		-- label
+		'Users',		-- name
+		'/intranet/users/',	-- url
 		30,			-- sort_order
 		v_main_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_user_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_menu, v_employees, ''read'');
+	PERFORM acs_permission__grant_permission(v_user_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_user_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_user_menu, v_employees, 'read');
 
 
 	v_office_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''offices'',		-- label
-		''Offices'',		-- name
-		''/intranet/offices/'', -- url
+		'intranet-core',	-- package_name
+		'offices',		-- label
+		'Offices',		-- name
+		'/intranet/offices/', -- url
 		40,			-- sort_order
 		v_main_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_office_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_office_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_office_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_office_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_office_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_office_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_office_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_office_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_office_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_office_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_office_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_office_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_office_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_office_menu, v_freelancers, 'read');
 
 	v_admin_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''admin'',		-- label
-		''Admin'',		-- name
-		''/intranet/admin/'',	-- url
+		'intranet-core',	-- package_name
+		'admin',		-- label
+		'Admin',		-- name
+		'/intranet/admin/',	-- url
 		999,			-- sort_order
 		v_main_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_admin_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_admin_menu, v_admins, 'read');
 
 	v_help_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''help'',		-- label
-		''Help'',		-- name
-		''/intranet/help/'',	-- url
+		'intranet-core',	-- package_name
+		'help',		-- label
+		'Help',		-- name
+		'/intranet/help/',	-- url
 		990,			-- sort_order
 		v_main_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_help_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_help_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_help_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_help_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_help_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_help_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_help_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_help_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_help_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_help_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_help_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_help_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_help_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_help_menu, v_freelancers, 'read');
 
 
 	-- -----------------------------------------------------
@@ -549,109 +608,109 @@ begin
 
 	v_user_employees_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''users_employees'',	-- label
-		''Employees'',		-- name
-		''/intranet/users/index?user_group_name=Employees'',	-- url
+		'intranet-core',	-- package_name
+		'users_employees',	-- label
+		'Employees',		-- name
+		'/intranet/users/index?user_group_name=Employees',	-- url
 		1,			-- sort_order
 		v_user_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_employees, ''read'');
+	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_user_employees_menu, v_employees, 'read');
 
 
 	v_user_companies_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''users_customers'',	-- label
-		''Customers'',		-- name
-		''/intranet/users/index?user_group_name=Customers'',	-- url
+		'intranet-core',	-- package_name
+		'users_customers',	-- label
+		'Customers',		-- name
+		'/intranet/users/index?user_group_name=Customers',	-- url
 		2,			-- sort_order
 		v_user_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_user_companies_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_companies_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_companies_menu, v_accounting, ''read'');
+	PERFORM acs_permission__grant_permission(v_user_companies_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_user_companies_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_companies_menu, v_accounting, 'read');
 
 
 	v_user_freelancers_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''users_freelancers'',	-- label
-		''Freelancers'',	-- name
-		''/intranet/users/index?user_group_name=Freelancers'',   -- url
+		'intranet-core',	-- package_name
+		'users_freelancers',	-- label
+		'Freelancers',	-- name
+		'/intranet/users/index?user_group_name=Freelancers',   -- url
 		3,			-- sort_order
 		v_user_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
 
-	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_employees, ''read'');
+	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_user_freelancers_menu, v_employees, 'read');
 
 	v_user_all_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''users_unassigned'',   -- label
-		''Unassigned'',		-- name
-		''/intranet/users/index?user_group_name=Unregistered&view_name=user_community&order_by=Creation'',   -- url
+		'intranet-core',	-- package_name
+		'users_unassigned',   -- label
+		'Unassigned',		-- name
+		'/intranet/users/index?user_group_name=Unregistered&view_name=user_community&order_by=Creation',   -- url
 		4,			-- sort_order
 		v_user_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_user_all_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_all_menu, v_senman, ''read'');
+	PERFORM acs_permission__grant_permission(v_user_all_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_user_all_menu, v_senman, 'read');
 
 	v_user_all_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''users_all'',		-- label
-		''All Users'',		-- name
-		''/intranet/users/index?user_group_name=All'',   -- url
+		'intranet-core',	-- package_name
+		'users_all',		-- label
+		'All Users',		-- name
+		'/intranet/users/index?user_group_name=All',   -- url
 		5,			-- sort_order
 		v_user_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_user_all_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_all_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_user_all_menu, v_accounting, ''read'');
+	PERFORM acs_permission__grant_permission(v_user_all_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_user_all_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_user_all_menu, v_accounting, 'read');
 
 	-- -----------------------------------------------------
 	-- Administration Submenu
@@ -659,112 +718,113 @@ begin
 
 	v_admin_home_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''admin_home'',		-- label
-		''Admin Home'',		-- name
-		''/intranet/admin/'',   -- url
+		'intranet-core',	-- package_name
+		'admin_home',		-- label
+		'Admin Home',		-- name
+		'/intranet/admin/',   -- url
 		10,			-- sort_order
 		v_admin_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_admin_home_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_admin_home_menu, v_admins, 'read');
 
 
 	v_admin_profiles_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''admin_profiles'',	-- label
-		''Profiles'',		-- name
-		''/intranet/admin/profiles/'',   -- url
+		'intranet-core',	-- package_name
+		'admin_profiles',	-- label
+		'Profiles',		-- name
+		'/intranet/admin/profiles/',   -- url
 		15,			-- sort_order
 		v_admin_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
-	PERFORM acs_permission__grant_permission(v_admin_profiles_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_admin_profiles_menu, v_admins, 'read');
 
 
 	v_admin_menus_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''admin_menus'',	-- label
-		''Menus'',		-- name
-		''/intranet/admin/menus/'',   -- url
+		'intranet-core',	-- package_name
+		'admin_menus',	-- label
+		'Menus',		-- name
+		'/intranet/admin/menus/',   -- url
 		20,			-- sort_order
 		v_admin_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
-	PERFORM acs_permission__grant_permission(v_admin_profiles_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_admin_profiles_menu, v_admins, 'read');
 
 
 	v_admin_matrix_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''admin_usermatrix'',   -- label
-		''User Matrix'',	-- name
-		''/intranet/admin/user_matrix/'',   -- url
+		'intranet-core',	-- package_name
+		'admin_usermatrix',   -- label
+		'User Matrix',	-- name
+		'/intranet/admin/user_matrix/',   -- url
 		30,			-- sort_order
 		v_admin_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
-	PERFORM acs_permission__grant_permission(v_admin_matrix_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_admin_matrix_menu, v_admins, 'read');
 
 	v_admin_parameters_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''admin_parameters'',   -- label
-		''Parameters'',		-- name
-		''/intranet/admin/parameters/'',   -- url
+		'intranet-core',	-- package_name
+		'admin_parameters',   -- label
+		'Parameters',		-- name
+		'/intranet/admin/parameters/',   -- url
 		39,			-- sort_order
 		v_admin_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
-	PERFORM acs_permission__grant_permission(v_admin_parameters_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_admin_parameters_menu, v_admins, 'read');
 
 	v_admin_categories_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''admin_categories'',   -- label
-		''Categories'',		-- name
-		''/intranet/admin/categories/'',   -- url
+		'intranet-core',	-- package_name
+		'admin_categories',   -- label
+		'Categories',		-- name
+		'/intranet/admin/categories/',   -- url
 		50,			-- sort_order
 		v_admin_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
-	PERFORM acs_permission__grant_permission(v_admin_categories_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_admin_categories_menu, v_admins, 'read');
   
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -773,9 +833,11 @@ drop function inline_0 ();
 -- Project Menu
 -- -----------------------------------------------------
 
-create or replace function inline_1 ()
-returns integer as '
-declare
+
+CREATE OR REPLACE FUNCTION inline_1(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_project_menu		integer;
@@ -790,39 +852,39 @@ declare
 	v_freelancers		integer;
 	v_proman		integer;
 	v_admins		integer;
-begin
+BEGIN
 
-	select group_id into v_admins from groups where group_name = ''P/O Admins'';
-	select group_id into v_senman from groups where group_name = ''Senior Managers'';
-	select group_id into v_proman from groups where group_name = ''Project Managers'';
-	select group_id into v_accounting from groups where group_name = ''Accounting'';
-	select group_id into v_employees from groups where group_name = ''Employees'';
-	select group_id into v_customers from groups where group_name = ''Customers'';
-	select group_id into v_freelancers from groups where group_name = ''Freelancers'';
+	select group_id into v_admins from groups where group_name = 'P/O Admins';
+	select group_id into v_senman from groups where group_name = 'Senior Managers';
+	select group_id into v_proman from groups where group_name = 'Project Managers';
+	select group_id into v_accounting from groups where group_name = 'Accounting';
+	select group_id into v_employees from groups where group_name = 'Employees';
+	select group_id into v_customers from groups where group_name = 'Customers';
+	select group_id into v_freelancers from groups where group_name = 'Freelancers';
 
 	select menu_id
 	into v_main_menu
 	from im_menus
-	where label=''main'';
+	where label='main';
 
 	select menu_id
 	into v_top_menu
 	from im_menus
-	where label=''top'';
+	where label='top';
 
-	-- The Project menu: It''s not displayed itself
+	-- The Project menu: It's not displayed itself
 	-- but serves as the starting point for submenus
 		v_project_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''project'',		-- label
-		''Project'',		-- name
-		''/intranet/projects/view'',  -- url
+		'intranet-core',	-- package_name
+		'project',		-- label
+		'Project',		-- name
+		'/intranet/projects/view',  -- url
 		10,			-- sort_order
 		v_top_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
@@ -830,54 +892,55 @@ begin
 
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''project_standard'',   -- label
-		''Summary'',		-- name
-		''/intranet/projects/view?view_name=standard'',  -- url
+		'intranet-core',	-- package_name
+		'project_standard',   -- label
+		'Summary',		-- name
+		'/intranet/projects/view?view_name=standard',  -- url
 		10,			-- sort_order
 		v_project_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, 'read');
 
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''project_files'',	-- label
-		''Files'',		-- name
-		''/intranet/projects/view?view_name=files'',  -- url
+		'intranet-core',	-- package_name
+		'project_files',	-- label
+		'Files',		-- name
+		'/intranet/projects/view?view_name=files',  -- url
 		20,			-- sort_order
 		v_project_menu,		-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, 'read');
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 select inline_1 ();
 
@@ -890,9 +953,11 @@ drop function inline_1();
 -- Companies Menu
 -- -----------------------------------------------------
 
-create or replace function inline_1 ()
-returns integer as '
-declare
+
+
+CREATE OR REPLACE FUNCTION inline_1(
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_companies_menu	integer;
@@ -905,102 +970,103 @@ declare
 	v_freelancers		integer;
 	v_proman		integer;
 	v_admins		integer;
-begin
+BEGIN
 
-	select group_id into v_admins from groups where group_name = ''P/O Admins'';
-	select group_id into v_senman from groups where group_name = ''Senior Managers'';
-	select group_id into v_proman from groups where group_name = ''Project Managers'';
-	select group_id into v_accounting from groups where group_name = ''Accounting'';
-	select group_id into v_employees from groups where group_name = ''Employees'';
-	select group_id into v_customers from groups where group_name = ''Customers'';
-	select group_id into v_freelancers from groups where group_name = ''Freelancers'';
+	select group_id into v_admins from groups where group_name = 'P/O Admins';
+	select group_id into v_senman from groups where group_name = 'Senior Managers';
+	select group_id into v_proman from groups where group_name = 'Project Managers';
+	select group_id into v_accounting from groups where group_name = 'Accounting';
+	select group_id into v_employees from groups where group_name = 'Employees';
+	select group_id into v_customers from groups where group_name = 'Customers';
+	select group_id into v_freelancers from groups where group_name = 'Freelancers';
 
-	select menu_id into v_companies_menu from im_menus where label=''companies'';
+	select menu_id into v_companies_menu from im_menus where label='companies';
 
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''customers_potential'', -- label
-		''Potential Customers'', -- name
-		''/intranet/companies/index?status_id=41&type_id=57'',  -- url
+		'intranet-core',	-- package_name
+		'customers_potential', -- label
+		'Potential Customers', -- name
+		'/intranet/companies/index?status_id=41&type_id=57',  -- url
 		10,			-- sort_order
 		v_companies_menu,	-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
 
 -- Freelancers and Customers shouldnt see non-activ companies,
 -- neither suppliers nor customers, even if its their own
 -- companies.
 --
---	PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
---	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, ''read'');
+--	PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
+--	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, 'read');
 
 
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''customers_active'',   -- label
-		''Active Customers'',	-- name
-		''/intranet/companies/index?status_id=46&type_id=57'',  -- url
+		'intranet-core',	-- package_name
+		'customers_active',   -- label
+		'Active Customers',	-- name
+		'/intranet/companies/index?status_id=46&type_id=57',  -- url
 		20,			-- sort_order
 		v_companies_menu,	-- parent_menu_id
 		null			-- p_visible_tcl
 	);
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
 
 -- Customers & Freelancers see only active companies
---	PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
---	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, ''read'');
+--	PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
+--	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, 'read');
 
 
 
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''customers_inactive'',	-- label
-		''Inactive Customers'',	-- name
-		''/intranet/companies/index?status_id=48&type_id=57'',  -- url
+		'intranet-core',	-- package_name
+		'customers_inactive',	-- label
+		'Inactive Customers',	-- name
+		'/intranet/companies/index?status_id=48&type_id=57',  -- url
 		30,			-- sort_order
 		v_companies_menu,	-- parent_menu_id
 		null			-- p_visible_tcl
 	);
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
 
 -- Customers & Freelancers see only active companies
---  PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
---  PERFORM acs_permission__grant_permission(v_menu, v_freelancers, ''read'');
+--  PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
+--  PERFORM acs_permission__grant_permission(v_menu, v_freelancers, 'read');
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_1 ();
 drop function inline_1();
 
@@ -1013,9 +1079,15 @@ drop function inline_1();
 -- with more Admin Links
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
@@ -1024,28 +1096,29 @@ BEGIN
 	select menu_id
 	into v_main_menu
 	from im_menus
-	where label = ''companies'';
+	where label = 'companies';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Companies
 	v_admin_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''companies_admin'',	-- label
-		''Companies Admin'',	-- name
-		''/intranet-core/'',	-- url
+		'intranet-core',	-- package_name
+		'companies_admin',	-- label
+		'Companies Admin',	-- name
+		'/intranet-core/',	-- url
 		90,			-- sort_order
 		v_main_menu,		-- parent_menu_id
-		''0''			-- p_visible_tcl
+		'0'			-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 select inline_0 ();
 drop function inline_0 ();
@@ -1059,9 +1132,15 @@ drop function inline_0 ();
 -- with more Admin Links
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
@@ -1070,28 +1149,29 @@ BEGIN
 	select menu_id
 	into v_main_menu
 	from im_menus
-	where label = ''projects'';
+	where label = 'projects';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''projects_admin'',	-- label
-		''Projects Admin'',	-- name
-		''/intranet-core/'',	-- url
+		'intranet-core',	-- package_name
+		'projects_admin',	-- label
+		'Projects Admin',	-- name
+		'/intranet-core/',	-- url
 		90,			-- sort_order
 		v_main_menu,		-- parent_menu_id
-		''0''			-- p_visible_tcl
+		'0'			-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1128,37 +1208,44 @@ SELECT acs_permission__grant_permission(
 -- -------------------------------------------------------
 -- Setup an invisible Admin menu for TimesheetNewPage
 --
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''timesheet2_timesheet'';
+	from im_menus where label = 'timesheet2_timesheet';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''timesheet_hours_new_admin'',	-- label
-		''Timesheet Hours New Admin'',	-- name
-		''/intranet-timesheet2/hours/'',	-- url
+		'intranet-core',	-- package_name
+		'timesheet_hours_new_admin',	-- label
+		'Timesheet Hours New Admin',	-- name
+		'/intranet-timesheet2/hours/',	-- url
 		90,			-- sort_order
 		v_main_menu,		-- parent_menu_id
-		''0''			-- p_visible_tcl
+		'0'			-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 select inline_0 ();
 drop function inline_0 ();
@@ -1168,9 +1255,9 @@ drop function inline_0 ();
 -- Projects Menu (project index page)
 -- -----------------------------------------------------
 
-create or replace function inline_1 ()
-returns integer as '
-declare
+CREATE OR REPLACE FUNCTION inline_1(
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_projects_menu		integer;
@@ -1183,20 +1270,20 @@ declare
 	v_freelancers		integer;
 	v_proman		integer;
 	v_admins		integer;
-begin
+BEGIN
 
-	select group_id into v_admins from groups where group_name = ''P/O Admins'';
-	select group_id into v_senman from groups where group_name = ''Senior Managers'';
-	select group_id into v_proman from groups where group_name = ''Project Managers'';
-	select group_id into v_accounting from groups where group_name = ''Accounting'';
-	select group_id into v_employees from groups where group_name = ''Employees'';
-	select group_id into v_customers from groups where group_name = ''Customers'';
-	select group_id into v_freelancers from groups where group_name = ''Freelancers'';
+	select group_id into v_admins from groups where group_name = 'P/O Admins';
+	select group_id into v_senman from groups where group_name = 'Senior Managers';
+	select group_id into v_proman from groups where group_name = 'Project Managers';
+	select group_id into v_accounting from groups where group_name = 'Accounting';
+	select group_id into v_employees from groups where group_name = 'Employees';
+	select group_id into v_customers from groups where group_name = 'Customers';
+	select group_id into v_freelancers from groups where group_name = 'Freelancers';
 
 	select menu_id
 	into v_projects_menu
 	from im_menus
-	where label=''projects'';
+	where label='projects';
 
 	-- needs to be the first Project menu in order to get selected
 	-- The URL should be /intranet/projects/index?view_name=project_list,
@@ -1204,78 +1291,79 @@ begin
 	-- skip this here.
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''projects_potential'',	-- label
-		''Potential'',		-- name
-		''/intranet/projects/index?project_status_id=71'', -- url
+		'intranet-core',	-- package_name
+		'projects_potential',	-- label
+		'Potential',		-- name
+		'/intranet/projects/index?project_status_id=71', -- url
 		10,			-- sort_order
 		v_projects_menu,	-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_freelancers, 'read');
 
 
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''projects_open'',	-- label
-		''Open'',		-- name
-		''/intranet/projects/index?project_status_id=76'', -- url
+		'intranet-core',	-- package_name
+		'projects_open',	-- label
+		'Open',		-- name
+		'/intranet/projects/index?project_status_id=76', -- url
 		20,			-- sort_order
 		v_projects_menu,	-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
 
 
 	v_menu := im_menu__new (
 		null,			-- p_menu_id
-		''im_menu'',		-- object_type
+		'im_menu',		-- object_type
 		now(),			-- creation_date
 		null,			-- creation_user
 		null,			-- creation_ip
 		null,			-- context_id
-		''intranet-core'',	-- package_name
-		''projects_closed'',	-- label
-		''Closed'',		-- name
-		''/intranet/projects/index?project_status_id=81'', -- url
+		'intranet-core',	-- package_name
+		'projects_closed',	-- label
+		'Closed',		-- name
+		'/intranet/projects/index?project_status_id=81', -- url
 		30,			-- sort_order
 		v_projects_menu,	-- parent_menu_id
 		null			-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_senman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_proman, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_accounting, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_employees, ''read'');
-	PERFORM acs_permission__grant_permission(v_menu, v_customers, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_senman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_proman, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_accounting, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_employees, 'read');
+	PERFORM acs_permission__grant_permission(v_menu, v_customers, 'read');
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_1 ();
 drop function inline_1();
 
@@ -1285,38 +1373,39 @@ drop function inline_1();
 -- User Exits Menu (Admin Page)
 -- -----------------------------------------------------
 
-create or replace function inline_1 ()
-returns integer as '
-declare
+CREATE OR REPLACE FUNCTION inline_1(
+) RETURNS integer AS $$
+DECLARE
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_admins		integer;
-begin
-	select group_id into v_admins from groups where group_name = ''P/O Admins'';
+BEGIN
+	select group_id into v_admins from groups where group_name = 'P/O Admins';
 
 	select menu_id into v_admin_menu
 	from im_menus
-	where label=''admin'';
+	where label='admin';
 
 	v_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_user_exits'',		-- label
-		''User Exits'',			-- name
-		''/intranet/admin/user_exits'', -- url
+		'intranet-core',		-- package_name
+		'admin_user_exits',		-- label
+		'User Exits',			-- name
+		'/intranet/admin/user_exits', -- url
 		110,				-- sort_order
 		v_admin_menu,			-- parent_menu_id
 		null				-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_1 ();
 drop function inline_1();
 
@@ -1326,37 +1415,44 @@ drop function inline_1();
 -- 
 -- -----------------------------------------------------
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_components'',		-- label
-		''Portlet Components'',		-- name
-		''/intranet/admin/components/'', -- url
+		'intranet-core',		-- package_name
+		'admin_components',		-- label
+		'Portlet Components',		-- name
+		'/intranet/admin/components/', -- url
 		90,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''0''				-- p_visible_tcl
+		'0'				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1365,37 +1461,44 @@ drop function inline_0 ();
 -- Setup "DynView" menu 
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_dynview'',		-- label
-		''DynView'',			-- name
-		''/intranet/admin/views/'',	-- url
+		'intranet-core',		-- package_name
+		'admin_dynview',		-- label
+		'DynView',			-- name
+		'/intranet/admin/views/',	-- url
 		751,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''0''				-- p_visible_tcl
+		'0'				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1405,37 +1508,44 @@ drop function inline_0 ();
 -- Setup "backup" menu 
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_backup'',		-- label
-		''Backup'',			-- name
-		''/intranet/admin/backup/'',	-- url
+		'intranet-core',		-- package_name
+		'admin_backup',		-- label
+		'Backup',			-- name
+		'/intranet/admin/backup/',	-- url
 		11,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''0''				-- p_visible_tcl
+		'0'				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1445,40 +1555,47 @@ drop function inline_0 ();
 -- Setup "templates" menu 
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_templates'',		-- label
-		''Templates'',			-- name
-		''/intranet/admin/templates/'',	-- url
+		'intranet-core',		-- package_name
+		'admin_templates',		-- label
+		'Templates',			-- name
+		'/intranet/admin/templates/',	-- url
 		2601,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''0''				-- p_visible_tcl
+		'0'				-- p_visible_tcl
 	);
 
-	update im_menus set menu_gif_small = ''arrow_right''
+	update im_menus set menu_gif_small = 'arrow_right'
 	where menu_id = v_admin_menu;
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1488,37 +1605,44 @@ drop function inline_0 ();
 -- Setup "Packages" menu 
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_packages'',		-- label
-		''Package Manager'',		-- name
-		''/acs-admin/apm/'',		-- url
+		'intranet-core',		-- package_name
+		'admin_packages',		-- label
+		'Package Manager',		-- name
+		'/acs-admin/apm/',		-- url
 		190,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''0''				-- p_visible_tcl
+		'0'				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1528,37 +1652,38 @@ drop function inline_0 ();
 -- Setup "Workflow" menu 
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+CREATE OR REPLACE FUNCTION inline_0(
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-workflow'',		-- package_name
-		''admin_workflow'',		-- label
-		''Workflow'',			-- name
-		''/acs-workflow/admin/'',	-- url
+		'intranet-workflow',		-- package_name
+		'admin_workflow',		-- label
+		'Workflow',			-- name
+		'/acs-workflow/admin/',	-- url
 		1090,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''0''				-- p_visible_tcl
+		'0'				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1568,15 +1693,27 @@ drop function inline_0 ();
 -- is already mounted at /acs-workflow/ (instead of
 -- (/workflow/ for older installations)
 --
-update im_menus set
-        url = '/'
-              || (
-                select name
-                from site_nodes
-                where object_id in (select package_id from apm_packages where package_key = 'acs-workflow'))
-              || '/admin/'
-where
-        label = 'admin_workflow';
+
+CREATE OR REPLACE FUNCTION inline_0(
+) RETURNS integer AS $$
+DECLARE
+	v_name			text;
+BEGIN
+	select name from site_nodes into v_name
+        where object_id in (select package_id from apm_packages where package_key = 'acs-workflow');
+
+	if found then
+	   update im_menus set url = '/' || v_name || '/admin/' 
+	   where  label = 'admin_workflow';
+        end if;
+
+	return 0;
+END;
+$$ LANGUAGE plpgsql;
+
+select inline_0 ();
+drop function inline_0 ();
+
 
 
 
@@ -1585,37 +1722,39 @@ where
 -- Setup "Flush Permission Cash" menu 
 --
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_flush'',		-- label
-		''Cache Flush'',		-- name
-		''/intranet/admin/flush_cache'',	-- url
+		'intranet-core',		-- package_name
+		'admin_flush',		-- label
+		'Cache Flush',		-- name
+		'/intranet/admin/flush_cache',	-- url
 		11,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''0''				-- p_visible_tcl
+		'0'				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1623,35 +1762,42 @@ drop function inline_0 ();
 -- -------------------------------------------------------
 -- API-Doc
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_api_doc'',		-- label
-		''API Doc'',			-- name
-		''/api-doc/'',			-- url
+		'intranet-core',		-- package_name
+		'admin_api_doc',		-- label
+		'API Doc',			-- name
+		'/api-doc/',			-- url
 		10,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1660,286 +1806,342 @@ drop function inline_0 ();
 -- -------------------------------------------------------
 -- API-Doc
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_developer'',		-- label
-		''Developer Home'',		-- name
-		''/acs-admin/developer'',	-- url
+		'intranet-core',		-- package_name
+		'admin_developer',		-- label
+		'Developer Home',		-- name
+		'/acs-admin/developer',	-- url
 		20,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_l10n'',		-- label
-		''Localization Home'',		-- name
-		''/acs-lang/admin/'',		-- url
+		'intranet-core',		-- package_name
+		'admin_l10n',		-- label
+		'Localization Home',		-- name
+		'/acs-lang/admin/',		-- url
 		20,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_package_manager'',	-- label
-		''Package Manager'',		-- name
-		''/acs-admin/apm/'',		-- url
+		'intranet-core',		-- package_name
+		'admin_package_manager',	-- label
+		'Package Manager',		-- name
+		'/acs-admin/apm/',		-- url
 		30,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_sitemap'',		-- label
-		''Sitemap'',			-- name
-		''/admin/site-map/'',			-- url
+		'intranet-core',		-- package_name
+		'admin_sitemap',		-- label
+		'Sitemap',			-- name
+		'/admin/site-map/',			-- url
 		40,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_ds'',			-- label
-		''SQL Profiling'',		-- name
-		''/ds/'',			-- url
+		'intranet-core',		-- package_name
+		'admin_ds',			-- label
+		'SQL Profiling',		-- name
+		'/ds/',			-- url
 		50,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_shell'',		-- label
-		''Interactive Shell'',		-- name
-		''/ds/shell'',			-- url
+		'intranet-core',		-- package_name
+		'admin_shell',		-- label
+		'Interactive Shell',		-- name
+		'/ds/shell',			-- url
 		55,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_cache'',		-- label
-		''Cache Status'',		-- name
-		''/acs-admin/cache/'',		-- url
+		'intranet-core',		-- package_name
+		'admin_cache',		-- label
+		'Cache Status',		-- name
+		'/acs-admin/cache/',		-- url
 		60,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
 	-- Menu IDs
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_main_menu		integer;
 BEGIN
 	select menu_id into v_main_menu
-	from im_menus where label = ''admin'';
+	from im_menus where label = 'admin';
 
 	-- Main admin menu - just an invisible top-menu
 	-- for all admin entries links under Projects
 	v_admin_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_auth'',			-- label
-		''LDAP'',			-- name
-		''/acs-admin/auth/'',		-- url
+		'intranet-core',		-- package_name
+		'admin_auth',			-- label
+		'LDAP',			-- name
+		'/acs-admin/auth/',		-- url
 		80,				-- sort_order
 		v_main_menu,			-- parent_menu_id
-		''''				-- p_visible_tcl
+		''				-- p_visible_tcl
 	);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
@@ -1969,38 +2171,39 @@ select im_menu__new (
 -- Auth Authorities
 -- -----------------------------------------------------
 
-create or replace function inline_1 ()
-returns integer as '
-declare
+CREATE OR REPLACE FUNCTION inline_1(
+) RETURNS integer AS $$
+DECLARE
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_admins		integer;
-begin
-	select group_id into v_admins from groups where group_name = ''P/O Admins'';
+BEGIN
+	select group_id into v_admins from groups where group_name = 'P/O Admins';
 
 	select menu_id into v_admin_menu
 	from im_menus
-	where label=''admin'';
+	where label='admin';
 
 	v_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_auth_authorities'',	-- label
-		''Auth Authorities'',		-- name
-		''/acs-admin/auth/index'',	-- url
+		'intranet-core',		-- package_name
+		'admin_auth_authorities',	-- label
+		'Auth Authorities',		-- name
+		'/acs-admin/auth/index',	-- url
 		120,				-- sort_order
 		v_admin_menu,			-- parent_menu_id
 		null				-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_1 ();
 drop function inline_1();
 
@@ -2009,37 +2212,38 @@ drop function inline_1();
 -- Consistency Checks
 -- -----------------------------------------------------
 
-create or replace function inline_1 ()
-returns integer as '
-declare
+CREATE OR REPLACE FUNCTION inline_1(
+) RETURNS integer AS $$
+DECLARE
 	v_menu			integer;
 	v_admin_menu		integer;
 	v_admins		integer;
-begin
-	select group_id into v_admins from groups where group_name = ''P/O Admins'';
+BEGIN
+	select group_id into v_admins from groups where group_name = 'P/O Admins';
 
 	select menu_id into v_admin_menu
-	from im_menus where label=''admin'';
+	from im_menus where label='admin';
 
 	v_menu := im_menu__new (
 		null,				-- p_menu_id
-		''im_menu'',			-- object_type
+		'im_menu',			-- object_type
 		now(),				-- creation_date
 		null,				-- creation_user
 		null,				-- creation_ip
 		null,				-- context_id
-		''intranet-core'',		-- package_name
-		''admin_consistency_check'',	-- label
-		''Consistency Checks'',		-- name
-		''/acs-admin/auth/index'',	-- url
+		'intranet-core',		-- package_name
+		'admin_consistency_check',	-- label
+		'Consistency Checks',		-- name
+		'/acs-admin/auth/index',	-- url
 		650,				-- sort_order
 		v_admin_menu,			-- parent_menu_id
 		null				-- p_visible_tcl
 	);
 
-	PERFORM acs_permission__grant_permission(v_menu, v_admins, ''read'');
+	PERFORM acs_permission__grant_permission(v_menu, v_admins, 'read');
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_1 ();
 drop function inline_1();
 

@@ -35,14 +35,23 @@ where parameter_id in (
 
 -----------------------------------------------------
 
-create or replace function acs_privilege__create_privilege (varchar,varchar,varchar)
-returns integer as '
-declare
-	create_privilege__privilege             alias for $1;  
-	create_privilege__pretty_name           alias for $2;  -- default null  
-	create_privilege__pretty_plural         alias for $3;  -- default null
+
+
+-- added
+select define_function_args('acs_privilege__create_privilege','privilege,pretty_name;null,pretty_plural;null');
+
+--
+-- procedure acs_privilege__create_privilege/3
+--
+CREATE OR REPLACE FUNCTION acs_privilege__create_privilege(
+   create_privilege__privilege varchar,
+   create_privilege__pretty_name varchar,  -- default null
+   create_privilege__pretty_plural varchar -- default null
+
+) RETURNS integer AS $$
+DECLARE
 	v_count					integer;
-begin
+BEGIN
 	select count(*) into v_count from acs_privileges
 	where privilege = create_privilege__privilege;
 	IF v_count > 0 THEN return 0; END IF;
@@ -56,14 +65,23 @@ begin
 	);
 
     return 0; 
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
-create or replace function acs_privilege__add_child (varchar,varchar)
-returns integer as '
-declare
-	add_child__privilege		alias for $1;
-	add_child__child_privilege	alias for $2;
+
+
+-- added
+select define_function_args('acs_privilege__add_child','privilege,child_privilege');
+
+--
+-- procedure acs_privilege__add_child/2
+--
+CREATE OR REPLACE FUNCTION acs_privilege__add_child(
+   add_child__privilege varchar,
+   add_child__child_privilege varchar
+) RETURNS integer AS $$
+DECLARE
 	v_count				integer;
 BEGIN
 	SELECT count(*) into v_count from acs_privilege_hierarchy
@@ -74,19 +92,19 @@ BEGIN
 	values (add_child__privilege, add_child__child_privilege);
 
 	return 0; 
-END;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 
-CREATE OR REPLACE FUNCTION ad_group_member_p(integer, integer)
-RETURNS character AS '
-DECLARE
+create or replace function ad_group_member_p(integer, integer) returns character AS '
+declare
 	p_user_id		alias for $1;
 	p_group_id		alias for $2;
 
 	ad_group_member_count	integer;
-BEGIN
+begin
 	select count(*)	into ad_group_member_count
 	from	acs_rels r,
 		membership_rels mr
@@ -94,47 +112,61 @@ BEGIN
 		r.rel_id = mr.rel_id
 		and object_id_one = p_group_id
 		and object_id_two = p_user_id
-		and mr.member_state = ''approved''
+		and mr.member_state = 'approved'
 	;
 
 	if ad_group_member_count = 0 then
-		return ''f'';
+		return 'f';
 	else
-		return ''t'';
+		return 't';
 	end if;
-END;' LANGUAGE 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 
 
 
 -------------------------------------------------------------
 -- Portrait Fields
 --
-create or replace function inline_0 ()
-returns integer as '
-declare
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
+DECLARE
         v_count                 integer;
-begin
+BEGIN
         select  count(*) into v_count from user_tab_columns
-        where   lower(table_name) = ''persons'' and lower(column_name) = ''portrait_checkdate'';
+        where   lower(table_name) = 'persons' and lower(column_name) = 'portrait_checkdate';
         if v_count = 1 then return 0; end if;
 
 	alter table persons add portrait_checkdate date;
 	alter table persons add portrait_file varchar(400);
 
         return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 
 
 -- Extend the OpenACS type system 
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
         v_count                 integer;
 BEGIN
 	select count(*) into v_count from user_tab_columns
-	where lower(table_name) = ''acs_object_types'' and lower(column_name) = ''status_column'';
+	where lower(table_name) = 'acs_object_types' and lower(column_name) = 'status_column';
 	IF v_count > 0 THEN return 0; END IF;
 
 	alter table acs_object_types
@@ -147,26 +179,34 @@ BEGIN
 	add status_type_table character varying(30);
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0();
 drop function inline_0();
 
 
 
 -- Add a "skin" field to users table
-create or replace function inline_0 ()
-returns integer as '
+
+
+--
+-- procedure inline_0/0
+--
+CREATE OR REPLACE FUNCTION inline_0(
+
+) RETURNS integer AS $$
 DECLARE
         v_count                 integer;
 BEGIN
 	select count(*) into v_count from user_tab_columns
-	where	lower(table_name) = ''users'' and lower(column_name) = ''skin'';
+	where	lower(table_name) = 'users' and lower(column_name) = 'skin';
 	IF v_count > 0 THEN return 0; END IF;
 
 	alter table users add skin int not null default 0;
 
 	return 0;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0();
 drop function inline_0();
 

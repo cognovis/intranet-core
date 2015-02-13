@@ -16,19 +16,20 @@ create table project_approval_wf_cases (
 /* 
  * Declare the object type
  */
-create function inline_0 () returns integer as '
-begin
+CREATE OR REPLACE FUNCTION inline_0 () RETURNS integer AS $$
+BEGIN
 	PERFORM workflow__create_workflow (
-		''project_approval_wf'', 
-		''Project Approval'', 
-		''Project Approval'', 
-		'''', 
-		''project_approval_wf_cases'',
-		''case_id''
+		'project_approval_wf', 
+		'Project Approval', 
+		'Project Approval', 
+		'', 
+		'project_approval_wf_cases',
+		'case_id'
 	);
 
 	return null;
-end;' language 'plpgsql';
+END;
+$$ LANGUAGE plpgsql;
 select inline_0 ();
 drop function inline_0 ();
 

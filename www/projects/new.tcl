@@ -28,7 +28,7 @@ ad_page_contract {
     { parent_id:integer "" }
     { company_id:integer "" }
     { project_type_id:integer "" }
-    { project_status_id:integer "" }
+    { project_status_id:integer,optional }
     { project_name "" }
     project_nr:optional
     { workflow_key "" }
@@ -169,8 +169,14 @@ if {[info exists project_id]} {
     set callback_project_id ""
 }
 
+if {[info exists project_status_id]} {
+    set callback_project_status_id $project_status_id
+} else {
+    set callback_project_status_id ""
+}
+
 callback im_project_new_redirect -object_id $callback_project_id \
-    -status_id $project_status_id -type_id $project_type_id \
+    -status_id $callback_project_status_id -type_id $project_type_id \
     -project_id $callback_project_id -parent_id $parent_id \
     -company_id $company_id -project_type_id $project_type_id \
     -project_name $project_name -project_nr [im_opt_val project_nr] \
@@ -319,8 +325,10 @@ ad_form -extend -name $form_id -new_request {
     }
 	
     if {$percent_completed > 100 || $percent_completed < 0} {
-        template::element::set_error $form_id percent_completed "Number must be in range (0 .. 100)"
-        incr n_error
+	if {$percent_completed eq ""} {set percent_completed 0} else {
+	    template::element::set_error $form_id percent_completed "Number must be in range (0 .. 100)"
+	    incr n_error
+	}
     }
     
     if {[template::util::date::compare $end_date $start_date] == -1} {

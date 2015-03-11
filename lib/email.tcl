@@ -22,7 +22,7 @@ foreach required_param {} {
     }
 }
 
-foreach optional_param {return_url content export_vars file_ids object_id cc item_id cc_ids to to_addr party_ids} {
+foreach optional_param {return_url content export_vars file_ids object_id cc item_id cc_ids to to_addr party_ids from_addr} {
     if {![info exists $optional_param]} {
         set $optional_param {}
     }
@@ -61,8 +61,21 @@ set form_elements {
     return_url:text(hidden),optional
     no_callback_p:text(hidden)
     title:text(hidden),optional
+    party_ids:text(hidden),optional
     {message_type:text(hidden) {value "email"}}
     {-section "recipients" {legendtext "[_ acs-mail-lite.Recipients]"}}
+}
+
+if {$from_addr eq ""} {
+    set from [ad_conn user_id]
+    set from_addr [cc_email_from_party $from]
+}
+
+append form_elements {
+    {from_addr:text(inform)
+	{label "[_ acs-mail-lite.Sender]"}
+	{value $from_addr}
+    }
 }
 
 if {$recipients eq ""} {
@@ -84,6 +97,9 @@ if {$recipients eq ""} {
 	    {label "[_ acs-mail-lite.Recipients]:"} 
 	    {html {size 56}}
 	    {help_text "[_ acs-mail-lite.cc_help]"}
+	}
+	{recipients:text(hidden)
+	    {value $recipients}
 	}
     }
 }
@@ -177,16 +193,15 @@ ad_form -action $action \
     -edit_buttons $edit_buttons \
     -form $form_elements \
     -on_request {
-	set content_body [template::util::richtext::create $content_body "html"]
+	if {[info exists content_body]} {
+	    set content_body [template::util::richtext::create $content_body "html"]
+	}
     } -new_request {
     } -edit_request {
     } -on_submit {
         # List to store know wich emails recieved the message
         set recipients_addr [list]
-        
-        set from [ad_conn user_id]
-        set from_addr [cc_email_from_party $from]
-        
+                
         # Remove all spaces in cc
         regsub -all " " $cc_addr "" cc_addr
         

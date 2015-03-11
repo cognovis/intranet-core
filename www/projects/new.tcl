@@ -324,10 +324,12 @@ ad_form -extend -name $form_id -new_request {
         set project_nr [string tolower [string trim $project_nr]]
     }
 	
-    if {$percent_completed > 100 || $percent_completed < 0} {
-	if {$percent_completed eq ""} {set percent_completed 0} else {
-	    template::element::set_error $form_id percent_completed "Number must be in range (0 .. 100)"
-	    incr n_error
+    if {[info exists percent_completed]} {
+	if {$percent_completed > 100 || $percent_completed < 0} {
+	    if {$percent_completed eq ""} {set percent_completed 0} else {
+		template::element::set_error $form_id percent_completed "Number must be in range (0 .. 100)"
+		incr n_error
+	    }
 	}
     }
     

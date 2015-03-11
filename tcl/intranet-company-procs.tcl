@@ -86,6 +86,7 @@ namespace eval im_company {
 	{ -creation_ip "" }
 	{ -context_id "" }
 	{ -company_id "" }
+	-no_callback:boolean
     } {
 	Creates a new company including the companies "Main Office".
 	@author frank.bergmann@project-open.com
@@ -133,7 +134,9 @@ namespace eval im_company {
 	set company_id [db_exec_plsql create_new_company {}]
 
 	# Record the action
-        im_audit -object_type "im_company" -object_id $company_id -action after_create
+	if {0 == $no_callback_p} {
+	    im_audit -object_type "im_company" -object_id $company_id -action after_create
+	}
 
 	return $company_id
     }

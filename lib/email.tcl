@@ -98,6 +98,11 @@ if {$recipients eq ""} {
 	    {html {size 56}}
 	    {help_text "[_ acs-mail-lite.cc_help]"}
 	}
+	{individual_mails_p:boolean(checkbox),optional
+	    {label "[_ acs-mail-lite.individual_mails]"}
+	    {options {{{} t}}}
+	    {help_text {[_ acs-mail-lite.individual_mails_ht]}}
+	}
 	{recipients:text(hidden)
 	    {value $recipients}
 	}
@@ -243,20 +248,37 @@ ad_form -action $action \
             }
         }
 
-	
-        acs_mail_lite::send \
-	    -send_immediately \
-            -to_addr $to_addr \
-            -cc_addr $cc_addr \
-            -from_addr "$from_addr" \
-            -subject "$subject" \
-            -body "$content_body" \
-            -package_id $package_id \
-            -file_ids $file_ids \
-            -mime_type $mime_type \
-            -object_id $object_id  \
-	    -use_sender
-
+        if {$individual_mails_p eq "t"} {
+            foreach to $to_addr {
+                acs_mail_lite::send \
+                    -send_immediately \
+                    -to_addr $to \
+                    -cc_addr $cc_addr \
+                    -from_addr "$from_addr" \
+                    -subject "$subject" \
+                    -body "$content_body" \
+                    -package_id $package_id \
+                    -file_ids $file_ids \
+                    -mime_type $mime_type \
+                    -object_id $object_id  \
+                    -use_sender       
+            } 
+            
+        } else {
+            acs_mail_lite::send \
+	            -send_immediately \
+                -to_addr $to_addr \
+                -cc_addr $cc_addr \
+                -from_addr "$from_addr" \
+                -subject "$subject" \
+                -body "$content_body" \
+                -package_id $package_id \
+                -file_ids $file_ids \
+                -mime_type $mime_type \
+                -object_id $object_id  \
+	            -use_sender
+        }
+        
         util_user_message -html -message "[_ acs-mail-lite.Your_message_was_sent_to]"
         
     } -after_submit {

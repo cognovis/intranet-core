@@ -260,7 +260,7 @@
 
   - Projects:
 	- Please create a sample project for each of the types 
-	  "Consulting Project", "Release Item" and "Release Project".
+	  "Gantt Project", "Release Item" and "Release Project".
 	  These project types have certain componetns associated
 	  that are only shown with projects of that type.
 

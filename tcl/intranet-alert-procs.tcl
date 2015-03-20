@@ -65,7 +65,7 @@ ad_proc -public im_send_alert {target_id frequency subject {message ""} } {
 
     # Send out the mail
     if [catch {
-        ns_sendmail $email $sender_email $subject $message
+        acs_mail_lite::send -to_addr $email -from_addr $sender_email -subject $subject -body $message
     } errmsg] {
         ns_log Notice "im_send_alert: Error sending to \"$email\": $errmsg"
 
@@ -205,7 +205,7 @@ peer_ip: $peer_ip
 
     # Ignore errors sending out mails...
     catch { 
-	ns_sendmail $target_email $system_owner_email $subject $body 
+        acs_mail_lite::send -to_addr $target_email -from_addr $system_owner_email -subject $subject -body $body
     }
 
 
@@ -224,6 +224,6 @@ peer_ip: $peer_ip
 ad_proc -public im_send_alert_to_system_owner {subject message} {
     set system_owner_email [ad_parameter -package_id [im_package_forum_id] ReportThisErrorEmail]
     set current_user_id [ad_get_user_id]
-    ns_sendmail $system_owner_email $system_owner_email $subject $message
+    acs_mail_lite::send -to_addr $system_owner_email -from_addr $system_owner_email -subject $subject -body $message
 }
 

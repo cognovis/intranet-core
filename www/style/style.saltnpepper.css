@@ -435,13 +435,13 @@ developer-support-adp-box-off {
     background-color: #fff;
     background-position:0% -42px;
     height:auto;
-    /*float:none;position:static;z-index:0;display:inline;;*/
+    /*float:none;position:static;z-index:0;display:inline;*/
 }
 
 #navbar_main_v4 li.selected a span {
     color: #fff;					 
     background-position:100% -42px;
-    /*float:none;position:static;z-index:0;display:inline;;*/
+    /*float:none;position:static;z-index:0;display:inline;*/
 }	
 
 #navbar_main_v4 a {
@@ -703,13 +703,13 @@ developer-support-adp-box-off {
     background-position:0% -42px;
     height:auto;
     padding:0pt 0pt 0pt 3px;
-    /*float:none;position:static;z-index:0;display:inline;;*/
+    /*float:none;position:static;z-index:0;display:inline;*/
 }
 	
 #navbar_sub li.selected a span {
     color: #fff;					 
     background-position:100% -42px;
-    /*float:none;position:static;z-index:0;display:inline;;*/
+    /*float:none;position:static;z-index:0;display:inline;*/
 }
 			
 #navbar_sub a {
@@ -1406,8 +1406,8 @@ table.table_list_simple tr.rowtitle {
     h1 {font-family: verdana, arial, helvetica, sans-serif; font-weight: bold; font-Size: large;}
     h2 {font-family: verdana, arial, helvetica, sans-serif; font-weight: bold; font-Size: medium; margin-top: 15px;}
     h3 {font-family: verdana, arial, helvetica, sans-serif; font-weight: bold; font-Size: small;}
-    .tabsel {background-color: #336699; color: #ffffff;; font-weight: bold}
-    .tabnotsel {background-color: #BBCFE1; color: #000000;; font-weight: bold}
+    .tabsel {background-color: #336699; color: #ffffff; font-weight: bold}
+    .tabnotsel {background-color: #BBCFE1; color: #000000; font-weight: bold}
 
 
 .maintenancebar {
@@ -1433,7 +1433,7 @@ table.table_list_simple tr.rowtitle {
 
     .productrow1 {font-family: verdana, arial, helvetica, sans-serif; font-size: 8pt; background-color: #DDDDDD; background: #DDDDDD;}
     .productrow2 {font-family: verdana, arial, helvetica, sans-serif; font-size: 8pt; background-color: #EEEEEE; background: #EEEEEE;}
-    .header {font-family: verdana, arial, helvetica, sans-serif; font-Size: 9pt; font-weight: bold;; color: #336699}
+    .header {font-family: verdana, arial, helvetica, sans-serif; font-Size: 9pt; font-weight: bold; color: #336699}
 
     .titlerow  {font-family: verdana, arial, helvetica, sans-serif; font-Size: 10pt; background-color: #BBCFE1; background: #BBCFE1;}
     .list  {font-family: verdana, arial, helvetica, sans-serif; font-Size: 8pt;}

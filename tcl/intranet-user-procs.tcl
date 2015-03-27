@@ -1952,18 +1952,19 @@ ad_proc im_user_timesheet_absences_options {
     # Deal with project managers and display their projects in this list
 
     if {$project_id ne "-1"} {
-	db_foreach manager_of_project_ids "select distinct r.object_id_one, p.project_nr || ' - ' || p.project_name as project_name
-        from acs_rels r, im_biz_object_members bom, im_projects p
-        where r.object_id_two = :current_user_id
-        and r.rel_id = bom.rel_id
-        and p.project_id = r.object_id_one
-        and bom.object_role_id = [im_biz_object_role_project_manager]
-        and p.project_type_id not in (100,101)
-        union select project_id,project_name from im_projects where project_id=:project_id order by project_name" {
-        
-	    lappend user_selection_types $object_id_one
-	    lappend user_selection_types $project_name
-	}
+        	db_foreach manager_of_project_ids "select distinct r.object_id_one, p.project_nr || ' - ' || p.project_name as project_name
+                from acs_rels r, im_biz_object_members bom, im_projects p
+                where r.object_id_two = :current_user_id
+                and r.rel_id = bom.rel_id
+                and p.project_id = r.object_id_one
+                and bom.object_role_id = [im_biz_object_role_project_manager]
+                and p.project_type_id not in (100,101)
+                and p.project_status_id not in ([template::util::tcl_to_sql_list [im_sub_categories [im_project_status_closed]]])
+                union select project_id,project_name from im_projects where project_id=:project_id order by project_name" {
+                
+        	    lappend user_selection_types $object_id_one
+        	    lappend user_selection_types $project_name
+        	}
     }
 
     # All

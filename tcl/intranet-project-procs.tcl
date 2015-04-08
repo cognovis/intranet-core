@@ -774,42 +774,40 @@ ad_proc -public im_project_options {
 
 	    set dept_perm_sql ""
 	    if {[im_permission $current_user_id "view_projects_dept"]} {
-		set dept_perm_sql "
-		UNION
-		-- projects of the user department
-		select  p.*
-		from    im_projects p
-		where   p.project_cost_center_id in (select * from im_user_cost_centers(:user_id))
-	    "
+            set dept_perm_sql "
+        		UNION
+        		-- projects of the user department
+        		select  p.*
+        		  from  im_projects p
+        		where   p.project_cost_center_id in (select * from im_user_cost_centers(:user_id))
+        	    "
 	    }
 
 	    # Check permissions for showing subprojects
 	    set perm_sql "
-		(select p.*
-		from    im_projects p,
-			acs_rels r
-		where   r.object_id_one = p.project_id
-			and r.object_id_two = :current_user_id
-		$dept_perm_sql
+        		(select  p.*
+         	 from    im_projects p,
+			         acs_rels r
+		     where   r.object_id_one = p.project_id
+			   and   r.object_id_two = :current_user_id
+		     $dept_perm_sql
 		)
 	    "
 
 	    if {[im_permission $current_user_id "view_projects_all"]} {
-		set perm_sql "im_projects" 
+        		set perm_sql "im_projects" 
 	    }
 	}
 
 	set subprojects [db_list subprojects "
 		select	children.project_id
-		from	im_projects parent,
-			$perm_sql children
+		from	    im_projects parent,
+			    $perm_sql children
 		where
 			children.tree_sortkey 
 				between parent.tree_sortkey 
 				and tree_right(parent.tree_sortkey)
-			and children.project_type_id not in (
-				84, [im_project_type_task]
-			)
+			and children.project_type_id not in (84, [im_project_type_task])
 			and parent.project_id = :super_project_id
 
 			-- exclude the projects own subprojects
@@ -871,19 +869,20 @@ ad_proc -public im_project_options {
 	# No restriction on parent's project type!
     }
 
-    set pm_user_check_p 0
+    set pm_project_ids []
     if {0 != $pm_user_id && "" != $pm_user_id} {
-        set pm_user_check_p 1
-	    lappend p_criteria "p.project_id in (
+	    set pm_project_ids [db_list project_ids "
 					select	object_id_one
-					from	acs_rels r, im_biz_object_members bom
-					where	r.object_id_two = :pm_user_id
-                    and r.rel_id = bom.rel_id
-                    and bom.object_role_id = [im_biz_object_role_project_manager]
-                    )"        
+					from   	acs_rels r, im_biz_object_members bom
+					where   r.object_id_two = :pm_user_id
+                    and      r.rel_id = bom.rel_id
+                    and      bom.object_role_id = [im_biz_object_role_project_manager]"]
+                    
+        # The PM definitely has to be a member
+        set member_user_id $pm_user_id
     }
     
-    if {0 != $member_user_id && "" != $member_user_id && 0 == $pm_user_check_p} {
+    if {0 != $member_user_id && "" != $member_user_id} {
 	    lappend p_criteria "p.project_id in (
 					select	object_id_one
 					from	acs_rels
@@ -936,34 +935,34 @@ ad_proc -public im_project_options {
 		from
 			im_projects p,
 			im_projects main_p,
-			(	select	p.project_name,
-					p.project_id
-				from	im_projects p
-				where	1=1
-					$p_where_clause
-			    UNION
-				select	p.project_name,
-					p.project_id
-				from	im_projects p
+			(select  p.project_name,
+				     p.project_id
+			 from    im_projects p
+			 where   1=1
+			 $p_where_clause
+			 UNION
+				select  p.project_name,
+					    p.project_id
+				from	    im_projects p
 				where	p.project_id in ([join $subprojects ", "])
-			    UNION
+			 UNION
 				select	p.project_name,
-					p.project_id
-				from	im_projects p
+					    p.project_id
+				from	    im_projects p
 				where	p.project_id = :current_project_id
-			    UNION
+			 UNION
 				select	p.project_name,
-					p.project_id
-				from	im_projects p
+					    p.project_id
+				from	    im_projects p
 				where	p.project_id in ([join $include_project_ids ","])
-			) p_cond,
-			(	select	p.project_id
-				from	im_projects p
+			 ) p_cond,
+			 (select    p.project_id
+				from	    im_projects p
 				where	1=1
-					$p_where_clause
-			    UNION
+				$p_where_clause
+			  UNION
 				select	p.project_id
-				from	im_projects p
+				from	    im_projects p
 				where	p.project_id = :super_project_id
 			) main_p_cond
 		where
@@ -979,22 +978,27 @@ ad_proc -public im_project_options {
     "
 
     if {$no_conn_p} {
-	db_multirow -local -upvar_level 2 multirow project_options $sql
+        	db_multirow -local -upvar_level 2 multirow project_options $sql
     } else {
-	db_multirow multirow project_options $sql
+        db_multirow multirow project_options $sql
     }
 
     multirow_sort_tree -nosort multirow project_id parent_id sort_order
     set options [list]
 
     template::multirow foreach multirow {
-	set indent ""
-	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" }
-	lappend options [list "$indent$project_name_shortened" $project_id]
+        	set indent ""
+        	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" }
+        	if {[llength $pm_project_ids]>0 && [lsearch $pm_project_ids $project_id]<0} {
+            lappend options [list "${indent}($project_name_shortened)" ""]            	
+        	} else {
+    	        lappend options [list "${indent}$project_name_shortened" $project_id]
+        	}
+
     }
 
-    if {$include_empty} { set options [linsert $options 0 [list $include_empty_name ""]] }
-    return $options
+        if {$include_empty} { set options [linsert $options 0 [list $include_empty_name ""]] }
+        return $options
 }
 
 

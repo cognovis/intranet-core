@@ -988,7 +988,7 @@ ad_proc -public im_project_options {
 
     template::multirow foreach multirow {
         	set indent ""
-        	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" }
+        	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;" }
         	if {[llength $pm_project_ids]>0 && [lsearch $pm_project_ids $project_id]<0} {
             lappend options [list "${indent}($project_name_shortened)" ""]            	
         	} else {

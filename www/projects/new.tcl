@@ -425,6 +425,8 @@ ad_form -extend -name $form_id -new_request {
     }
 
     # Make sure company_project_nr has a max length 50
+
+    if {![exists_and_not_null company_project_nr]} {set company_project_nr ""}
     if { [string length $company_project_nr] > 50} {
         incr n_error
         template::element::set_error $form_id company_project_nr "[_ intranet-core.Max50Chars]"

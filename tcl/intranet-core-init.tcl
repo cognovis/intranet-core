@@ -56,6 +56,7 @@ set object_types {
     im_report
     im_risk
     im_rule
+    im_sencha_preference
     im_sla_parameter
     im_sql_selector
     im_ticket
@@ -174,7 +175,7 @@ foreach object_type $object_types {
 
 
     
-    ad_proc -public -callback ${object_type}_before_delete {
+    ad_proc -public -callback ${object_type}_before_nuke {
 	{-object_id:required}
 	{-status_id ""}
 	{-type_id ""}
@@ -198,7 +199,7 @@ foreach object_type $object_types {
     } -
     
     # Deprecated: After delete there is no object in the DB anymore!
-    ad_proc -public -callback ${object_type}_after_delete {
+    ad_proc -public -callback ${object_type}_after_nuke {
 	{-object_id:required}
 	{-status_id ""}
 	{-type_id ""}

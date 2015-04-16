@@ -22,6 +22,7 @@ ad_proc -public im_category_from_id {
     {-translate_p 1}
     {-package_key "intranet-core" }
     {-locale ""}
+    {-current_user_id 0}
     {-empty_default ""}
     category_id 
 } {
@@ -33,7 +34,7 @@ ad_proc -public im_category_from_id {
     set category_name [util_memoize [list db_string cat "select im_category_from_id($category_id)" -default {}]]
     set category_key [lang::util::suggest_key $category_name]
     if {$translate_p} {
-	if {"" == $locale} { set locale [lang::user::locale -user_id [ad_get_user_id]] }
+	if {"" == $locale} { set locale [lang::user::locale -user_id $current_user_id -package_id [im_package_core_id]] }
 	set category_name [lang::message::lookup $locale "$package_key.$category_key" $category_name]
     }
 
@@ -167,54 +168,37 @@ ad_proc im_category_select_helper {
 
     # Read the categories into the a hash cache
     # Initialize parent and level to "0"
+
     set category_list_sorted [list]
+    set visible_tcl ""
+    set visible_tcl_sql ""
 
     if {[im_column_exists im_categories visible_tcl]} {
-	set sql "
-        select
-                category_id,
-                category,
-                category_description,
-                parent_only_p,
-                enabled_p,
-                coalesce(sort_order,0) as sort_order,
-                visible_tcl
-        from
-                im_categories
-        where
-                category_type = :category_type
-		and (enabled_p = 't' OR enabled_p is NULL)
-		$super_category_sql
-        order by sort_order
-        "
-    } else {
-	set sql "
-        select
-                category_id,
-                category,
-                category_description,
-                parent_only_p,
-                enabled_p,
-                '' as visible_tcl
-        from
-                im_categories
-        where
-                category_type = :category_type
-		and (enabled_p = 't' OR enabled_p is NULL)
-		$super_category_sql
-        order by sort_order
-        "
+	set visible_tcl_sql ",visible_tcl"
     }
+	set sql "
+        select
+                category_id,
+                category,
+                category_description,
+                parent_only_p,
+                enabled_p,
+                coalesce(sort_order,0) as sort_order
+                $visible_tcl_sql
+        from
+                im_categories
+        where
+                category_type = :category_type
+		and (enabled_p = 't' OR enabled_p is NULL)
+		$super_category_sql
+        order by sort_order
+    "
     db_foreach category_select $sql {
-    	if {"" != $visible_tcl} {
-    	    set visible 0
-    	    set errmsg ""
-    	    catch {	set visible [expr $visible_tcl] }
-    	    if {!$visible} { continue }
-    	}
-        set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p $sort_order]
-        set level($category_id) 0
-        lappend category_list_sorted $category_id
+	ns_log Notice "im_category_select_helper: category=$category, visible_tcl=$visible_tcl"
+	if {"" == $visible_tcl || [eval $visible_tcl]} {
+	    set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p $sort_order]
+	    set level($category_id) 0
+	}
     }
 
     # Get the hierarchy into a hash cache
@@ -804,21 +788,6 @@ ad_proc -public im_sub_categories {
     returns a list of the transitive closure (all sub-
     categories) plus the original input categories.
 } {
-    return [util_memoize \
-        [list im_sub_categories_helper \
-	 -include_disabled_p $include_disabled_p \
-	     $category_list] 60]
-} 
-
-
-ad_proc -public im_sub_categories_helper {
-    {-include_disabled_p 0}
-    category_list
-} {
-    Takes a single category or a list of categories and
-    returns a list of the transitive closure (all sub-
-    categories) plus the original input categories.
-} {
     # Add a dummy value so that an empty input list doesn't
     # give a syntax error...
     lappend category_list 0
@@ -847,7 +816,7 @@ ad_proc -public im_sub_categories_helper {
 		$enabled_check
     "
 
-    set result [db_list category_trans_closure $closure_sql]
+    set result [util_memoize [list db_list category_trans_closure $closure_sql]]
 
     # Avoid SQL syntax error when the result is used in a where x in (...) clause
     if {"" == $result} { set result [list 0] }

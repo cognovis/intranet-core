@@ -167,7 +167,7 @@
 -- 83000-83999  Checklists (1000)
 -- 84000-84999  CRM (1000)
 -- 85000-85999  Rule Engine (1000)
--- 86000-86999  reserved (1000)
+-- 86000-86999  Sencha Preferences (1000)
 -- 87000-87999  reserved (1000)
 -- 88000-88999  reserved (1000)
 -- 89000-89999  reserved (1000)
@@ -372,7 +372,7 @@ update im_categories set enabled_p = 'f' where category_id in (101, 102, 103);
 
 -- 102 - 109 reserved for other Project subclasses
 SELECT im_category_new (2500, 'Translation Project', 'Intranet Project Type');
-SELECT im_category_new (2501, 'Consulting Project', 'Intranet Project Type');
+SELECT im_category_new (2501, 'Gantt Project', 'Intranet Project Type');
 -- 2502 reserved for "SLA"
 -- 2503 reserved
 SELECT im_category_new (2504, 'Milestone', 'Intranet Project Type');

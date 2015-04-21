@@ -124,8 +124,8 @@ SET
 	aux_int2 = :aux_int2,
 	aux_string1 = :aux_string1,
 	aux_string2 = :aux_string2,
-	category_description = :category_description,
-    visible_tcl = :visible_tcl
+	visible_tcl = :visible_tcl,
+	category_description = :category_description
 WHERE 
 	category_id = :category_id" 
 } errmsg ] {

@@ -126,6 +126,7 @@ ad_proc -public im_ds_comment_privilege {
     -user_id:required
     -privilege:required
     -result:required
+    {-object_id ""}
 } {
     Write out the results of a parameter call to OpenACS Developer Support
 } {
@@ -136,6 +137,10 @@ ad_proc -public im_ds_comment_privilege {
     im_ds_restart_with_new_request
 
     array set privilege_hash [nsv_array get privilege_hash]
+
+    if {$object_id ne ""} {
+        append privilege " (${object_id})"
+    }
     set key "$user_id-$privilege"
     set privilege_hash($key) $result
     nsv_array set privilege_hash [array get privilege_hash]

@@ -195,7 +195,9 @@ ad_proc -public im_object_permission {
 } {
     if {"" == $user_id} { set user_id [ad_get_user_id] }
     set read_p [util_memoize [list db_string operm "select im_object_permission_p($object_id, $user_id, '$privilege')"]]
-    return [string equal $read_p "t"]
+    set result [string equal $read_p "t"]
+    catch { im_ds_comment_privilege -user_id $user_id -privilege $privilege -object_id $object_id -result $result }
+    return $result
 }
 
 

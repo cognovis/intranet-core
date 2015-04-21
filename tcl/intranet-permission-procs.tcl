@@ -372,6 +372,7 @@ ad_proc -public im_menu_permission {
     if {"" == $menu_id} {
         return 0
     } else {
+        ds_comment "Menu Permission for $menu_label ($menu_id)"
         return [im_object_permission -object_id $menu_id -user_id $user_id -privilege "read"]
     }
 }

@@ -359,3 +359,20 @@ ad_proc -public im_is_user_site_wide_or_intranet_admin {
 }
 
 
+ad_proc -public im_menu_permission {
+    {-user_id ""}
+    {-menu_label ""}
+    {-menu_id ""}
+} {
+    Returns 1 (true) or 0 (false), depending whether the user has the permission on the specified object.
+} {
+    if {"" == $menu_id} { 
+        set menu_id [db_string menu "select menu_id from im_menus where label = :menu_label" -default ""]
+    }
+    if {"" == $menu_id} {
+        return 0
+    } else {
+        return [im_object_permission -object_id $menu_id -user_id $user_id -privilege "read"]
+    }
+}
+

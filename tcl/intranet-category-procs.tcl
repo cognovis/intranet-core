@@ -152,18 +152,18 @@ ad_proc im_category_select_helper {
     @param super_category_id determines where to start in the category hierarchy
 } {
     if {$plain_p} {
-	return [im_category_select_plain -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name $category_type $select_name $default]
+        	return [im_category_select_plain -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name $category_type $select_name $default]
     }
 
     set super_category_sql ""
     if {0 != $super_category_id} {
-	set super_category_sql "
-	    and category_id in (
-		select child_id
-		from im_category_hierarchy
-		where parent_id = :super_category_id
-	    )
-	"
+        	set super_category_sql "
+        	    and category_id in (
+        		select child_id
+        		from im_category_hierarchy
+        		where parent_id = :super_category_id
+        	    )
+        	"
     }
 
     # Read the categories into the a hash cache
@@ -174,7 +174,7 @@ ad_proc im_category_select_helper {
     set visible_tcl_sql ""
 
     if {[im_column_exists im_categories visible_tcl]} {
-	set visible_tcl_sql ",visible_tcl"
+        	set visible_tcl_sql ",visible_tcl"
     }
 	set sql "
         select
@@ -193,12 +193,13 @@ ad_proc im_category_select_helper {
 		$super_category_sql
         order by sort_order
     "
+    
     db_foreach category_select $sql {
-	ns_log Notice "im_category_select_helper: category=$category, visible_tcl=$visible_tcl"
-	if {"" == $visible_tcl || [eval $visible_tcl]} {
-	    set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p $sort_order]
-	    set level($category_id) 0
-	}
+        	ns_log Debug "im_category_select_helper: category=$category, visible_tcl=$visible_tcl"
+        	if {"" == $visible_tcl || [eval $visible_tcl]} {
+        	    set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p $sort_order]
+        	    set level($category_id) 0
+        	}
     }
 
     # Get the hierarchy into a hash cache
@@ -220,8 +221,8 @@ ad_proc im_category_select_helper {
     # performance reasons
     set children [list]
     db_foreach hierarchy_select $sql {
-	if {![info exists cat($parent_id)]} { continue}
-	if {![info exists cat($child_id)]} { continue}
+        if {![info exists cat($parent_id)]} { continue}
+	   	if {![info exists cat($child_id)]} { continue}
         lappend children [list $parent_id $child_id]
     }
 
@@ -284,41 +285,40 @@ ad_proc im_category_select_helper {
     # New feature: Show list based on category sort_order
     # Make it "fault tolerant" until further testing  
     if {[catch {
-	set elements_with_no_sort_order [list]
+        	set elements_with_no_sort_order [list]
 
-	foreach p $category_list_by_id_sorted {
-	    if { ![info exists cat_helper([lindex $cat($p) 5])] } {
-		# ad_return_complaint xx "[lindex $cat($p) 5]"
-		set cat_helper([lindex $cat($p) 5]) $p
-	    } else {
-            	# No sort order defined, add to the end of the list
-		lappend elements_with_no_sort_order $p
+        	foreach p $category_list_by_id_sorted {
+            	if { ![info exists cat_helper([lindex $cat($p) 5])] } {
+                	# ad_return_complaint xx "[lindex $cat($p) 5]"
+            	    set cat_helper([lindex $cat($p) 5]) $p
+            } else {
+                	# No sort order defined, add to the end of the list
+                	lappend elements_with_no_sort_order $p
             }
-	}
+        }
 
-	foreach p [lsort [array names cat_helper]] {
-	    lappend category_list_by_sort_order_sorted $cat_helper($p)
-	}
+        	foreach p [lsort [array names cat_helper]] {
+        	    lappend category_list_by_sort_order_sorted $cat_helper($p)
+        	}
 
-	lappend category_list_by_sort_order_sorted $elements_with_no_sort_order
-	set category_list_by_sort_order_sorted [join $category_list_by_sort_order_sorted " "]
+        	lappend category_list_by_sort_order_sorted $elements_with_no_sort_order
+        	set category_list_by_sort_order_sorted [join $category_list_by_sort_order_sorted " "]
 
-	set category_list_final $category_list_by_sort_order_sorted
+        	set category_list_final $category_list_by_sort_order_sorted
     } err_msg]} {
-	global errorInfo
-	ns_log Error "Error sorting categories: $errorInfo"
-	set category_list_final $category_list_by_id_sorted
+        	global errorInfo
+        	ns_log Error "Error sorting categories: $errorInfo"
+        	set category_list_final $category_list_by_id_sorted
     }
 
     # Now recursively descend and draw the tree, starting
     # with the top level
     foreach p $category_list_final {
-        set p [lindex $cat($p) 0]
         set enabled_p [lindex $cat($p) 4]
-	if {"f" == $enabled_p} { continue }
+        	if {"f" == $enabled_p} { continue }
         set p_level $level($p)
         if {0 == $p_level} {
-            append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $p $default $base_level [array get cat] [array get direct_parent]]
+            append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_final $p $default $base_level [array get cat] [array get direct_parent]]
         }
     }
 
@@ -330,11 +330,11 @@ ad_proc im_category_select_helper {
         append select_html "id=\"$id\""
     }
     append select_html ">"
-	return "
-$select_html
-$html
-</select>
-"
+    	return "
+    $select_html
+    $html
+    </select>
+    "
 
 }
 
@@ -359,15 +359,15 @@ ad_proc im_category_select_branch {
 
     set category [lindex $cat($parent) 1]
     if {$translate_p} {
-	set category_key "$package_key.[lang::util::suggest_key $category]"
-	set category [lang::message::lookup $locale $category_key $category]
+        	set category_key "$package_key.[lang::util::suggest_key $category]"
+        	set category [lang::message::lookup $locale $category_key $category]
     }
 
     set parent_only_p [lindex $cat($parent) 3]
 
     set spaces ""
     for {set i 0} { $i < $level} { incr i} {
-	append spaces "&nbsp;"
+        	append spaces "&nbsp;"
     }
 
     set selected ""
@@ -375,14 +375,13 @@ ad_proc im_category_select_branch {
     set html ""
     if {"f" == $parent_only_p} {
         set html "<option value=\"$parent\" $selected>$spaces $category</option>\n"
-	incr level
+        	incr level
     }
 
-
     foreach cat_id $category_list_sorted {
-	if {[info exists direct_parent($cat_id)] && $parent == $direct_parent($cat_id)} {
-	    append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $cat_id $default $level $cat_array $direct_parent_array]
-	}
+        	if {[info exists direct_parent($cat_id)] && $parent == $direct_parent($cat_id)} {
+        	    append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $cat_id $default $level $cat_array $direct_parent_array]
+        	}
     }
 
     return $html

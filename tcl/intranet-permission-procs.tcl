@@ -312,9 +312,12 @@ ad_proc -public im_user_is_inco_customer_p { user_id } {
 }
 
 # ToDo: replace by im_profile::member_p
-ad_proc -public im_user_is_hr_p { user_id } {
+ad_proc -public im_user_is_hr_p { 
+    {user_id ""}
+} {
     Returns 1 if a the user is in the HR Managers group.
 } {
+    if {$user_id eq ""} {set user_id [ad_conn user_id]}
     return [im_profile::member_p -profile_id [im_hr_group_id] -user_id $user_id]
 }
 

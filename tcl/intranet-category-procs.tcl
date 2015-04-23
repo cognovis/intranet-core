@@ -458,20 +458,20 @@ ad_proc -public template::widget::im_category_tree {
 } {
     upvar $element_reference element
     if { [info exists element(custom)] } {
-	set params $element(custom)
+        	set params $element(custom)
     } else {
-	return "Intranet Category Widget: Error: Didn't find 'custom' parameter.<br>
-	Please use a Parameter such as:
-	<tt>{custom {category_type \"Intranet Company Type\"}} </tt>"
+        	return "Intranet Category Widget: Error: Didn't find 'custom' parameter.<br>
+        	Please use a Parameter such as:
+        	<tt>{custom {category_type \"Intranet Company Type\"}} </tt>"
     }
 
     # Get the "category_type" parameter that defines which
     # category to display
     set category_type_pos [lsearch $params category_type]
     if { $category_type_pos >= 0 } {
-	set category_type [lindex $params [expr $category_type_pos + 1]]
+        	set category_type [lindex $params [expr $category_type_pos + 1]]
     } else {
-	return "Intranet Category Widget: Error: Didn't find 'category_type' parameter"
+        	return "Intranet Category Widget: Error: Didn't find 'category_type' parameter"
     }
 
     # Get the "plain_p" parameter to determine if we should
@@ -481,7 +481,7 @@ ad_proc -public template::widget::im_category_tree {
     set plain_p 0
     set plain_p_pos [lsearch $params plain_p]
     if { $plain_p_pos >= 0 } {
-	set plain_p [lindex $params [expr $plain_p_pos + 1]]
+        	set plain_p [lindex $params [expr $plain_p_pos + 1]]
     }
 
     # Get the "translate_p" parameter to determine if we should
@@ -490,7 +490,7 @@ ad_proc -public template::widget::im_category_tree {
     set translate_p 0
     set translate_p_pos [lsearch $params translate_p]
     if { $translate_p_pos >= 0 } {
-	set translate_p [lindex $params [expr $translate_p_pos + 1]]
+        	set translate_p [lindex $params [expr $translate_p_pos + 1]]
     }
 
     # Get the "package_key" parameter to determine in which package
@@ -499,7 +499,7 @@ ad_proc -public template::widget::im_category_tree {
     set package_key "intranet-core"
     set package_key_pos [lsearch $params "package_key"]
     if { $package_key_pos >= 0 } {
-	set package_key [lindex $params [expr $package_key_pos + 1]]
+        	set package_key [lindex $params [expr $package_key_pos + 1]]
     }
 
     # Get the "multiple_p" parameter to determine if we should
@@ -508,7 +508,7 @@ ad_proc -public template::widget::im_category_tree {
     set multiple_p 0
     set multiple_p_pos [lsearch $params multiple_p]
     if { $multiple_p_pos >= 0 } {
-	set multiple_p [lindex $params [expr $multiple_p_pos + 1]]
+        	set multiple_p [lindex $params [expr $multiple_p_pos + 1]]
     }
 
     # Get the "include_empty_p" parameter to determine if we should
@@ -517,7 +517,7 @@ ad_proc -public template::widget::im_category_tree {
     set include_empty_p 1
     set include_empty_p_pos [lsearch $params include_empty_p]
     if { $include_empty_p_pos >= 0 } {
-	set include_empty_p [lindex $params [expr $include_empty_p_pos + 1]]
+        	set include_empty_p [lindex $params [expr $include_empty_p_pos + 1]]
     }
 
     # Get the "include_empty_name" parameter to determine if we should
@@ -526,7 +526,7 @@ ad_proc -public template::widget::im_category_tree {
     set include_empty_name ""
     set include_empty_name_pos [lsearch $params include_empty_name]
     if { $include_empty_name_pos >= 0 } {
-	set include_empty_name [lindex $params [expr $include_empty_name_pos + 1]]
+        	set include_empty_name [lindex $params [expr $include_empty_name_pos + 1]]
     }
 
     array set attributes $tag_attributes
@@ -537,25 +537,16 @@ ad_proc -public template::widget::im_category_tree {
 
     set default_value ""
     if {[info exists element(value)]} {
-	set default_value $element(values)
-    }
-
-    if {0} {
-	set debug ""
-	foreach key [array names element] {
-	    set value $element($key)
-	    append debug "$key = $value\n"
-	}
-	ad_return_complaint 1 "<pre>$element(name)\n$debug\n</pre>"
-	return
+        	set default_value $element(values)
     }
 
     if { "edit" == $element(mode)} {
-	append category_html [im_category_select -translate_p $translate_p -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -multiple_p $multiple_p $category_type $field_name $default_value]
+        	append category_html [im_category_select -translate_p $translate_p -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -multiple_p $multiple_p $category_type $field_name $default_value]
     } else {
-	if {"" != $default_value && "\{\}" != $default_value} {
-	    append category_html [im_category_from_id -translate_p $translate_p -package_key $package_key $default_value]
-	}
+        	if {"" != $default_value && "\{\}" != $default_value} {
+            	set category_name "[im_category_from_id -translate_p $translate_p -package_key $package_key $default_value]"
+        	    append category_html "$category_name <input type=\"hidden\" name=\"$element(name)\" id=\"$element(name)\" value=\"$default_value\">"
+        	}
     }
     return $category_html
 }

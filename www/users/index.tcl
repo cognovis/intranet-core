@@ -115,7 +115,7 @@ switch $user_group_name {
 
 set read_p [im_menu_permission -menu_label $menu_label -user_id $current_user_id]
 
-if {$read_p} {
+if {!$read_p} {
     ad_return_complaint 1 "
     [lang::message::lookup "" intranet-reporting.You_dont_have_permissions "You don't have the necessary permissions to view this page"]"
     return

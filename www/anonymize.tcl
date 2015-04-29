@@ -425,4 +425,26 @@ db_foreach im_employees_select $im_employees_sql {
 }
 
 
+# ---------------------- im_cost_centers -------------------------------
+
+
+set im_cost_centers_sql "
+	select	c.*
+	from	im_cost_centers c
+"
+db_foreach im_cost_centers_select $im_cost_centers_sql {
+
+    db_dml im_cost_centers_update "
+	update im_cost_centers set
+		cost_center_name = '[anonymize_name $cost_center_name]',
+		cost_center_label = '[anonymize_name $cost_center_label]',
+		note = '[anonymize_name $note]',
+		description = '[anonymize_name $description]'
+    	where
+		cost_center_id = :cost_center_id
+    "
+}
+
+
+
 ad_returnredirect $return_url

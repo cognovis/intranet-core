@@ -994,7 +994,7 @@ ad_proc -public im_project_options {
 
     template::multirow foreach multirow {
         	set indent ""
-        	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" }
+        	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;" }
         	if {[llength $pm_project_ids]>0 && [lsearch $pm_project_ids $project_id]<0} {
             lappend options [list "${indent}($project_name_shortened)" ""]            	
         	} else {
@@ -3514,16 +3514,19 @@ ad_proc -public im_parent_projects {
     } else {
        set order "asc"
     } 
-    db_foreach parent_projects "WITH RECURSIVE breadcrumb(parent_id, project_name, project_id, tree_sortkey) AS (
-    SELECT parent_id, project_name, project_id, tree_sortkey from im_projects where project_id in ([template::util::tcl_to_sql_list $project_ids])
-  UNION ALL
-    SELECT p.parent_id,p.project_name, p.project_id, p.tree_sortkey
-    FROM breadcrumb b, im_projects p
-    WHERE p.project_id = b.parent_id)
-    select distinct project_id, tree_sortkey from breadcrumb order by tree_sortkey $order" {
-	lappend project_list $project_id
+    
+    if {[llength $project_ids] <1} {return ""} else {
+        db_foreach parent_projects "WITH RECURSIVE breadcrumb(parent_id, project_name, project_id, tree_sortkey) AS (
+            SELECT parent_id, project_name, project_id, tree_sortkey from im_projects where project_id in ([template::util::tcl_to_sql_list $project_ids])
+          UNION ALL
+            SELECT p.parent_id,p.project_name, p.project_id, p.tree_sortkey
+            FROM breadcrumb b, im_projects p
+            WHERE p.project_id = b.parent_id)
+            select distinct project_id, tree_sortkey from breadcrumb order by tree_sortkey $order" {
+            	lappend project_list $project_id
+        }
+        return $project_list
     }
-    return $project_list
 }
 
 ad_proc -public im_menu_projects_admin_links {

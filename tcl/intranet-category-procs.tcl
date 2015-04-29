@@ -152,18 +152,18 @@ ad_proc im_category_select_helper {
     @param super_category_id determines where to start in the category hierarchy
 } {
     if {$plain_p} {
-	return [im_category_select_plain -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name $category_type $select_name $default]
+        	return [im_category_select_plain -translate_p $translate_p -package_key $package_key -locale $locale -include_empty_p $include_empty_p -include_empty_name $include_empty_name $category_type $select_name $default]
     }
 
     set super_category_sql ""
     if {0 != $super_category_id} {
-	set super_category_sql "
-	    and category_id in (
-		select child_id
-		from im_category_hierarchy
-		where parent_id = :super_category_id
-	    )
-	"
+        	set super_category_sql "
+        	    and category_id in (
+        		select child_id
+        		from im_category_hierarchy
+        		where parent_id = :super_category_id
+        	    )
+        	"
     }
 
     # Read the categories into the a hash cache
@@ -174,7 +174,7 @@ ad_proc im_category_select_helper {
     set visible_tcl_sql ""
 
     if {[im_column_exists im_categories visible_tcl]} {
-	set visible_tcl_sql ",visible_tcl"
+        	set visible_tcl_sql ",visible_tcl"
     }
 	set sql "
         select
@@ -193,12 +193,13 @@ ad_proc im_category_select_helper {
 		$super_category_sql
         order by sort_order
     "
+    
     db_foreach category_select $sql {
-	ns_log Notice "im_category_select_helper: category=$category, visible_tcl=$visible_tcl"
-	if {"" == $visible_tcl || [eval $visible_tcl]} {
-	    set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p $sort_order]
-	    set level($category_id) 0
-	}
+        	ns_log Debug "im_category_select_helper: category=$category, visible_tcl=$visible_tcl"
+        	if {"" == $visible_tcl || [eval $visible_tcl]} {
+        	    set cat($category_id) [list $category_id $category $category_description $parent_only_p $enabled_p $sort_order]
+        	    set level($category_id) 0
+        	}
     }
 
     # Get the hierarchy into a hash cache
@@ -220,8 +221,8 @@ ad_proc im_category_select_helper {
     # performance reasons
     set children [list]
     db_foreach hierarchy_select $sql {
-	if {![info exists cat($parent_id)]} { continue}
-	if {![info exists cat($child_id)]} { continue}
+        if {![info exists cat($parent_id)]} { continue}
+	   	if {![info exists cat($child_id)]} { continue}
         lappend children [list $parent_id $child_id]
     }
 
@@ -284,41 +285,40 @@ ad_proc im_category_select_helper {
     # New feature: Show list based on category sort_order
     # Make it "fault tolerant" until further testing  
     if {[catch {
-	set elements_with_no_sort_order [list]
+        	set elements_with_no_sort_order [list]
 
-	foreach p $category_list_by_id_sorted {
-	    if { ![info exists cat_helper([lindex $cat($p) 5])] } {
-		# ad_return_complaint xx "[lindex $cat($p) 5]"
-		set cat_helper([lindex $cat($p) 5]) $p
-	    } else {
-            	# No sort order defined, add to the end of the list
-		lappend elements_with_no_sort_order $p
+        	foreach p $category_list_by_id_sorted {
+            	if { ![info exists cat_helper([lindex $cat($p) 5])] } {
+                	# ad_return_complaint xx "[lindex $cat($p) 5]"
+            	    set cat_helper([lindex $cat($p) 5]) $p
+            } else {
+                	# No sort order defined, add to the end of the list
+                	lappend elements_with_no_sort_order $p
             }
-	}
+        }
 
-	foreach p [lsort [array names cat_helper]] {
-	    lappend category_list_by_sort_order_sorted $cat_helper($p)
-	}
+        	foreach p [lsort [array names cat_helper]] {
+        	    lappend category_list_by_sort_order_sorted $cat_helper($p)
+        	}
 
-	lappend category_list_by_sort_order_sorted $elements_with_no_sort_order
-	set category_list_by_sort_order_sorted [join $category_list_by_sort_order_sorted " "]
+        	lappend category_list_by_sort_order_sorted $elements_with_no_sort_order
+        	set category_list_by_sort_order_sorted [join $category_list_by_sort_order_sorted " "]
 
-	set category_list_final $category_list_by_sort_order_sorted
+        	set category_list_final $category_list_by_sort_order_sorted
     } err_msg]} {
-	global errorInfo
-	ns_log Error "Error sorting categories: $errorInfo"
-	set category_list_final $category_list_by_id_sorted
+        	global errorInfo
+        	ns_log Error "Error sorting categories: $errorInfo"
+        	set category_list_final $category_list_by_id_sorted
     }
 
     # Now recursively descend and draw the tree, starting
     # with the top level
     foreach p $category_list_final {
-        set p [lindex $cat($p) 0]
         set enabled_p [lindex $cat($p) 4]
-	if {"f" == $enabled_p} { continue }
+        	if {"f" == $enabled_p} { continue }
         set p_level $level($p)
         if {0 == $p_level} {
-            append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $p $default $base_level [array get cat] [array get direct_parent]]
+            append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_final $p $default $base_level [array get cat] [array get direct_parent]]
         }
     }
 
@@ -330,11 +330,11 @@ ad_proc im_category_select_helper {
         append select_html "id=\"$id\""
     }
     append select_html ">"
-	return "
-$select_html
-$html
-</select>
-"
+    	return "
+    $select_html
+    $html
+    </select>
+    "
 
 }
 
@@ -359,15 +359,15 @@ ad_proc im_category_select_branch {
 
     set category [lindex $cat($parent) 1]
     if {$translate_p} {
-	set category_key "$package_key.[lang::util::suggest_key $category]"
-	set category [lang::message::lookup $locale $category_key $category]
+        	set category_key "$package_key.[lang::util::suggest_key $category]"
+        	set category [lang::message::lookup $locale $category_key $category]
     }
 
     set parent_only_p [lindex $cat($parent) 3]
 
     set spaces ""
     for {set i 0} { $i < $level} { incr i} {
-	append spaces "&nbsp;"
+        	append spaces "&nbsp;"
     }
 
     set selected ""
@@ -375,14 +375,13 @@ ad_proc im_category_select_branch {
     set html ""
     if {"f" == $parent_only_p} {
         set html "<option value=\"$parent\" $selected>$spaces $category</option>\n"
-	incr level
+        	incr level
     }
 
-
     foreach cat_id $category_list_sorted {
-	if {[info exists direct_parent($cat_id)] && $parent == $direct_parent($cat_id)} {
-	    append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $cat_id $default $level $cat_array $direct_parent_array]
-	}
+        	if {[info exists direct_parent($cat_id)] && $parent == $direct_parent($cat_id)} {
+        	    append html [im_category_select_branch -translate_p $translate_p -package_key $package_key -locale $locale -category_list_sorted $category_list_sorted $cat_id $default $level $cat_array $direct_parent_array]
+        	}
     }
 
     return $html
@@ -459,20 +458,20 @@ ad_proc -public template::widget::im_category_tree {
 } {
     upvar $element_reference element
     if { [info exists element(custom)] } {
-	set params $element(custom)
+        	set params $element(custom)
     } else {
-	return "Intranet Category Widget: Error: Didn't find 'custom' parameter.<br>
-	Please use a Parameter such as:
-	<tt>{custom {category_type \"Intranet Company Type\"}} </tt>"
+        	return "Intranet Category Widget: Error: Didn't find 'custom' parameter.<br>
+        	Please use a Parameter such as:
+        	<tt>{custom {category_type \"Intranet Company Type\"}} </tt>"
     }
 
     # Get the "category_type" parameter that defines which
     # category to display
     set category_type_pos [lsearch $params category_type]
     if { $category_type_pos >= 0 } {
-	set category_type [lindex $params [expr $category_type_pos + 1]]
+        	set category_type [lindex $params [expr $category_type_pos + 1]]
     } else {
-	return "Intranet Category Widget: Error: Didn't find 'category_type' parameter"
+        	return "Intranet Category Widget: Error: Didn't find 'category_type' parameter"
     }
 
     # Get the "plain_p" parameter to determine if we should
@@ -482,7 +481,7 @@ ad_proc -public template::widget::im_category_tree {
     set plain_p 0
     set plain_p_pos [lsearch $params plain_p]
     if { $plain_p_pos >= 0 } {
-	set plain_p [lindex $params [expr $plain_p_pos + 1]]
+        	set plain_p [lindex $params [expr $plain_p_pos + 1]]
     }
 
     # Get the "translate_p" parameter to determine if we should
@@ -491,7 +490,7 @@ ad_proc -public template::widget::im_category_tree {
     set translate_p 0
     set translate_p_pos [lsearch $params translate_p]
     if { $translate_p_pos >= 0 } {
-	set translate_p [lindex $params [expr $translate_p_pos + 1]]
+        	set translate_p [lindex $params [expr $translate_p_pos + 1]]
     }
 
     # Get the "package_key" parameter to determine in which package
@@ -500,7 +499,7 @@ ad_proc -public template::widget::im_category_tree {
     set package_key "intranet-core"
     set package_key_pos [lsearch $params "package_key"]
     if { $package_key_pos >= 0 } {
-	set package_key [lindex $params [expr $package_key_pos + 1]]
+        	set package_key [lindex $params [expr $package_key_pos + 1]]
     }
 
     # Get the "multiple_p" parameter to determine if we should
@@ -509,7 +508,7 @@ ad_proc -public template::widget::im_category_tree {
     set multiple_p 0
     set multiple_p_pos [lsearch $params multiple_p]
     if { $multiple_p_pos >= 0 } {
-	set multiple_p [lindex $params [expr $multiple_p_pos + 1]]
+        	set multiple_p [lindex $params [expr $multiple_p_pos + 1]]
     }
 
     # Get the "include_empty_p" parameter to determine if we should
@@ -518,7 +517,7 @@ ad_proc -public template::widget::im_category_tree {
     set include_empty_p 1
     set include_empty_p_pos [lsearch $params include_empty_p]
     if { $include_empty_p_pos >= 0 } {
-	set include_empty_p [lindex $params [expr $include_empty_p_pos + 1]]
+        	set include_empty_p [lindex $params [expr $include_empty_p_pos + 1]]
     }
 
     # Get the "include_empty_name" parameter to determine if we should
@@ -527,7 +526,7 @@ ad_proc -public template::widget::im_category_tree {
     set include_empty_name ""
     set include_empty_name_pos [lsearch $params include_empty_name]
     if { $include_empty_name_pos >= 0 } {
-	set include_empty_name [lindex $params [expr $include_empty_name_pos + 1]]
+        	set include_empty_name [lindex $params [expr $include_empty_name_pos + 1]]
     }
 
     array set attributes $tag_attributes
@@ -538,25 +537,16 @@ ad_proc -public template::widget::im_category_tree {
 
     set default_value ""
     if {[info exists element(value)]} {
-	set default_value $element(values)
-    }
-
-    if {0} {
-	set debug ""
-	foreach key [array names element] {
-	    set value $element($key)
-	    append debug "$key = $value\n"
-	}
-	ad_return_complaint 1 "<pre>$element(name)\n$debug\n</pre>"
-	return
+        	set default_value $element(values)
     }
 
     if { "edit" == $element(mode)} {
-	append category_html [im_category_select -translate_p $translate_p -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -multiple_p $multiple_p $category_type $field_name $default_value]
+        	append category_html [im_category_select -translate_p $translate_p -package_key $package_key -include_empty_p $include_empty_p -include_empty_name $include_empty_name -plain_p $plain_p -multiple_p $multiple_p $category_type $field_name $default_value]
     } else {
-	if {"" != $default_value && "\{\}" != $default_value} {
-	    append category_html [im_category_from_id -translate_p $translate_p -package_key $package_key $default_value]
-	}
+        	if {"" != $default_value && "\{\}" != $default_value} {
+            	set category_name "[im_category_from_id -translate_p $translate_p -package_key $package_key $default_value]"
+        	    append category_html "$category_name <input type=\"hidden\" name=\"$element(name)\" id=\"$element(name)\" value=\"$default_value\">"
+        	}
     }
     return $category_html
 }

@@ -1580,7 +1580,8 @@ ad_proc -public im_header {
 	if {$developer_support_p} {
 	    if {$developer_support_p} {
 		if { !$no_head_p } { template::add_header -src "/packages/acs-developer-support/lib/toolbar" }
-		template::add_footer -src "/packages/acs-developer-support/lib/footer"
+        		template::add_footer -src "/packages/acs-developer-support/lib/footer"
+        		im_ds_display_config_info
 	    }
 	}
 	
@@ -2153,7 +2154,7 @@ ad_proc -public im_footer {
     if {[im_openacs54_p]} {
         set footer_html [template::get_footer_html]
     }
-
+    
     return "
     </div> <!-- monitor_frame -->
     <div class=\"footer_hack\">&nbsp;</div>	

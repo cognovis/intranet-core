@@ -29,6 +29,7 @@ ad_page_contract {
     company_id:integer,optional
     {company_name "" }
     {company_type_id "" }
+    {company_status_id "" }
     { form_mode "edit" }
     { return_url "" }
     { also_add_users "" }

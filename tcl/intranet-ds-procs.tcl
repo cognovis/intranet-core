@@ -31,19 +31,18 @@ ad_proc -public im_ds_display_config_info {
     array set privilege_hash [nsv_array get privilege_hash]
     set privilege_list [list]
     foreach key [array names privilege_hash] {
-	if {"request" == $key} { continue }
-	set value $privilege_hash($key)
-	set key_elements [split $key "-"]
-	set package_id [lindex $key_elements 0]
-	set privilege [lindex $key_elements 1]
-	set package_name $package_id
-	if {[string is integer $package_id]} { set package_name [acs_object_name $package_id] }
-	lappend privilege_list "$package_name: $privilege = $value"
+        	if {"request" == $key} { continue }
+        	set value $privilege_hash($key)
+        	set key_elements [split $key "-"]
+        	set user_id [lindex $key_elements 0]
+        	set privilege [lindex $key_elements 1]
+        	set user_name [im_name_from_user_id $user_id]
+        	lappend privilege_list "$user_name: $privilege = $value"
     }
 
     set privilege_list [lsort $privilege_list]
     foreach privilege_line $privilege_list {
-	ds_comment "Privilege: $privilege_line"
+        	ds_comment "Privilege: $privilege_line"
     }
 
     # --------------------------------------------
@@ -52,21 +51,20 @@ ad_proc -public im_ds_display_config_info {
     array set parameter_hash [nsv_array get parameter_hash]
     set parameter_list [list]
     foreach key [array names parameter_hash] {
-	if {"request" == $key} { continue }
-	set value $parameter_hash($key)
-	set key_elements [split $key "-"]
-	set package_id [lindex $key_elements 0]
-	set parameter [lindex $key_elements 1]
-	set package_name $package_id
-	if {[string is integer $package_id]} { set package_name [acs_object_name $package_id] }
-	lappend parameter_list "$package_name: $parameter = $value"
+        	if {"request" == $key} { continue }
+        	set value $parameter_hash($key)
+        	set key_elements [split $key "-"]
+        	set package_id [lindex $key_elements 0]
+        	set parameter [lindex $key_elements 1]
+        	set package_name $package_id
+        	if {[string is integer $package_id]} { set package_name [acs_object_name $package_id] }
+        	lappend parameter_list "$package_name: $parameter = $value"
     }
 
     set parameter_list [lsort $parameter_list]
     foreach parameter_line $parameter_list {
-	ds_comment "Parameter: $parameter_line"
+        	ds_comment "Parameter: $parameter_line"
     }
-
 }
 
 
@@ -128,6 +126,7 @@ ad_proc -public im_ds_comment_privilege {
     -user_id:required
     -privilege:required
     -result:required
+    {-object_id ""}
 } {
     Write out the results of a parameter call to OpenACS Developer Support
 } {
@@ -138,6 +137,10 @@ ad_proc -public im_ds_comment_privilege {
     im_ds_restart_with_new_request
 
     array set privilege_hash [nsv_array get privilege_hash]
+
+    if {$object_id ne ""} {
+        append privilege " (${object_id})"
+    }
     set key "$user_id-$privilege"
     set privilege_hash($key) $result
     nsv_array set privilege_hash [array get privilege_hash]

@@ -96,7 +96,7 @@ foreach parent $parents {
 
     # Transitive closure. Add the parents parents as well
     foreach super_parent [im_category_parents $parent] {
-	db_dml insert_parent "insert into im_category_hierarchy (parent_id, child_id) values (:super_parent, :category_id)"
+        	db_dml insert_parent "insert into im_category_hierarchy (parent_id, child_id) values (:super_parent, :category_id)"
     }
 }
 
@@ -124,8 +124,8 @@ SET
 	aux_int2 = :aux_int2,
 	aux_string1 = :aux_string1,
 	aux_string2 = :aux_string2,
-	category_description = :category_description,
-    visible_tcl = :visible_tcl
+	visible_tcl = :visible_tcl,
+	category_description = :category_description
 WHERE 
 	category_id = :category_id" 
 } errmsg ] {

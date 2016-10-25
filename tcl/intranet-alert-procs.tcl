@@ -65,7 +65,7 @@ ad_proc -public im_send_alert {target_id frequency subject {message ""} } {
 
     # Send out the mail
     if [catch {
-        ns_sendmail $email $sender_email $subject $message
+        acs_mail_lite::send -to_addr $email -from_addr $sender_email -subject $subject -body $message
     } errmsg] {
         ns_log Notice "im_send_alert: Error sending to \"$email\": $errmsg"
 
@@ -101,6 +101,30 @@ ad_proc -public im_security_alert_check_integer {
     }
     return $breach_p
 }
+
+ad_proc -public im_security_alert_check_float {
+    { -location "No location specified"}
+    { -value "" }
+    { -message "Found non-float value in float argument" }
+    { -severity "Normal" }
+} {
+    Check of a parameter has the form of an float list,
+    which includes the empty list and a single float.
+} {
+    set breach_p 0
+    foreach v $value {
+	if {![string is double $v]} {
+	    set breach_p 1
+	    im_security_alert \
+		-location $location \
+		-message $message \
+		-value $value \
+		-severity $severity \
+	}
+    }
+    return $breach_p
+}
+
 
 ad_proc -public im_security_alert_check_alphanum {
     { -location "No location specified"}
@@ -205,7 +229,7 @@ peer_ip: $peer_ip
 
     # Ignore errors sending out mails...
     catch { 
-	ns_sendmail $target_email $system_owner_email $subject $body 
+        acs_mail_lite::send -to_addr $target_email -from_addr $system_owner_email -subject $subject -body $body
     }
 
 
@@ -224,6 +248,6 @@ peer_ip: $peer_ip
 ad_proc -public im_send_alert_to_system_owner {subject message} {
     set system_owner_email [ad_parameter -package_id [im_package_forum_id] ReportThisErrorEmail]
     set current_user_id [ad_get_user_id]
-    ns_sendmail $system_owner_email $system_owner_email $subject $message
+    acs_mail_lite::send -to_addr $system_owner_email -from_addr $system_owner_email -subject $subject -body $message
 }
 

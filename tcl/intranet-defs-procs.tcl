@@ -1577,7 +1577,7 @@ ad_proc -public im_generate_auto_login {
 } {
     Generates a security token for auto_login
 } {
-    ns_log Notice "im_generate_auto_login: expiry_date=$expiry_date, user_id=$user_id"
+    ns_log Debug "im_generate_auto_login: expiry_date=$expiry_date, user_id=$user_id"
     set user_password ""
     set user_salt ""
 
@@ -2268,4 +2268,16 @@ ad_proc -public im_object_super_types {
     }
     return $object_type_hierarchy
 }
+
+
+
+
+
+ad_proc -public im_package_exists_p { package_key } {
+    Returns true if the package_key exists
+} {
+    set exists_p [util_memoize [list db_string package_exists "select count(*) from apm_packages where package_key = '$package_key'"]]
+    return $exists_p
+}
+
 

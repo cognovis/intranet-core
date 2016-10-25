@@ -53,12 +53,6 @@ set export_vars [export_url_vars user_id]
 
 
 if {$send_email_p} {
-    if [catch {ns_sendmail "$email" "$admin_email" "You have been added as a user to [ad_system_name] at [ad_url]" "$message"} errmsg] {
-	ad_return_error "[_ intranet-core.Mail_Failed]" "[_ intranet-core.lt_The_system_was_unable]<br>[_ intranet-core.Here_is_the_error]
-<blockquote><pre>
-[ad_quotehtml $errmsg]
-</pre></blockquote>"
-        return
-    }
+    acs_mail_lite::send -to_addr "$email" -from_addr "$admin_email" -subject "You have been added as a user to [ad_system_name] at [ad_url]" -body "$message"
 }
 

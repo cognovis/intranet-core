@@ -195,7 +195,9 @@ ad_proc -public im_object_permission {
 } {
     if {"" == $user_id} { set user_id [ad_get_user_id] }
     set read_p [util_memoize [list db_string operm "select im_object_permission_p($object_id, $user_id, '$privilege')"]]
-    return [string equal $read_p "t"]
+    set result [string equal $read_p "t"]
+    catch { im_ds_comment_privilege -user_id $user_id -privilege $privilege -object_id $object_id -result $result }
+    return $result
 }
 
 
@@ -310,9 +312,12 @@ ad_proc -public im_user_is_inco_customer_p { user_id } {
 }
 
 # ToDo: replace by im_profile::member_p
-ad_proc -public im_user_is_hr_p { user_id } {
+ad_proc -public im_user_is_hr_p { 
+    {user_id ""}
+} {
     Returns 1 if a the user is in the HR Managers group.
 } {
+    if {$user_id eq ""} {set user_id [ad_conn user_id]}
     return [im_profile::member_p -profile_id [im_hr_group_id] -user_id $user_id]
 }
 
@@ -356,4 +361,22 @@ ad_proc -public im_is_user_site_wide_or_intranet_admin {
     return 0
 }
 
+
+ad_proc -public im_menu_permission {
+    {-user_id ""}
+    {-menu_label ""}
+    {-menu_id ""}
+} {
+    Returns 1 (true) or 0 (false), depending whether the user has the permission on the specified object.
+} {
+    if {"" == $menu_id} { 
+        set menu_id [db_string menu "select menu_id from im_menus where label = :menu_label" -default ""]
+    }
+    if {"" == $menu_id} {
+        return 0
+    } else {
+        ds_comment "Menu Permission for $menu_label ($menu_id)"
+        return [im_object_permission -object_id $menu_id -user_id $user_id -privilege "read"]
+    }
+}
 

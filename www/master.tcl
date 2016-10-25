@@ -106,10 +106,3 @@ if { $show_feedback_p } {
 }
 set feedback_url "<a href=\"[export_vars -base "/intranet/report-bug-on-page" {{page_url [im_url_with_query]}}]\" title='Give us feedback' id='feedback-badge-right' target='new'>"
 append feedback_url "<span>[lang::message::lookup "" intranet-core.Feedback "Feedback"]</span></a>"
-
-# Fraber 121008: Write out permission debugging
-# This procedure may fail in a V3.3 and earlier installation
-catch {
-    im_ds_display_config_info
-} err_msg
-

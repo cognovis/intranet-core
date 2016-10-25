@@ -46,7 +46,9 @@ ad_proc -public im_project_type_service_contract_periodic_invoicing {} { return 
 ad_proc -public im_project_type_service_contract_time_material {} { return 107 }
 ad_proc -public im_project_type_service_contract_open_stack {} { return 108 }
 
+# Remove im_project_type_consulting in V4.2 or later
 ad_proc -public im_project_type_consulting {} { return 2501 }
+ad_proc -public im_project_type_gantt {} { return 2501 }
 ad_proc -public im_project_type_sla {} { return 2502 }
 ad_proc -public im_project_type_milestone {} { return 2504 }
 ad_proc -public im_project_type_program {} { return 2510 }
@@ -92,6 +94,9 @@ ad_proc -public im_project_has_type_helper { project_id project_type } {
     # Is the projects type_id a sub-category of "Translation Project"?
     # We take two cases: Either the project is of category "project_type"
     # OR it is one of the subcategories of "project_type".
+
+    # Compatibility after changing "Consulting Project" into "Gantt Project"...
+    if {"Consulting Project" == $project_type} { set project_type "Gantt Project" }
 
     ns_log Notice "im_project_has_type: project_id=$project_id, project_type=$project_type"
     set sql "
@@ -380,7 +385,7 @@ namespace eval im_project {
         set project_id [db_exec_plsql create_new_project $sql]
 
 	# Write Audit Trail
-	# im_project_audit -action after_create -project_id $project_id
+	im_project_audit -action after_create -project_id $project_id
 
         return $project_id
     }
@@ -714,13 +719,14 @@ ad_proc -public im_project_options {
     
     @pm_user_id only display projects where the user_id is a pm of that project
 } {
-    set exclude_type_id [list]
     # Default: Exclude tickets, opportunities and deleted projects
-    if {"" == $exclude_status_id} { set exclude_status_id [im_project_status_deleted] }
     if {"" == $exclude_type_id} { 
 	set exclude_type_id [list [im_project_type_ticket]] 
 	lappend exclude_type_id [im_project_type_opportunity]
     } 
+
+    if {"" == $exclude_status_id} { set exclude_status_id [im_project_status_deleted] }
+
     # Exclude tasks? 
     if {!$exclude_tasks_p} { 
 	# Overwrite parameter when tasks should be shown
@@ -774,42 +780,40 @@ ad_proc -public im_project_options {
 
 	    set dept_perm_sql ""
 	    if {[im_permission $current_user_id "view_projects_dept"]} {
-		set dept_perm_sql "
-		UNION
-		-- projects of the user department
-		select  p.*
-		from    im_projects p
-		where   p.project_cost_center_id in (select * from im_user_cost_centers(:user_id))
-	    "
+            set dept_perm_sql "
+        		UNION
+        		-- projects of the user department
+        		select  p.*
+        		  from  im_projects p
+        		where   p.project_cost_center_id in (select * from im_user_cost_centers(:user_id))
+        	    "
 	    }
 
 	    # Check permissions for showing subprojects
 	    set perm_sql "
-		(select p.*
-		from    im_projects p,
-			acs_rels r
-		where   r.object_id_one = p.project_id
-			and r.object_id_two = :current_user_id
-		$dept_perm_sql
+        		(select  p.*
+         	 from    im_projects p,
+			         acs_rels r
+		     where   r.object_id_one = p.project_id
+			   and   r.object_id_two = :current_user_id
+		     $dept_perm_sql
 		)
 	    "
 
 	    if {[im_permission $current_user_id "view_projects_all"]} {
-		set perm_sql "im_projects" 
+        		set perm_sql "im_projects" 
 	    }
 	}
 
 	set subprojects [db_list subprojects "
 		select	children.project_id
-		from	im_projects parent,
-			$perm_sql children
+		from	    im_projects parent,
+			    $perm_sql children
 		where
 			children.tree_sortkey 
 				between parent.tree_sortkey 
 				and tree_right(parent.tree_sortkey)
-			and children.project_type_id not in (
-				84, [im_project_type_task]
-			)
+			and children.project_type_id not in (84, [im_project_type_task])
 			and parent.project_id = :super_project_id
 
 			-- exclude the projects own subprojects
@@ -852,8 +856,8 @@ ad_proc -public im_project_options {
     }
 
     if {0 != $exclude_type_id && "" != $exclude_type_id} {
-	# lappend p_criteria "p.project_type_id not in ([join [im_sub_categories -include_disabled_p 1 $exclude_type_id] ","])"
-	# No restriction of type on parent project!
+	# Don't exclude sub-categories at the moment...
+	lappend p_criteria "p.project_type_id not in ([join $exclude_type_id ","])"
     }
 
     if {$exclude_tasks_p} {
@@ -871,19 +875,20 @@ ad_proc -public im_project_options {
 	# No restriction on parent's project type!
     }
 
-    set pm_user_check_p 0
+    set pm_project_ids []
     if {0 != $pm_user_id && "" != $pm_user_id} {
-        set pm_user_check_p 1
-	    lappend p_criteria "p.project_id in (
+	    set pm_project_ids [db_list project_ids "
 					select	object_id_one
-					from	acs_rels r, im_biz_object_members bom
-					where	r.object_id_two = :pm_user_id
-                    and r.rel_id = bom.rel_id
-                    and bom.object_role_id = [im_biz_object_role_project_manager]
-                    )"        
+					from   	acs_rels r, im_biz_object_members bom
+					where   r.object_id_two = :pm_user_id
+                    and      r.rel_id = bom.rel_id
+                    and      bom.object_role_id = [im_biz_object_role_project_manager]"]
+                    
+        # The PM definitely has to be a member
+        set member_user_id $pm_user_id
     }
     
-    if {0 != $member_user_id && "" != $member_user_id && 0 == $pm_user_check_p} {
+    if {0 != $member_user_id && "" != $member_user_id} {
 	    lappend p_criteria "p.project_id in (
 					select	object_id_one
 					from	acs_rels
@@ -936,34 +941,34 @@ ad_proc -public im_project_options {
 		from
 			im_projects p,
 			im_projects main_p,
-			(	select	p.project_name,
-					p.project_id
-				from	im_projects p
-				where	1=1
-					$p_where_clause
-			    UNION
-				select	p.project_name,
-					p.project_id
-				from	im_projects p
+			(select  p.project_name,
+				     p.project_id
+			 from    im_projects p
+			 where   1=1
+			 $p_where_clause
+			 UNION
+				select  p.project_name,
+					    p.project_id
+				from	    im_projects p
 				where	p.project_id in ([join $subprojects ", "])
-			    UNION
+			 UNION
 				select	p.project_name,
-					p.project_id
-				from	im_projects p
+					    p.project_id
+				from	    im_projects p
 				where	p.project_id = :current_project_id
-			    UNION
+			 UNION
 				select	p.project_name,
-					p.project_id
-				from	im_projects p
+					    p.project_id
+				from	    im_projects p
 				where	p.project_id in ([join $include_project_ids ","])
-			) p_cond,
-			(	select	p.project_id
-				from	im_projects p
+			 ) p_cond,
+			 (select    p.project_id
+				from	    im_projects p
 				where	1=1
-					$p_where_clause
-			    UNION
+				$p_where_clause
+			  UNION
 				select	p.project_id
-				from	im_projects p
+				from	    im_projects p
 				where	p.project_id = :super_project_id
 			) main_p_cond
 		where
@@ -979,22 +984,27 @@ ad_proc -public im_project_options {
     "
 
     if {$no_conn_p} {
-	db_multirow -local -upvar_level 2 multirow project_options $sql
+        	db_multirow -local -upvar_level 2 multirow project_options $sql
     } else {
-	db_multirow multirow project_options $sql
+        db_multirow multirow project_options $sql
     }
 
     multirow_sort_tree -nosort multirow project_id parent_id sort_order
     set options [list]
 
     template::multirow foreach multirow {
-	set indent ""
-	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" }
-	lappend options [list "$indent$project_name_shortened" $project_id]
+        	set indent ""
+        	for {set i 0} {$i < $tree_level} { incr i} { append indent "&nbsp;&nbsp;" }
+        	if {[llength $pm_project_ids]>0 && [lsearch $pm_project_ids $project_id]<0} {
+            lappend options [list "${indent}($project_name_shortened)" ""]            	
+        	} else {
+    	        lappend options [list "${indent}$project_name_shortened" $project_id]
+        	}
+
     }
 
-    if {$include_empty} { set options [linsert $options 0 [list $include_empty_name ""]] }
-    return $options
+        if {$include_empty} { set options [linsert $options 0 [list $include_empty_name ""]] }
+        return $options
 }
 
 
@@ -1898,7 +1908,7 @@ ad_proc im_project_clone_base2 {
 	db_dml project_update $project_update_sql
     }
 
-    # ToDo: Add stuff for consulting projects
+    # ToDo: Add stuff for gantt projects
 
     # DON't clone caches. It's better to leave them emtpy.
     # They're inconsisten anyway, because we may or may have
@@ -2764,7 +2774,7 @@ ad_proc im_project_nuke {
 	    "
 	}
 	
-	# Consulting
+	# Gantt
 	if {[im_table_exists im_timesheet_tasks]} {
 	    
 	    ns_log Notice "projects/nuke-2: im_timesheet_tasks"
@@ -3504,16 +3514,19 @@ ad_proc -public im_parent_projects {
     } else {
        set order "asc"
     } 
-    db_foreach parent_projects "WITH RECURSIVE breadcrumb(parent_id, project_name, project_id, tree_sortkey) AS (
-    SELECT parent_id, project_name, project_id, tree_sortkey from im_projects where project_id in ([template::util::tcl_to_sql_list $project_ids])
-  UNION ALL
-    SELECT p.parent_id,p.project_name, p.project_id, p.tree_sortkey
-    FROM breadcrumb b, im_projects p
-    WHERE p.project_id = b.parent_id)
-    select distinct project_id, tree_sortkey from breadcrumb order by tree_sortkey $order" {
-	lappend project_list $project_id
+    
+    if {[llength $project_ids] <1} {return ""} else {
+        db_foreach parent_projects "WITH RECURSIVE breadcrumb(parent_id, project_name, project_id, tree_sortkey) AS (
+            SELECT parent_id, project_name, project_id, tree_sortkey from im_projects where project_id in ([template::util::tcl_to_sql_list $project_ids])
+          UNION ALL
+            SELECT p.parent_id,p.project_name, p.project_id, p.tree_sortkey
+            FROM breadcrumb b, im_projects p
+            WHERE p.project_id = b.parent_id)
+            select distinct project_id, tree_sortkey from breadcrumb order by tree_sortkey $order" {
+            	lappend project_list $project_id
+        }
+        return $project_list
     }
-    return $project_list
 }
 
 ad_proc -public im_menu_projects_admin_links {
